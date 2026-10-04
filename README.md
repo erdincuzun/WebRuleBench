@@ -113,7 +113,7 @@ webrulebench serve                       # or ./run.sh
 ```
 
 Further users are created from **👥 Users** in the app (or with
-`manage_users.py create <name>`). Tokens are stored only as salted hashes.
+`webrulebench users create <name>`). Tokens are stored only as salted hashes.
 
 ### 2. Configure an LLM backend
 
@@ -136,7 +136,7 @@ python -m webrulebench.pipeline.llm_extractor data/dataset/raw/<domain>/article_
 ### 4. Score a rule on a page (Python)
 
 ```python
-from metrics import score_selector
+from webrulebench.evaluation.metrics import score_selector
 from bs4 import BeautifulSoup
 
 html = open("data/dataset/raw/<domain>/article_001.html", encoding="utf-8").read()
@@ -201,7 +201,7 @@ ruff check .       # lint (configured in pyproject.toml)
 ```
 
 The tests are intentionally lightweight: they check the core formulas in
-`metrics.py`, run every `html_cleaner.py` strategy and `skeleton.py` against a
+`metrics`, run every `html_cleaner` strategy and `skeleton` against a
 handful of small sample pages under `tests/fixtures/`, check the CSS / XPath /
 regex runners, verify that `score_selector` behaves consistently against
 the approved ground truth for those pages, check experiment scoring, the

@@ -94,7 +94,7 @@ Sekmeler: 📦 Veri seti · ✍ Annotation & GT · 🤖 LLM sonuçları · ⬇ D
 ## Sorun giderme
 
 - **Port meşgul**: başka bir portla başlat: `WRB_PORT=5003 ./run.sh`.
-- **Sayfa önizlemede boş görünüyor**: bazı sayfalar iframe'de yüklenmez; dosyayı doğrudan aç: `dataset/raw/<site>/article_001.html`.
+- **Sayfa önizlemede boş görünüyor**: bazı sayfalar iframe'de yüklenmez; dosyayı doğrudan aç: `data/dataset/raw/<site>/article_001.html`.
 - **Sayfa indirilemiyor**: JavaScript ile oluşan sayfalar için `playwright install chromium`.
 - **LLM bağlantı hatası**: ⚙ LLM Modelleri'nde **⚡ Test**; Ollama için `ollama serve` çalışıyor mu ve model yüklü mü (`ollama list`)?
 - **Admin token'ı unutuldu**: `webrulebench users reset-token <kullanıcı>`.
