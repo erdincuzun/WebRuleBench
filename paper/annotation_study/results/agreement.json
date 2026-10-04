@@ -1,13 +1,13 @@
 {
  "annotators": [
-  "euzun",
-  "user2",
-  "user3"
+  "A1",
+  "A2",
+  "A3"
  ],
  "sample": {
   "seed": null,
   "eligible": 70,
-  "criteria": "article layout named 'Article 1', >=3 GT pages, euzun rules present; top 10 by GT pages (ties: alphabetical)",
+  "criteria": "article layout named 'Article 1', >=3 GT pages, A1 rules present; top 10 by GT pages (ties: alphabetical)",
   "sites": [
    {
     "domain": "525.az",
@@ -175,17 +175,17 @@
  ],
  "per_pair": [
   {
-   "pair": "euzun–user2",
+   "pair": "A1–A2",
    "cells": 2767,
    "content_similarity": 0.877
   },
   {
-   "pair": "euzun–user3",
+   "pair": "A1–A3",
    "cells": 2642,
    "content_similarity": 0.857
   },
   {
-   "pair": "user2–user3",
+   "pair": "A2–A3",
    "cells": 2763,
    "content_similarity": 0.914
   }

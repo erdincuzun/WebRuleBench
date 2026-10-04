@@ -9,6 +9,7 @@ sample.json'daki layout'lar için annotatörlerin CSS kurallarını iki düzeyde
                      ve annotatör çiftleri arasındaki ortalama içerik benzerliği
 
 Kullanım:  python paper/annotation_study/analyze.py [--annotators euzun user2 user3]
+           Çıktılarda annotatörler verilen sırayla A1, A2, A3… olarak anonimleştirilir.
 Çıktılar:  paper/annotation_study/results/agreement.json, per_field.csv, per_pair.csv, per_layout.csv
 """
 from __future__ import annotations
@@ -60,6 +61,7 @@ def main():
     ap.add_argument("--max-pairs", type=int, default=20000, help="D_e kestirimi için rastgele çift sayısı")
     args = ap.parse_args()
     users = args.annotators
+    label = {u: f"A{i}" for i, u in enumerate(users, 1)}   # çıktılarda anonim ad
 
     sample = json.loads((HERE / "sample.json").read_text(encoding="utf-8"))
     tmpls = X._templates()
@@ -125,11 +127,11 @@ def main():
     per_pair = []
     for a, b in itertools.combinations(users, 2):
         xs = [v for (p, q, f), vs in pair_sims.items() if (p, q) == (a, b) for v in vs]
-        per_pair.append({"pair": f"{a}–{b}", "cells": len(xs),
+        per_pair.append({"pair": f"{label[a]}–{label[b]}", "cells": len(xs),
                          "content_similarity": round(sum(xs) / len(xs), 3) if xs else None})
 
     OUT.mkdir(exist_ok=True)
-    result = {"annotators": users, "sample": sample, "per_field": per_field, "per_pair": per_pair,
+    result = {"annotators": [label[u] for u in users], "sample": sample, "per_field": per_field, "per_pair": per_pair,
               "per_layout": per_layout,
               "method": {"rule": "Fleiss kappa over layouts (subjects) x annotators; categories = normalized CSS rules (rule_agreement.normalize_rule)",
                          "content": "Krippendorff alpha over (layout, page, field) units; distance = 1 - field metric "

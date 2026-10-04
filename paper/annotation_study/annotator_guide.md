@@ -87,5 +87,5 @@ Notlarınızı bu klasördeki `notes_<kullanıcı>.md` dosyasına ya da e-postay
 
 ## 6. Bilinmesi gerekenler (araştırmacı için)
 
-- Karşılaştırılan diğer kurallar (euzun) bu kılavuzdan **önce** yazılmıştır; makalede sınırlama olarak belirtilmelidir.
+- Karşılaştırılan diğer kurallar (A1) bu kılavuzdan **önce** yazılmıştır; makalede sınırlama olarak belirtilmelidir.
 - Uyum, Rapor → Annotation & GT sekmesinde (alan bazında κ, düşük uyumlu alanlar) ve her layout'un GT Onayı sayfasında (K1/K2) izlenir.
