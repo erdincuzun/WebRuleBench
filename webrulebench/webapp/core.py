@@ -917,6 +917,8 @@ def _extract_with_selector(soup, selector: str, field: str, merge: bool = False)
     # {css, xpath, regex} biçimindeki alanlar (GT ve kullanıcı annotation'ları) → CSS kısmı
     if isinstance(selector, dict):
         selector = selector.get("css") or ""
+    if isinstance(selector, list):  # eski kayıtlarda liste olarak saklanmış kurallar
+        selector = ", ".join(s for s in selector if isinstance(s, str))
     if not selector:
         return "" if field != "images" else []
 
