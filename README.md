@@ -1,6 +1,7 @@
 # WebRuleBench
 
 [![tests](https://github.com/erdincuzun/WebRuleBench/actions/workflows/tests.yml/badge.svg)](https://github.com/erdincuzun/WebRuleBench/actions/workflows/tests.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23142233.svg)](https://doi.org/10.5281/zenodo.23142233)
 
 A benchmark environment for evaluating **LLM-generated web extraction rules**
 (news article title/body/date/author/images/tags, and any fields you define in
@@ -227,7 +228,8 @@ MIT — see [LICENSE](LICENSE).
 ## Citing
 
 If you use this software in academic work, please cite it as described in
-[CITATION.cff](CITATION.cff). The regex generator extends:
+[CITATION.cff](CITATION.cff); the archived releases are on Zenodo,
+doi:[10.5281/zenodo.23142233](https://doi.org/10.5281/zenodo.23142233) (all versions). The regex generator extends:
 Uzun, E. (2020). A regular expression generator based on CSS selectors for
 efficient extraction from HTML pages. *Turkish Journal of Electrical
 Engineering & Computer Sciences*, 28(6), 3389–3401. doi:10.3906/elk-2004-67

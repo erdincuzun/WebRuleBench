@@ -14,4 +14,12 @@ authors:
     email: bsevinc@nku.edu.tr
     affiliation: "Tekirdağ Namık Kemal University"
 license: MIT
+doi: "10.5281/zenodo.23142233"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.23142233"
+    description: "Concept DOI (all versions)"
+  - type: doi
+    value: "10.5281/zenodo.23142234"
+    description: "Version 1.0.0"
 repository-code: "https://github.com/erdincuzun/WebRuleBench"
