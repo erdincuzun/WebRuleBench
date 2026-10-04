@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "webrulebench": {
+      "command": "python3",
+      "args": ["-m", "webrulebench.mcp_server"]
+    }
+  }
+}

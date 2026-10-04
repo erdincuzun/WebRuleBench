@@ -1,0 +1,4256 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebRuleBench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/i18n/{{ lang }}.js?v={{ i18n_version }}"></script>
+<script src="{{ url_for('static', filename='i18n.js') }}"></script>
+<style>
+/* ── RESET & VARS ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0d0f14;
+  --bg2:      #13161e;
+  --bg3:      #1a1e28;
+  --border:   #262b38;
+  --accent:   #5b7cfa;
+  --accent2:  #a78bfa;
+  --green:    #34d399;
+  --red:      #f87171;
+  --yellow:   #fbbf24;
+  --text:     #e2e8f0;
+  --text2:    #8892a4;
+  --text3:    #4a5568;
+  --radius:   8px;
+  --font:     'Syne', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+}
+
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+/* ── LAYOUT ───────────────────────────────────────── */
+.app { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 56px 1fr; height: 100vh; }
+
+/* ── HEADER ───────────────────────────────────────── */
+.header {
+  grid-column: 1 / -1;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 16px; padding: 0 20px;
+}
+.logo { font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+.logo span { color: var(--accent); }
+.progress-bar-wrap { flex: 1; max-width: 300px; }
+.progress-label { font-size: 11px; color: var(--text2); font-family: var(--mono); margin-bottom: 4px; }
+.progress-bar { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width .4s ease; }
+.header-stats { display: flex; gap: 16px; margin-left: auto; }
+.stat { text-align: right; }
+.stat-val { font-size: 18px; font-weight: 700; font-family: var(--mono); color: var(--accent); }
+.stat-label { font-size: 10px; color: var(--text3); letter-spacing: .5px; text-transform: uppercase; }
+.site-stats { display: none; gap: 12px; align-items: center; padding: 0 16px; border-left: 1px solid var(--border); }
+.site-stats.visible { display: flex; }
+.site-stat { text-align: center; }
+.site-stat-val { font-size: 13px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.site-stat-val span { color: var(--accent2); }
+.site-stat-label { font-size: 9px; color: var(--text3); letter-spacing: .4px; text-transform: uppercase; margin-top: 1px; }
+.site-stat-name { color: var(--accent2); font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Başlık öğeleri satır kırmasın; yer daralınca yalnızca ilerleme çubuğu küçülür */
+.header > *, .header-user-area > * { flex-shrink: 0; white-space: nowrap; }
+.header > .progress-bar-wrap { flex-shrink: 1; min-width: 90px; }
+.header { overflow: hidden; }
+/* Genel toplamlar ana sayfada ve Rapor'da da var; yer daralınca önce onlar gizlenir, seçili sitenin sayıları kalır */
+@media (max-width: 1520px) { .header > .header-stats { display: none; } }
+@media (max-width: 1300px) { .header > .progress-bar-wrap { display: none; } }
+
+/* ── BÖLÜM MODU ─────────────────────────────────────
+   /annotate?mode=data|annotation — yalnızca o bölümün işlemleri görünür (groundtruth/evaluation kendi sayfalarına yönlendirilir).
+   data-sec="a b" taşıyan öğe yalnızca a veya b modunda görünür; data-sec'siz öğeler her modda görünür. */
+body[data-mode="data"]        [data-sec]:not([data-sec~="data"]),
+body[data-mode="annotation"]  [data-sec]:not([data-sec~="annotation"]),
+body[data-mode="groundtruth"] [data-sec]:not([data-sec~="groundtruth"]) { display: none !important; }
+.mode-badge { font-size: 11px; font-weight: 700; color: var(--accent2); background: rgba(167,139,250,.12); border: 1px solid rgba(167,139,250,.3); border-radius: 6px; padding: 4px 8px; }
+
+/* ── KENDİ ANNOTATION SEKMELERİ ───────────────────── */
+.annot-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.annot-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 14px; color: var(--text3); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
+.annot-tab:hover { color: var(--text); }
+.annot-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+.annot-tab-count { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: 4px; }
+.annot-hint { font-size: 11px; color: var(--text2); margin-bottom: 14px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.annot-ref { font-size: 10px; color: var(--text3); font-family: var(--mono); margin: -2px 0 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.annot-ref code { color: var(--text2); }
+.annot-link.on { border-color: rgba(167,139,250,.5); }
+
+/* ── HEADER USER AREA ─────────────────────────────── */
+.header-user-area { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+.user-badge { align-items: center; gap: 6px; font-size: 12px; font-family: var(--mono); color: var(--accent2); background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.3); padding: 4px 10px; border-radius: 20px; }
+.btn-report { padding: 5px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg3); color: var(--text2); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.btn-report:hover { border-color: var(--accent); color: var(--accent); }
+/* MCP Config Modal */
+.mcp-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 1000; align-items: center; justify-content: center; }
+.mcp-overlay.open { display: flex; }
+.mcp-modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; width: 420px; max-width: 95vw; overflow: hidden; }
+.mcp-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.mcp-title { font-size: 14px; font-weight: 700; color: var(--accent); }
+.mcp-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.mcp-field { display: flex; flex-direction: column; gap: 5px; }
+.mcp-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+.mcp-select, .mcp-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 12px; padding: 7px 10px; width: 100%; box-sizing: border-box; }
+.mcp-select:focus, .mcp-input:focus { outline: none; border-color: var(--accent); }
+.mcp-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+.mcp-status { font-size: 11px; font-family: var(--mono); color: var(--text3); padding: 6px 10px; background: var(--bg3); border-radius: 6px; margin-top: 4px; }
+.mcp-label-hint { color: var(--text3); font-weight: 400; }
+.btn-logout { padding: 5px 12px; border-radius: var(--radius); border: 1px solid rgba(248,113,113,.3); background: rgba(248,113,113,.08); color: var(--red); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.btn-logout:hover { background: rgba(248,113,113,.18); border-color: var(--red); }
+.btn-login { padding: 5px 12px; border-radius: var(--radius); border: 1px solid rgba(91,124,250,.4); background: rgba(91,124,250,.1); color: var(--accent); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.btn-login:hover { background: rgba(91,124,250,.2); }
+.hidden { display: none !important; }
+
+/* ── LOGIN MODAL ──────────────────────────────────── */
+.login-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 1000; align-items: center; justify-content: center; }
+.login-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 32px; width: 340px; text-align: center; }
+.login-logo { font-size: 32px; margin-bottom: 12px; }
+.login-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.login-sub { font-size: 12px; color: var(--text2); margin-bottom: 24px; }
+.login-input { width: 100%; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; margin-bottom: 10px; outline: none; box-sizing: border-box; }
+.login-input:focus { border-color: var(--accent); }
+.login-input.mb { margin-bottom: 12px; }
+.btn-login-submit { width: 100%; padding: 10px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; font-family: var(--font); }
+.btn-login-submit:hover { background: #4a6ef5; }
+
+/* ── MAIN ─────────────────────────────────────────── */
+.main { display: grid; grid-template-columns: 1fr 380px; overflow: hidden; }
+
+/* ── VIEWER ───────────────────────────────────────── */
+.viewer { display: flex; flex-direction: column; overflow: hidden; }
+.viewer-toolbar {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 8px 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.page-tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
+.page-tab {
+  font-size: 11px; font-family: var(--mono); padding: 4px 10px;
+  border-radius: 4px; cursor: pointer; white-space: nowrap;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text2); transition: all .15s;
+}
+.page-tab:hover { border-color: var(--accent); color: var(--text); }
+.page-tab.active { background: rgba(91,124,250,.2); border-color: var(--accent); color: var(--accent); }
+.page-tab.assigned { border-color: var(--green); color: var(--green); }
+.page-tab.skipped  { border-color: var(--text3); color: var(--text3); text-decoration: line-through; }
+
+.viewer-frame { flex: 1; position: relative; overflow: auto; }
+.viewer-frame iframe {
+  display: block; border: none; background: white;
+  transform-origin: top left;
+}
+.viewer-zoom-bar { display: flex; align-items: center; gap: 4px; margin-left: auto; flex-shrink: 0; }
+.viewer-zoom-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); font-size: 14px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; padding: 0; }
+.viewer-zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
+.viewer-zoom-level { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 36px; text-align: center; cursor: pointer; padding: 2px 4px; border-radius: 3px; transition: background .1s; }
+.viewer-zoom-level:hover { background: var(--bg3); color: var(--text); }
+.viewer-empty {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; flex-direction: column; gap: 12px; color: var(--text3);
+}
+.viewer-empty-icon { font-size: 48px; opacity: .3; }
+.viewer-empty-text { font-size: 14px; }
+
+/* ── PANEL ────────────────────────────────────────── */
+.panel {
+  background: var(--bg2); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+.panel-section {
+  padding: 14px; border-bottom: 1px solid var(--border);
+}
+.panel-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text3); font-weight: 600; margin-bottom: 10px;
+}
+
+/* Layout list */
+.layout-list { display: flex; flex-direction: column; gap: 6px; }
+.layout-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: var(--radius);
+  border: 1px solid var(--border); cursor: pointer;
+  transition: all .15s; background: var(--bg3);
+}
+.layout-item:hover { border-color: var(--accent2); }
+.layout-item.selected { border-color: var(--accent); background: rgba(91,124,250,.1); }
+.layout-badge {
+  font-size: 10px; font-family: var(--mono); font-weight: 600;
+  background: var(--bg); padding: 2px 6px; border-radius: 4px;
+  color: var(--accent2); border: 1px solid var(--border);
+}
+.layout-name { font-size: 12px; flex: 1; }
+.layout-type { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+.layout-actions { display: flex; gap: 4px; }
+.icon-btn {
+  background: none; border: none; cursor: pointer; color: var(--text3);
+  padding: 2px 4px; border-radius: 3px; font-size: 12px;
+  transition: color .15s;
+}
+.icon-btn:hover { color: var(--text); }
+.icon-btn.danger:hover { color: var(--red); }
+
+.btn-new-layout {
+  width: 100%; padding: 8px; border-radius: var(--radius);
+  border: 1px dashed var(--border); background: none; color: var(--text3);
+  font-family: var(--font); font-size: 12px; cursor: pointer;
+  transition: all .15s; margin-top: 8px;
+}
+.btn-new-layout:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Assignment actions */
+.assign-actions { display: flex; flex-direction: column; gap: 8px; }
+.btn {
+  padding: 9px 16px; border-radius: var(--radius); border: none;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s; text-align: center;
+}
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #4a6ef5; }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+.btn-skip { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); font-size: 12px; }
+.btn-skip:hover { border-color: var(--red); color: var(--red); }
+.btn-danger { background: rgba(248,113,113,.1); color: var(--red); border: 1px solid rgba(248,113,113,.3); font-size: 12px; }
+.btn-danger:hover { background: rgba(248,113,113,.2); border-color: var(--red); }
+.redownload-box { margin-top:10px; padding:10px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); }
+.redownload-url { font-size:10px; color:var(--text3); font-family:var(--mono); word-break:break-all; margin-bottom:6px; }
+.redownload-input { width:100%; box-sizing:border-box; padding:6px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg2); color:var(--text); font-size:11px; font-family:var(--mono); margin-bottom:6px; }
+.redownload-input:focus { outline:none; border-color:var(--accent); }
+
+/* Layout editor modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; width: min(780px, 92vw); max-height: 92vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  transform: translateY(20px); transition: transform .2s;
+  position: relative;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; flex-wrap: wrap;
+}
+.modal-title { font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.form-label .optional { color: var(--text3); font-weight: 400; text-transform: none; letter-spacing: 0; }
+.form-input {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 9px 12px; color: var(--text);
+  font-family: var(--mono); font-size: 13px; outline: none;
+  transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text3); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.validation-result {
+  margin-top: 6px; padding: 6px 10px; border-radius: 4px;
+  font-size: 11px; font-family: var(--mono);
+}
+.validation-result.ok  { background: rgba(52,211,153,.1); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
+.validation-result.err { background: rgba(248,113,113,.1); color: var(--red);   border: 1px solid rgba(248,113,113,.3); }
+
+.selector-row { display: flex; gap: 6px; align-items: flex-start; }
+.selector-row .form-input { flex: 1; }
+.btn-validate {
+  padding: 9px 12px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text2); font-family: var(--mono);
+  font-size: 11px; cursor: pointer; white-space: nowrap; transition: all .15s;
+  flex-shrink: 0;
+}
+.btn-xpath {
+  padding: 9px 10px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text2); font-family: var(--mono);
+  font-size: 11px; cursor: pointer; white-space: nowrap; transition: all .15s;
+  flex-shrink: 0;
+}
+.rule-extra-row {
+  display: flex; gap: 6px; align-items: center; margin-top: 6px;
+}
+.rule-extra-row .rule-tag {
+  font-size: 10px; color: var(--text3); font-family: var(--mono);
+  flex-shrink: 0; width: 42px;
+}
+.rule-extra-row .form-input {
+  flex: 1; font-size: 11px; padding: 6px 8px;
+}
+.btn-validate:hover { border-color: var(--accent); color: var(--accent); }
+
+.page-type-select {
+  display: flex; gap: 8px;
+}
+.type-btn {
+  flex: 1; padding: 8px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg3);
+  color: var(--text2); font-family: var(--font); font-size: 12px;
+  cursor: pointer; transition: all .15s; text-align: center;
+}
+.type-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(91,124,250,.1); }
+
+/* Test Modal */
+.test-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.test-modal-overlay.open { opacity: 1; pointer-events: all; }
+.test-modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; width: 480px; max-height: 80vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  transform: translateY(16px); transition: transform .2s;
+}
+.test-modal-overlay.open .test-modal { transform: translateY(0); }
+.test-modal-header {
+  padding: 16px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.test-modal-title { font-size: 14px; font-weight: 700; }
+.test-modal-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+.test-modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+.test-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.test-row:last-child { border-bottom: none; }
+.test-field { font-family: var(--mono); color: var(--text3); width: 60px; flex-shrink: 0; font-size: 11px; padding-top: 1px; }
+.test-status { font-size: 14px; flex-shrink: 0; }
+.test-info { flex: 1; min-width: 0; }
+.test-count { font-family: var(--mono); font-size: 11px; color: var(--text2); }
+.test-preview { color: var(--text3); font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.test-skip { color: var(--text3); font-style: italic; font-size: 11px; }
+.test-summary {
+  margin-top: 12px; padding: 8px 12px; border-radius: var(--radius);
+  font-size: 12px; font-family: var(--mono); text-align: center;
+}
+.test-summary.all-pass { background: rgba(52,211,153,.1); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
+.test-summary.has-fail { background: rgba(248,113,113,.1); color: var(--red);   border: 1px solid rgba(248,113,113,.3); }
+.test-summary.partial  { background: rgba(251,191,36,.1);  color: var(--yellow);border: 1px solid rgba(251,191,36,.3); }
+.optional-toggle { display:flex; align-items:center; gap:5px; cursor:pointer; font-size:10px; color:var(--text3); font-weight:400; text-transform:none; letter-spacing:0; margin-left:auto; user-select:none; }
+.optional-toggle input { accent-color:var(--accent2); cursor:pointer; }
+.optional-toggle.checked { color:var(--accent2); }
+
+/* Auto Detect */
+.auto-detect-group { display: flex; gap: 6px; align-items: center; }
+.model-select {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 5px 8px; color: var(--text2);
+  font-family: var(--mono); font-size: 11px; outline: none; cursor: pointer;
+  transition: border-color .15s;
+}
+.model-select:focus { border-color: var(--accent2); }
+.model-select:disabled { opacity: .4; cursor: not-allowed; }
+.btn-auto-detect {
+  padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--accent2);
+  background: rgba(167,139,250,.1); color: var(--accent2);
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.btn-auto-detect:hover { background: rgba(167,139,250,.2); }
+.btn-auto-detect:disabled { opacity: .4; cursor: not-allowed; }
+.btn-prompt-edit {
+  padding: 6px 10px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: var(--bg3); color: var(--text2);
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.btn-prompt-edit:hover { border-color: var(--accent); color: var(--accent); }
+.btn-prompt-edit.has-custom { border-color: var(--yellow); color: var(--yellow); }
+/* Prompt editor modal */
+.prompt-editor-area {
+  flex: 1; padding: 0 18px 14px; display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-loading {
+  position: absolute; inset: 0; background: rgba(13,15,20,.88);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; z-index: 10; border-radius: 12px;
+}
+.modal-loading-text { font-size: 13px; color: var(--text2); font-family: var(--mono); }
+.spinner {
+  width: 34px; height: 34px; border: 3px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 16px;
+  font-size: 13px; opacity: 0; transform: translateY(8px);
+  transition: all .2s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.ok  { border-color: var(--green); color: var(--green); }
+.toast.err { border-color: var(--red); color: var(--red); }
+
+/* ── ELEMENT PICKER ───────────────────────────────── */
+/* Modal minimized state */
+.modal-overlay.picker-mode .modal {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  width: auto; max-width: 92vw; height: auto; max-height: none;
+  border-radius: 10px; overflow: visible;
+}
+.modal-overlay.picker-mode .modal-header { border-radius: 10px; }
+.modal-overlay.picker-mode .modal-body,
+.modal-overlay.picker-mode .modal-footer,
+.modal-overlay.picker-mode > .modal > div:not(.modal-header):not(.picker-bar) { display: none !important; }
+.modal-overlay.picker-mode { background: transparent; pointer-events: none; }
+.modal-overlay.picker-mode .modal { pointer-events: all; }
+
+/* Picker floating bar — fixed bottom, shown whenever picker is active */
+.picker-bar {
+  display: none;
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  z-index: 1200;
+  flex-direction: column; gap: 6px;
+  padding: 10px 16px 14px;
+  border: 1px solid var(--border); border-bottom: none;
+  background: var(--bg2);
+  border-radius: 10px 10px 0 0;
+  min-width: 520px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.4);
+}
+.picker-bar.visible { display: flex; }
+.picker-bar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.picker-xpath-tag { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+.picker-xpath-preview { font-family: var(--mono); font-size: 11px; color: var(--accent2); word-break: break-all; flex: 1; min-width: 0; }
+.picker-sel-segments {
+  flex: 1; font-family: var(--mono); font-size: 12px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 8px; color: var(--accent);
+  min-width: 160px; display: flex; align-items: center; flex-wrap: wrap; gap: 2px;
+}
+.picker-seg {
+  padding: 2px 6px; border-radius: 4px; cursor: pointer;
+  border: 1px solid transparent; transition: all .12s;
+}
+.picker-seg:hover { background: rgba(91,124,250,.15); border-color: rgba(91,124,250,.3); }
+.picker-seg.active { background: rgba(91,124,250,.25); border-color: var(--accent); color: #fff; }
+.picker-seg-sep { color: var(--text3); padding: 0 1px; cursor: default; }
+.picker-match-badge {
+  font-size: 11px; font-family: var(--mono); padding: 3px 8px;
+  border-radius: 4px; font-weight: 600; white-space: nowrap;
+}
+.picker-match-badge.ok  { background: rgba(52,211,153,.15); color: var(--green); border: 1px solid rgba(52,211,153,.3); }
+.picker-match-badge.warn { background: rgba(251,191,36,.12); color: var(--yellow); border: 1px solid rgba(251,191,36,.3); }
+.picker-match-badge.none { background: rgba(248,113,113,.1); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+.picker-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-picker { padding: 4px 10px; border-radius: 5px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn-picker:hover { border-color: var(--accent); color: var(--accent); }
+.btn-picker:disabled { opacity: .35; cursor: not-allowed; }
+.btn-picker.confirm { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn-picker.confirm:hover { background: #4a6ef5; }
+.btn-picker.cancel { border-color: rgba(248,113,113,.4); color: var(--red); }
+.btn-picker.cancel:hover { background: rgba(248,113,113,.1); }
+.picker-field-label { font-size: 11px; color: var(--text2); white-space: nowrap; font-weight: 600; }
+.picker-hint { font-size: 11px; color: var(--text3); }
+.form-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.multi-sel-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.multi-sel-row .form-input { flex: 1; }
+.btn-add-selector { font-size: 11px; font-family: var(--mono); color: var(--accent); background: none; border: 1px dashed rgba(91,124,250,.4); border-radius: 5px; padding: 3px 10px; cursor: pointer; margin-top: 2px; transition: all .15s; }
+.btn-add-selector:hover { background: rgba(91,124,250,.08); border-color: var(--accent); }
+.form-required { color: var(--red); }
+.picker-class-dropdown { margin-top: 4px; }
+.picker-class-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; }
+.picker-class-list { display: flex; gap: 6px; flex-wrap: wrap; }
+.picker-attr-dropdown { margin-top: 4px; }
+.picker-attr-val-preview { font-size: 10px; color: var(--accent2); font-family: var(--mono); margin: 4px 0 2px; padding: 3px 7px; background: rgba(167,139,250,.08); border: 1px solid rgba(167,139,250,.2); border-radius: 4px; word-break: break-all; display: none; }
+.picker-attr-val-preview.visible { display: block; }
+.picker-attr-form { display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.picker-attr-select { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: var(--mono); font-size: 11px; padding: 3px 6px; outline: none; }
+.picker-attr-select:focus { border-color: var(--accent); }
+.picker-attr-input { flex: 1; min-width: 80px; background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: var(--mono); font-size: 11px; padding: 3px 8px; outline: none; }
+.picker-attr-input:focus { border-color: var(--accent); }
+
+/* Scrollbars */
+.modal-body::-webkit-scrollbar { width: 4px; }
+.modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── EVAL MODAL ───────────────────────────────────── */
+
+/* ── BULK TEST MODAL ──────────────────────────────────── */
+.bulk-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 450; opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.bulk-overlay.open { opacity: 1; pointer-events: all; }
+.bulk-modal {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; width: min(92vw, 1100px); max-height: 90vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  transform: translateY(16px); transition: transform .2s;
+}
+.bulk-overlay.open .bulk-modal { transform: translateY(0); }
+.bulk-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.bulk-title { font-size: 15px; font-weight: 700; flex: 1; }
+.bulk-toolbar { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.bulk-body { overflow: auto; flex: 1; }
+.bulk-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.bulk-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.bulk-table th { position: sticky; top: 0; background: var(--bg3); padding: 8px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--text2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.bulk-table th.opt { color: var(--text3); }
+.bulk-table td { padding: 7px 10px; border-bottom: 1px solid rgba(38,43,56,.6); vertical-align: middle; }
+.bulk-table tr:hover td { background: rgba(255,255,255,.02); }
+.bulk-table td.fname { font-family: var(--mono); font-size: 11px; color: var(--text2); white-space: nowrap; }
+.bulk-cell-ok { color: var(--green); font-size: 13px; cursor: default; }
+.bulk-cell-fail { color: var(--red); font-size: 13px; cursor: default; }
+.bulk-cell-opt-fail { color: var(--yellow); font-size: 13px; cursor: default; }
+.bulk-cell-skip { color: var(--text3); font-size: 13px; cursor: default; }
+.bulk-status-ok { color: var(--green); font-size: 11px; font-weight: 700; }
+.bulk-status-fail { color: var(--red); font-size: 11px; font-weight: 700; }
+.bulk-status-partial { color: var(--yellow); font-size: 11px; font-weight: 700; }
+.bulk-assigned-badge { font-size: 9px; background: rgba(91,124,250,.15); border: 1px solid rgba(91,124,250,.3); color: var(--accent); border-radius: 3px; padding: 1px 5px; margin-left: 4px; font-family: var(--mono); vertical-align: middle; }
+
+/* Bulk Add Pages Modal */
+.badd-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1100; display: flex; align-items: stretch; justify-content: stretch; opacity: 0; pointer-events: none; transition: opacity .15s; padding: 20px; box-sizing: border-box; }
+.badd-overlay.open { opacity: 1; pointer-events: all; }
+.badd-modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; width: 100%; height: 100%; display: flex; flex-direction: column; transform: translateY(10px); transition: transform .15s; box-shadow: 0 8px 40px rgba(0,0,0,.5); overflow: hidden; }
+.badd-overlay.open .badd-modal { transform: translateY(0); }
+.badd-step { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.badd-step.active { display: flex; }
+.badd-link-row { display: flex; align-items: center; padding: 5px 10px; border-bottom: 1px solid rgba(38,43,56,.6); gap: 8px; font-size: 12px; }
+.badd-link-row:hover { background: rgba(255,255,255,.02); }
+.badd-link-href { font-family: var(--mono); font-size: 11px; color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badd-link-text { font-size: 11px; color: var(--text3); width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+.badd-result-ok { color: var(--green); font-size: 11px; }
+.badd-result-err { color: var(--red); font-size: 11px; }
+
+/* Katman 1 kappa badge */
+/* Katman 2 skor hücreleri */
+/* Layer toolbar */
+
+/* No-site placeholder */
+.no-site {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; grid-column: 1 / -1; flex-direction: column; gap: 12px;
+  color: var(--text3);
+}
+
+/* ── DİL SEÇİCİ (hub.css ile aynı) ─────────────────── */
+.lang-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+.lang-switch button { background: none; border: none; color: var(--text3); font: 600 10px var(--mono); padding: 5px 7px; cursor: pointer; }
+.lang-switch button + button { border-left: 1px solid var(--border); }
+.lang-switch button:hover { color: var(--text); }
+.lang-switch button.active { background: rgba(91,124,250,.15); color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <a class="logo" href="/" title="{{ T('Home') }}" style="color:inherit;text-decoration:none">🏠 Web<span>RuleBench</span></a>
+    <a class="btn-report" id="backToSection" href="/annotation" style="text-decoration:none">← {{ T("Site list") }}</a>
+    <span class="mode-badge" id="modeBadge"></span>
+    <div class="progress-bar-wrap">
+      <div class="progress-label" id="progressLabel">{{ T("{done} / {total} sites complete", done=0, total=0) }}</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div class="site-stats" id="siteStats">
+      <div class="site-stat"><div class="site-stat-val site-stat-name" id="ssSiteName">—</div><div class="site-stat-label">{{ T("Selected site") }}</div></div>
+      <div class="site-stat"><div class="site-stat-val" id="ssArticleAnnotated">—</div><div class="site-stat-label">Article</div></div>
+      <div class="site-stat"><div class="site-stat-val" id="ssListingAnnotated">—</div><div class="site-stat-label">Listing</div></div>
+      <div class="site-stat"><div class="site-stat-val" id="ssSiteAnnotated">—</div><div class="site-stat-label">{{ T("Total") }}</div></div>
+    </div>
+    <div class="header-stats">
+      <div class="stat"><div class="stat-val" id="statPages">0</div><div class="stat-label">{{ T("Pages annotated") }}</div></div>
+      <div class="stat"><div class="stat-val" id="statLayouts">0</div><div class="stat-label">{{ T("Layouts defined") }}</div></div>
+    </div>
+    <div class="header-user-area">
+      <div id="userBadge" class="user-badge hidden"></div>
+      <button type="button" id="logoutBtn" class="btn-logout hidden" onclick="doLogout()">{{ T("Log out") }}</button>
+      <button type="button" id="loginBtn" class="btn-login hidden" onclick="showLoginModal()">{{ T("Login") }}</button>
+      {% include "_lang_switch.html" %}
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main" id="mainArea">
+    <div class="no-site">
+      <div style="font-size:48px;opacity:.2">◈</div>
+      <div>{% if lang == 'tr' %}<a href="/annotation" style="color:var(--accent)">Annotation</a> bölümünden bir site seçin{% else %}Select a site in the <a href="/annotation" style="color:var(--accent)">Annotation</a> section{% endif %}</div>
+    </div>
+  </main>
+
+</div>
+
+<!-- LAYOUT EDITOR MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">{{ T("New Layout") }}</div>
+      <div class="auto-detect-group" id="autoDetectGroup" style="display:none">
+        <select class="model-select" id="modelSelect" title="{{ T('Select a model') }}">
+          <optgroup label="— Groq ({{ T('cloud, fast') }})">
+            <option value="groq|llama-3.3-70b-versatile">groq / llama-3.3-70b</option>
+            <option value="groq|llama-3.1-8b-instant">groq / llama-3.1-8b</option>
+          </optgroup>
+          <optgroup label="— Gemini ({{ T('cloud') }})">
+            <option value="gemini|gemini-2.5-flash-lite">gemini / 2.5-flash-lite</option>
+          </optgroup>
+          <optgroup label="— Ollama ({{ T('local') }})">
+            <option value="ollama|qwen2.5-coder:14b">ollama / qwen2.5-coder:14b</option>
+            <option value="ollama|gemma3:12b">ollama / gemma3:12b</option>
+          </optgroup>
+        </select>
+        <button type="button" class="btn-auto-detect" id="btnAutoDetect" onclick="autoDetect()">⚡ Auto Detect</button>
+      </div>
+      <button type="button" class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- TABS -->
+    <div id="layoutTabBar" style="display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 20px">
+      <button type="button" id="tabGT" onclick="switchLayoutTab('gt')"
+        style="padding:8px 16px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:-1px">
+        🏛 Ground Truth
+      </button>
+      <button type="button" id="tabMyAnnot" onclick="switchLayoutTab('annot')"
+        style="padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:-1px">
+        ✏️ {{ T("My annotation") }}
+      </button>
+    </div>
+
+    <!-- TAB: GROUND TRUTH -->
+    <div class="modal-body" id="tabBodyGT">
+
+      <div id="gtReadonlyNotice" style="display:none;padding:8px 12px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:6px;font-size:12px;color:var(--yellow);margin-bottom:14px">
+        🔒 {{ T("Ground Truth — only admins can edit") }}
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">{{ T("Layout Name") }}</div>
+        <input type="text" class="form-input" id="layoutName" placeholder="{{ T('e.g. Standard Article, Gallery Post...') }}">
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">{{ T("Template") }} <span class="optional">— {{ T("optional, determines the evaluation metrics") }}</span></div>
+        <select class="form-input" id="layoutTemplate" title="{{ T('Select a layout template') }}" onchange="onLayoutTemplateChange()">
+          <option value="">— {{ T("No template") }}</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="pageTypeGroup">
+        <div class="form-label">{{ T("Page Type") }} <span class="optional" id="pageTypeNote">— {{ T("set automatically when a template is selected") }}</span></div>
+        <div class="page-type-select">
+          <button type="button" class="type-btn selected" id="typeArticle" onclick="selectType('article')">Article</button>
+          <button type="button" class="type-btn" id="typeListing" onclick="selectType('listing')">Listing</button>
+        </div>
+      </div>
+
+      <!-- DYNAMIC FIELDS (template-driven) -->
+      <div id="gtFieldsBody">
+        <div style="color:var(--text3);font-size:12px;padding:20px 0">{{ T("Select a template or set the page type.") }}</div>
+      </div>
+
+    </div>
+
+    <!-- TAB: KENDİ ANNOTATION -->
+    <div class="modal-body" id="tabBodyAnnot" style="display:none">
+      <div id="modalAnnotFormBody">
+        <div style="color:var(--text3);text-align:center;padding:30px">
+          {{ T("Select or edit a layout") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeModal()">{{ T("Close") }}</button>
+      <button type="button" class="btn btn-primary" id="modalSaveBtn" onclick="saveLayout()">💾 {{ T("Save GT") }}</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- PICKER BAR (fixed bottom, shown whenever picker is active) -->
+<div class="picker-bar" id="pickerBar">
+  <div class="picker-bar-row">
+    <span class="picker-field-label" id="pickerFieldLabel">—</span>
+    <span class="picker-hint">{{ T("— select an element") }}</span>
+  </div>
+  <div class="picker-bar-row">
+    <div id="pickerSelPreview" class="picker-sel-segments">—</div>
+    <span class="picker-match-badge none" id="pickerMatchBadge">—</span>
+  </div>
+  <div class="picker-bar-row" id="pickerXPathRow" style="display:none">
+    <span class="picker-xpath-tag">xpath</span>
+    <code id="pickerXPathPreview" class="picker-xpath-preview"></code>
+    <span class="picker-match-badge none" id="pickerXPathBadge">—</span>
+  </div>
+  <div class="picker-actions">
+    <button type="button" class="btn-picker" id="btnPickerParentUp" onclick="pickerParentUp()" disabled title="{{ T('Move the selection to the parent element') }}">^ Parent</button>
+    <button type="button" class="btn-picker" id="btnPickerParentAdd" onclick="pickerParentAdd()" disabled title="{{ T('Prepend a parent (narrow down)') }}">+ Parent</button>
+    <button type="button" class="btn-picker" id="btnPickerParentRemove" onclick="pickerParentRemove()" disabled title="{{ T('Undo the added parent') }}">− Parent</button>
+    <button type="button" class="btn-picker" id="btnPickerIdAdd" onclick="pickerIdAdd()" disabled title="{{ T('Add the element id') }}"></button>
+    <button type="button" class="btn-picker" id="btnPickerClassPick" onclick="pickerClassPick()" disabled title="{{ T('Add class') }}"></button>
+    <button type="button" class="btn-picker" id="btnPickerAttr" onclick="pickerAttrToggle()" disabled title="{{ T('Add attribute selector') }}">+ Attr</button>
+    <div style="flex:1"></div>
+    <button type="button" class="btn-picker cancel" onclick="cancelPicker()">{{ T("Cancel") }}</button>
+    <button type="button" class="btn-picker confirm" id="btnPickerConfirm" onclick="confirmPicker()" disabled>✓ {{ T("Use") }}</button>
+  </div>
+  <!-- Class pick dropdown -->
+  <div id="pickerClassDropdown" class="picker-class-dropdown hidden">
+    <div class="picker-class-label">{{ T("Select class:") }}</div>
+    <div id="pickerClassList" class="picker-class-list"></div>
+  </div>
+  <!-- Attr builder -->
+  <div id="pickerAttrDropdown" class="picker-attr-dropdown hidden">
+    <div class="picker-class-label">{{ T("Attribute selector:") }}</div>
+    <div id="pickerAttrList" class="picker-class-list"></div>
+    <div class="picker-attr-val-preview" id="pickerAttrValPreview"></div>
+    <div id="pickerAttrOpRow" class="picker-attr-form" style="display:none">
+      <select id="pickerAttrName" class="picker-attr-select" title="Attribute" onchange="pickerAttrNameChange()"></select>
+      <select id="pickerAttrOp" class="picker-attr-select" title="{{ T('Operator') }}">
+        <option value="">{{ T("exists") }}</option>
+        <option value="=">= ({{ T("equals") }})</option>
+        <option value="*=">*= ({{ T("contains") }})</option>
+        <option value="^=">^= ({{ T("starts with") }})</option>
+        <option value="$=">$= ({{ T("ends with") }})</option>
+      </select>
+      <input type="text" id="pickerAttrVal" class="picker-attr-input" placeholder="{{ T('value') }}">
+      <button type="button" class="btn-picker confirm" onclick="pickerAttrApply()">{{ T("Add") }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEST MODAL -->
+<div class="test-modal-overlay" id="testModalOverlay">
+  <div class="test-modal">
+    <div class="test-modal-header">
+      <div class="test-modal-title" id="testModalTitle">{{ T("Layout test") }}</div>
+      <button class="icon-btn" onclick="closeTestModal()">✕</button>
+    </div>
+    <div class="test-modal-body" id="testModalBody">
+      <div style="color:var(--text3);font-size:13px">{{ T("Running test...") }}</div>
+    </div>
+    <div class="test-modal-footer">
+      <button class="btn btn-secondary" onclick="closeTestModal()">{{ T("Close") }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+let sites        = [];
+let activeDomain = null;
+let activeFile   = null;
+let groundTruth  = {};
+let editingLayout= null;
+let currentType  = 'article';
+
+// ── BÖLÜM MODU ─────────────────────────────────────────
+// Hangi bölümden gelindiyse o bölümün işlemleri gösterilir (CSS: body[data-mode] + data-sec).
+const MODES = {
+  data:        { title: '🌐 ' + T('Data Collection'),       back: '/data',         pageTitle: T('Page') },
+  annotation:  { title: '✏️ ' + T('Annotation'),            back: '/annotation',   pageTitle: T('Assign Page') },
+  groundtruth: { title: '✅ ' + T('Ground Truth Approval'), back: '/ground-truth', pageTitle: T('Page') },
+};
+const MODE = (m => MODES[m] ? m : 'annotation')(new URLSearchParams(location.search).get('mode'));
+// GT Onayı ve LLM Değerlendirme artık kendi sayfalarında; eski linkler oraya gider
+if (new URLSearchParams(location.search).get('mode') === 'evaluation') location.replace('/evaluation');
+if (MODE === 'groundtruth') {
+  const _s = new URLSearchParams(location.search).get('site');
+  location.replace('/ground-truth' + (_s ? '/' + encodeURIComponent(_s) : ''));
+}
+document.body.dataset.mode = MODE;
+document.getElementById('modeBadge').textContent = MODES[MODE].title;
+document.getElementById('backToSection').href  = MODES[MODE].back;
+document.getElementById('backToSection').title = T('Back to the site list of {section}', {section: MODES[MODE].title});
+
+// ── INIT ───────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadSites(), loadStats(), loadTemplates()]);
+}
+
+async function loadSites() {
+  const res  = await fetch('/api/sites');
+  const data = await res.json();
+  sites      = data.sites;
+  const prog = data.progress;
+
+  document.getElementById('progressLabel').textContent =
+    T('{done} / {total} sites complete', {done: prog.complete, total: prog.total});
+  document.getElementById('progressFill').style.width =
+    `${prog.total ? (prog.complete/prog.total*100) : 0}%`;
+
+}
+
+async function loadStats() {
+  const res  = await fetch('/api/stats');
+  const data = await res.json();
+  document.getElementById('statPages').textContent   = data.annotated_pages;
+  document.getElementById('statLayouts').textContent = data.total_layouts;
+}
+
+// ── SITE SELECTION ─────────────────────────────────────
+async function selectSite(domain) {
+  activeDomain = domain;
+  activeFile   = null;
+  groundTruth  = {};
+
+  const res  = await fetch(`/api/site/${domain}`);
+  const data = await res.json();
+  groundTruth = data.ground_truth;
+
+  renderMain(data);
+  updateSiteStats(data);
+}
+
+let _sitePages = { article: [], listing: [], homepage: [] };
+
+function updateSiteStats(data) {
+  if (data) _sitePages = data.pages;
+  const assign       = groundTruth?.page_assignments || {};
+  const articles     = _sitePages.article || [];
+  const listings     = [...(_sitePages.homepage || []), ...(_sitePages.listing || [])];
+  const allPages     = [...articles, ...listings].sort();
+  // page_assignments formatı: {filename: {layout_id, skipped}}
+  const annotated    = allPages.filter(f => assign[f]?.layout_id && !assign[f]?.skipped).length;
+  const artAnnotated = articles.filter(f => assign[f]?.layout_id && !assign[f]?.skipped).length;
+  const lstAnnotated = listings.filter(f => assign[f]?.layout_id && !assign[f]?.skipped).length;
+
+  document.getElementById('ssSiteName').textContent       = activeDomain || '—';
+  document.getElementById('ssArticleAnnotated').innerHTML = `<span>${artAnnotated}</span> / ${articles.length}`;
+  document.getElementById('ssListingAnnotated').innerHTML = `<span>${lstAnnotated}</span> / ${listings.length}`;
+  document.getElementById('ssSiteAnnotated').innerHTML    = `<span>${annotated}</span> / ${allPages.length}`;
+
+  document.getElementById('siteStats').classList.add('visible');
+}
+
+// ── MAIN RENDER ────────────────────────────────────────
+function renderMain(data) {
+  const { domain, pages } = data;
+  const allPages = [...pages.homepage, ...pages.article, ...pages.listing].sort();
+
+  document.getElementById('mainArea').innerHTML = `
+    <div class="viewer">
+      <div class="viewer-toolbar">
+        <div class="page-tabs" id="pageTabs">
+          ${allPages.map(f => {
+            const assign = groundTruth.page_assignments?.[f];
+            const cls    = assign ? (assign.skipped ? 'skipped' : 'assigned') : '';
+            return `<div class="page-tab ${cls} ${activeFile === f ? 'active' : ''}"
+                        onclick="selectPage('${f}')">${f}</div>`;
+          }).join('')}
+        </div>
+        <div class="viewer-zoom-bar">
+          <button type="button" class="viewer-zoom-btn" onclick="viewerZoom(-0.25)" title="${T('Zoom out')}">−</button>
+          <span class="viewer-zoom-level" id="viewerZoomLabel" onclick="viewerZoomReset()" title="${T('Reset')}">100%</span>
+          <button type="button" class="viewer-zoom-btn" onclick="viewerZoom(+0.25)" title="${T('Zoom in')}">+</button>
+          <button type="button" class="viewer-zoom-btn" onclick="viewerZoomFit()" title="${T('Fit')}" style="width:auto;padding:0 6px;font-size:11px">⊡</button>
+        </div>
+      </div>
+      <div class="viewer-frame" id="viewerFrame">
+        <div class="viewer-empty" id="viewerEmpty">
+          <div class="viewer-empty-icon">⬡</div>
+          <div class="viewer-empty-text">${T('Select a page to preview')}</div>
+        </div>
+        <iframe id="pageFrame" style="display:none" sandbox="allow-same-origin allow-scripts"></iframe>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-section" data-sec="data">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="panel-title" style="margin-bottom:0">Site — ${domain}</div>
+          ${currentUserRole === 'admin' ? `<button class="btn btn-danger" style="font-size:11px;padding:4px 10px" onclick="deleteSite()">🗑 ${T('Remove site')}</button>` : ''}
+        </div>
+      </div>
+
+      <div class="panel-section" data-sec="annotation groundtruth">
+        <div class="panel-title">Layouts — ${domain}</div>
+        <div class="layout-list" id="layoutList"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" data-sec="annotation">
+          ${currentUserRole === 'admin' ? `<button class="btn-new-layout" onclick="openModal()">+ ${T('New Layout')}</button>` : ''}
+          <button class="btn-new-layout" onclick="openBulkTestModal()" style="border-color:var(--accent2);color:var(--accent2)">⚡ ${T('Bulk page assignment')}</button>
+        </div>
+      </div>
+
+      <div class="panel-section" style="flex:1;overflow-y:auto">
+        <div class="panel-title">${MODES[MODE].pageTitle}</div>
+        <div id="assignPanel">
+          <div style="color:var(--text3);font-size:12px">${T('Select a page first')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  renderLayouts();
+
+  const firstUnassigned = allPages.find(f =>
+    !groundTruth.page_assignments?.[f] && f !== 'homepage.html'
+  );
+  if (firstUnassigned) selectPage(firstUnassigned);
+}
+
+// ── PAGE SELECTION ─────────────────────────────────────
+// ── VIEWER ZOOM ──────────────────────────────────────────
+let _viewerZoom = 1.0;
+
+function _viewerApplyZoom() {
+  const frame = document.getElementById('pageFrame');
+  const wrap  = document.getElementById('viewerFrame');
+  if (!frame || frame.style.display === 'none') return;
+  frame.style.width     = (100 / _viewerZoom) + '%';
+  frame.style.height    = (100 / _viewerZoom) + '%';
+  frame.style.transform = `scale(${_viewerZoom})`;
+  const lbl = document.getElementById('viewerZoomLabel');
+  if (lbl) lbl.textContent = Math.round(_viewerZoom * 100) + '%';
+}
+
+function viewerZoom(delta) {
+  _viewerZoom = Math.min(2.0, Math.max(0.25, _viewerZoom + delta));
+  _viewerApplyZoom();
+}
+
+function viewerZoomReset() {
+  _viewerZoom = 1.0;
+  _viewerApplyZoom();
+}
+
+function viewerZoomFit() {
+  const frame = document.getElementById('pageFrame');
+  const wrap  = document.getElementById('viewerFrame');
+  if (!frame || !wrap) return;
+  frame.style.transform = 'none';
+  frame.style.width  = '100%';
+  frame.style.height = '100%';
+  let naturalW = 0;
+  try { naturalW = frame.contentDocument?.body?.scrollWidth || 0; } catch(e) {}
+  if (!naturalW) { _viewerZoom = 1.0; _viewerApplyZoom(); return; }
+  _viewerZoom = Math.min(1.0, Math.round((wrap.clientWidth / naturalW) * 100) / 100);
+  _viewerApplyZoom();
+}
+
+document.addEventListener('wheel', (e) => {
+  if (!e.ctrlKey && !e.metaKey) return;
+  const wrap = document.getElementById('viewerFrame');
+  if (!wrap || !wrap.contains(e.target)) return;
+  e.preventDefault();
+  viewerZoom(e.deltaY < 0 ? 0.1 : -0.1);
+}, { passive: false });
+
+async function selectPage(filename) {
+  activeFile = filename;
+
+  document.querySelectorAll('.page-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.trim() === filename);
+  });
+
+  const frame = document.getElementById('pageFrame');
+  const empty = document.getElementById('viewerEmpty');
+  frame.style.display = 'block';
+  empty.style.display = 'none';
+  applyJsToggle();
+  frame.src = `/api/page/${activeDomain}/${filename}`;
+
+  renderAssignPanel();
+  loadPageUrl(filename);
+
+  // Sayfa yüklenince seçili (checked) layout'u otomatik test et
+  frame.onload = () => {
+    const layouts = groundTruth.layouts || {};
+    // Önce seçili radio'ya bak, yoksa assigned layout, yoksa atla
+    const checkedRadio = document.querySelector('input[name="layoutPick"]:checked');
+    const assignment   = groundTruth.page_assignments?.[filename];
+    const testId = checkedRadio?.value || assignment?.layout_id || null;
+    if (MODE === 'annotation' && testId && layouts[testId]) runLayoutTests(testId);
+    _viewerApplyZoom();
+  };
+}
+
+// ── LAYOUTS ────────────────────────────────────────────
+function renderLayouts() {
+  const el      = document.getElementById('layoutList');
+  const layouts = groundTruth.layouts || {};
+  const keys    = Object.keys(layouts);
+
+  if (!keys.length) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:4px 0">${T('No layouts yet — create one')}</div>`;
+    return;
+  }
+
+  el.innerHTML = keys.map(id => {
+    const l        = layouts[id];
+    const assigned = Object.values(groundTruth.page_assignments || {})
+      .filter(a => a.layout_id === id).length;
+    return `
+    <div class="layout-item" id="layout-${id}">
+      <div class="layout-badge">${id}</div>
+      <div>
+        <div class="layout-name">${l.name}</div>
+        <div class="layout-type">${l.page_type} · ${T('{n} pages', {n: assigned})}</div>
+      </div>
+      <div class="layout-actions">
+        <button class="icon-btn" onclick="editLayout('${id}')" title="${T('Edit')}">✎</button>
+        <button class="icon-btn danger" data-sec="annotation" onclick="deleteLayout('${id}')" title="${T('Delete')}">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ASSIGN PANEL ───────────────────────────────────────
+function renderAssignPanel() {
+  const el = document.getElementById('assignPanel');
+  if (!activeFile) {
+    el.innerHTML = `<div style="color:var(--text3);font-size:12px">${T('Select a page first')}</div>`;
+    return;
+  }
+
+  const layouts    = groundTruth.layouts || {};
+  const assignment = groundTruth.page_assignments?.[activeFile];
+  const keys       = Object.keys(layouts);
+
+  const assignedId = assignment?.layout_id;
+  const isSkipped  = assignment?.skipped;
+
+  el.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">
+        ${activeFile} ${assignment ? (isSkipped ? `— <span style="color:var(--red)">${T('skipped')}</span>` : `— <span style="color:var(--green)">${assignedId}</span>`) : '— ' + T('unassigned')}
+      </div>
+      <div data-sec="annotation">
+      ${keys.length ? `
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+          ${keys.map(id => `
+            <div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border-radius:6px;border:1px solid ${assignedId===id?'var(--accent)':'var(--border)'};background:${assignedId===id?'rgba(91,124,250,.1)':'var(--bg3)'};transition:all .15s">
+                <input type="radio" name="layoutPick" value="${id}" ${assignedId===id?'checked':''} style="accent-color:var(--accent)" onchange="runLayoutTests('${id}')">
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:12px;font-weight:600">${layouts[id].name}</div>
+                  <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${id} · ${layouts[id].template_id || layouts[id].page_type || ''}</div>
+                </div>
+              </label>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-primary" onclick="assignPage()" style="width:100%;margin-bottom:6px">
+          ${T('Assign Layout')}
+        </button>
+        ${assignedId ? `
+        <button class="btn btn-secondary" onclick="openAnnotModal('${assignedId}')" style="width:100%;margin-bottom:6px;border-color:var(--accent2);color:var(--accent2)">
+          ✏️ ${T('My annotation')}
+        </button>` : ''}
+      ` : `<div style="color:var(--text3);font-size:12px;margin-bottom:10px">${T('Create a layout first')}</div>`}
+      <button class="btn btn-skip" onclick="skipPage()" style="width:100%">${T('Skip this page')}</button>
+      </div>
+      ${currentUserRole === 'admin' ? `<button class="btn btn-danger" data-sec="data" onclick="deletePage()" style="width:100%;margin-top:6px">🗑 ${T('Delete this page')}</button>` : ''}
+    </div>
+    ${currentUserRole === 'admin' ? `
+    <div class="redownload-box" data-sec="data">
+      <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text2)">🔄 ${T('Re-download page')}</div>
+      <div class="redownload-url" id="currentPageUrl">${T('Loading URL...')}</div>
+      <input class="redownload-input" id="redownloadUrl" type="text" placeholder="${T('Enter new URL...')}">
+      <button class="btn btn-secondary" style="width:100%;font-size:11px" onclick="redownloadPage()">${T('Download & update')}</button>
+    </div>
+    <div class="redownload-box" data-sec="data" style="margin-top:8px">
+      <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text2)">➕ ${T('Add new page')}</div>
+      <select id="addPageType" class="redownload-input" title="${T('Page type')}" style="margin-bottom:6px">
+        ${[...new Set(Object.values(_templates).map(t => t.page_type || 'article').concat(['article','listing']))]
+          .map(pt => `<option value="${pt}">${pt}</option>`).join('')}
+      </select>
+      <input class="redownload-input" id="addPageUrl" type="text" placeholder="${T('Enter page URL...')}">
+      <div style="display:flex;gap:6px;margin-top:0">
+        <button class="btn btn-secondary" style="flex:1;font-size:11px" onclick="addPage()">${T('Download & add')}</button>
+        <button class="btn btn-secondary" style="flex:1;font-size:11px;border-color:var(--accent2);color:var(--accent2)" onclick="openBulkAddModal()">⚡ ${T('Bulk add')}</button>
+      </div>
+    </div>
+    ` : ''}
+    <div class="redownload-box" style="margin-top:8px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer;user-select:none">
+        <input type="checkbox" id="jsToggle" onchange="applyJsToggle()" style="margin:0">
+        <span>${T('JS enabled (for sites that need popups/JS)')}</span>
+      </label>
+    </div>
+  `;
+}
+
+async function assignPage() {
+  const selected = document.querySelector('input[name="layoutPick"]:checked');
+  if (!selected) { showToast(T('Select a layout first'), 'err'); return; }
+
+  await fetch('/api/page/assign', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      domain:    activeDomain,
+      filename:  activeFile,
+      layout_id: selected.value,
+      skipped:   false,
+    })
+  });
+
+  if (!groundTruth.page_assignments) groundTruth.page_assignments = {};
+  groundTruth.page_assignments[activeFile] = { layout_id: selected.value, skipped: false };
+
+  updatePageTab(activeFile, 'assigned');
+  renderAssignPanel();
+  updateSiteStats();
+  showToast(T('Assigned to {layout}', {layout: selected.value}), 'ok');
+  await loadSites();
+  await loadStats();
+}
+
+async function skipPage() {
+  await fetch('/api/page/assign', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, filename: activeFile, skipped: true })
+  });
+
+  if (!groundTruth.page_assignments) groundTruth.page_assignments = {};
+  groundTruth.page_assignments[activeFile] = { layout_id: null, skipped: true };
+
+  updatePageTab(activeFile, 'skipped');
+  renderAssignPanel();
+  updateSiteStats();
+  showToast(T('Page skipped'), 'ok');
+  advanceToNext();
+}
+
+async function runLayoutTests(layoutId) {
+  if (!activeFile || !activeDomain) return;
+  const layouts = groundTruth.layouts || {};
+  const layout  = layouts[layoutId];
+  if (!layout) return;
+
+  const selectors = layout.selectors || {};
+
+  // Tüm selector'ları düz {key, selector} çiftlerine normalize et
+  // Hem düz string hem array+object formatını destekle
+  const allFields = [];
+  // Özel işlem gereken alanlar dışındaki tüm string selector'ları dinamik olarak ekle
+  const specialKeys = new Set(['images', 'related_links', 'links']);
+  Object.keys(selectors).forEach(f => {
+    if (specialKeys.has(f)) return;
+    const v = _cssOf(selectors[f]);
+    if (v && typeof v === 'string') allFields.push({ key: f, selector: v });
+    else if (v && typeof v === 'number') allFields.push({ key: f, selector: String(v) });
+  });
+
+  // images: string | [{image,caption}] | [string]
+  const imgVal = selectors.images;
+  if (imgVal) {
+    if (typeof imgVal === 'string') {
+      allFields.push({ key: 'images', selector: imgVal });
+    } else if (Array.isArray(imgVal)) {
+      imgVal.forEach((b, i) => {
+        const s = typeof b === 'object' ? b.image : b;
+        if (s) allFields.push({ key: `images[${i}]`, selector: s });
+        if (typeof b === 'object' && b.caption) allFields.push({ key: `images_caption[${i}]`, selector: b.caption });
+      });
+    }
+  }
+
+  // related_links: string | [{link,content}] | [string]
+  const relVal = selectors.related_links;
+  if (relVal) {
+    if (typeof relVal === 'string') {
+      allFields.push({ key: 'related_links', selector: relVal });
+    } else if (Array.isArray(relVal)) {
+      relVal.forEach((b, i) => {
+        const s = typeof b === 'object' ? b.link : b;
+        if (s) allFields.push({ key: `related_links[${i}]`, selector: s });
+      });
+    }
+  }
+
+  // links: string | [string]
+  const linksVal = selectors.links;
+  if (linksVal) {
+    if (typeof linksVal === 'string') {
+      allFields.push({ key: 'links', selector: linksVal });
+    } else if (Array.isArray(linksVal)) {
+      linksVal.forEach((s, i) => {
+        if (s && typeof s === 'string') allFields.push({ key: `links[${i}]`, selector: s });
+      });
+    }
+  }
+
+  // optional_fields'e göre flag ekle
+  const optionalFields = layout.optional_fields || [];
+  const fieldsWithOpt = allFields.map(f => ({
+    ...f,
+    optional: optionalFields.some(of =>
+      f.key === of ||
+      f.key.startsWith(of + '[') ||
+      f.key.startsWith(of + '_')),
+  }));
+
+  // Show modal with loading state
+  document.getElementById('testModalTitle').textContent =
+    `${layoutId} — ${layout.name} / ${activeFile}`;
+  document.getElementById('testModalBody').innerHTML =
+    `<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">⏳ ${T('Running test...')}</div>`;
+  document.getElementById('testModalOverlay').classList.add('open');
+
+  const results = await Promise.all(fieldsWithOpt.map(async ({ key, selector, optional }) => {
+    if (!selector || !selector.trim()) {
+      return { key, selector: null, skipped: true, optional };
+    }
+    try {
+      const res  = await fetch('/api/validate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ domain: activeDomain, filename: activeFile, selector, field: key })
+      });
+      const data = await res.json();
+      return { key, selector, ...data, skipped: false, optional };
+    } catch(e) {
+      return { key, selector, valid: false, message: T('Error'), skipped: false, optional };
+    }
+  }));
+
+  // Count pass/fail/skip
+  const tested       = results.filter(r => !r.skipped);
+  const passed       = tested.filter(r => r.valid).length;
+  const reqFailed    = tested.filter(r => !r.valid && !r.optional).length;
+  const optFailed    = tested.filter(r => !r.valid && r.optional).length;
+  const totalTested  = tested.length;
+
+  const summaryClass = reqFailed > 0 ? 'has-fail'
+                     : optFailed > 0 ? 'partial' : 'all-pass';
+  const summaryText  = reqFailed === 0 && optFailed === 0
+    ? '✅ ' + T('All tests passed ({passed}/{total})', {passed, total: totalTested})
+    : reqFailed > 0
+      ? '❌ ' + T('{req} required fields failed / {opt} optional warnings', {req: reqFailed, opt: optFailed})
+      : '⚠️ ' + T('{opt} optional fields not found (required fields OK)', {opt: optFailed});
+
+  const rows = results
+    .filter(r => !r.skipped)  // selector girilmemiş alanları gizle
+    .map(r => {
+      const icon    = r.valid ? '✅' : (r.optional ? '⚠️' : '❌');
+      const preview = r.previews?.[0] ? `<div class="test-preview">${r.previews[0]}</div>` : '';
+      const count   = r.count != null ? `<div class="test-count">${T('{n} elements', {n: r.count})}</div>` : '';
+      const failColor = r.optional ? 'var(--yellow)' : 'var(--red)';
+      return `
+        <div class="test-row">
+          <div class="test-field">${r.key}</div>
+          <div class="test-status">${icon}</div>
+          <div class="test-info">
+            ${count}
+            ${preview}
+            ${!r.valid ? `<div class="test-preview" style="color:${failColor}">${r.message}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+  document.getElementById('testModalBody').innerHTML = `
+    ${rows}
+    <div class="test-summary ${summaryClass}">${summaryText}</div>
+  `;
+
+  // Highlight the tested layout in panel
+  document.querySelectorAll('input[name="layoutPick"]').forEach(r => {
+    if (r.value === layoutId) r.checked = true;
+  });
+}
+
+function closeTestModal() {
+  document.getElementById('testModalOverlay').classList.remove('open');
+}
+
+async function deletePage() {
+  if (!activeFile) return;
+  const confirmed = confirm(
+    T('Are you sure you want to delete "{file}"?\n\nThis cannot be undone — the file will be permanently deleted from disk.', {file: activeFile})
+  );
+  if (!confirmed) return;
+
+  const res  = await fetch('/api/page/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, filename: activeFile })
+  });
+  const data = await res.json();
+
+  if (data.success) {
+    if (groundTruth.page_assignments) {
+      delete groundTruth.page_assignments[activeFile];
+    }
+    const deletedFile = activeFile;
+    activeFile = null;
+
+    // Sonraki sekmeyi bul (silmeden önce)
+    const tabs = [...document.querySelectorAll('.page-tab')];
+    const curr = tabs.findIndex(t => t.textContent.trim() === deletedFile);
+    const nextTab = tabs[curr + 1] || tabs[curr - 1];
+    const nextFile = nextTab ? nextTab.textContent.trim() : null;
+
+    // Siteyi yeniden yükle (sekme kaybolsun)
+    await selectSite(activeDomain);
+
+    // Sonraki sayfaya geç
+    if (nextFile) selectPage(nextFile);
+
+    showToast(T('{file} deleted', {file: deletedFile}), 'ok');
+    await loadSites();
+    await loadStats();
+  } else {
+    showToast(T('Delete failed'), 'err');
+  }
+}
+
+function advanceToNext() {
+  const tabs = [...document.querySelectorAll('.page-tab')];
+  const curr = tabs.findIndex(t => t.textContent.trim() === activeFile);
+  const next = tabs.slice(curr + 1).find(t =>
+    !t.classList.contains('assigned') && !t.classList.contains('skipped')
+  );
+  if (next) next.click();
+}
+
+function updatePageTab(filename, status) {
+  document.querySelectorAll('.page-tab').forEach(t => {
+    if (t.textContent.trim() === filename) {
+      t.classList.remove('assigned', 'skipped');
+      t.classList.add(status);
+    }
+  });
+}
+
+// ── MODAL ──────────────────────────────────────────────
+function openModal(layoutId = null, startTab = null) {
+  editingLayout = layoutId;
+  currentType   = 'article';
+
+  if (layoutId && groundTruth.layouts?.[layoutId]) {
+    const l = groundTruth.layouts[layoutId];
+    document.getElementById('modalTitle').textContent = T('Edit {layout}', {layout: layoutId});
+    document.getElementById('layoutName').value = l.name;
+    document.getElementById('layoutTemplate').value = l.template_id || '';
+    currentType = l.page_type || 'article';
+    document.getElementById('typeArticle').classList.toggle('selected', currentType === 'article');
+    document.getElementById('typeListing').classList.toggle('selected', currentType === 'listing');
+    document.getElementById('pageTypeGroup').style.display = l.template_id ? 'none' : '';
+    renderGTFields(l.template_id || null, l.selectors || {}, l.optional_fields || []);
+  } else {
+    document.getElementById('modalTitle').textContent = T('New Layout');
+    document.getElementById('layoutName').value = '';
+    document.getElementById('layoutTemplate').value = '';
+    document.getElementById('pageTypeGroup').style.display = '';
+    currentType = 'article';
+    document.getElementById('typeArticle').classList.add('selected');
+    document.getElementById('typeListing').classList.remove('selected');
+    renderGTFields(null, {}, []);
+  }
+
+  // Tab durumu: admin GT tab'ını düzenleyebilir, diğerleri sadece annot
+  const isAdmin = currentUserRole === 'admin';
+  const gtTab   = document.getElementById('tabGT');
+  const notice  = document.getElementById('gtReadonlyNotice');
+
+  // GT tab görünürlüğü
+  gtTab.style.display = isAdmin ? '' : 'none';
+
+  // Bölüm modu: Annotation → yalnızca kendi annotation; GT Onayı → yalnızca GT
+  if (MODE === 'annotation' || MODE === 'groundtruth') {
+    document.getElementById('layoutTabBar').style.display = 'none';
+    if (MODE === 'annotation') {
+      document.getElementById('modalOverlay').classList.add('open');
+      if (!layoutId) {
+        document.getElementById('modalTitle').textContent = '+ ' + T('New layout');
+        switchLayoutTab('annot');
+        document.getElementById('modalSaveBtn').style.display = 'none';
+        _renderLayoutCreateForm();
+      } else {
+        document.getElementById('modalTitle').textContent = `✏️ ${groundTruth.layouts[layoutId]?.name || layoutId} — ${T('my annotation')}`;
+        switchLayoutTab('annot');
+      }
+      return;
+    }
+    startTab = 'gt';
+  }
+
+  // Admin değilse GT alanlarını kilitle
+  document.querySelectorAll('#tabBodyGT input, #tabBodyGT textarea, #tabBodyGT select, #tabBodyGT button:not(#tabGT):not(#tabMyAnnot)')
+    .forEach(el => { el.disabled = !isAdmin; });
+  notice.style.display = isAdmin ? 'none' : '';
+
+  switchLayoutTab(startTab || (isAdmin ? 'gt' : 'annot'));
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function switchLayoutTab(tab) {
+  const isGT = tab === 'gt';
+  document.getElementById('tabBodyGT').style.display    = isGT ? '' : 'none';
+  document.getElementById('tabBodyAnnot').style.display = isGT ? 'none' : '';
+
+  const gtBtn    = document.getElementById('tabGT');
+  const annotBtn = document.getElementById('tabMyAnnot');
+  const saveBtn  = document.getElementById('modalSaveBtn');
+  const autoGrp  = document.getElementById('autoDetectGroup');
+
+  gtBtn.style.borderBottomColor    = isGT ? 'var(--accent)' : 'transparent';
+  gtBtn.style.color                = isGT ? 'var(--accent)' : 'var(--text3)';
+  annotBtn.style.borderBottomColor = isGT ? 'transparent' : 'var(--accent2)';
+  annotBtn.style.color             = isGT ? 'var(--text3)' : 'var(--accent2)';
+
+  if (isGT) {
+    saveBtn.textContent   = '💾 ' + T('Save GT');
+    saveBtn.onclick       = saveLayout;
+    saveBtn.style.display = currentUserRole === 'admin' ? '' : 'none';
+    // GT: autoDetect sadece admin için
+    autoGrp.style.display = (currentUserRole === 'admin' && activeFile) ? '' : 'none';
+  } else {
+    saveBtn.textContent   = '💾 ' + T('Save');
+    saveBtn.onclick       = saveModalAnnotForm;
+    saveBtn.style.display = '';
+    // Annot: autoDetect herkese açık
+    autoGrp.style.display = activeFile ? '' : 'none';
+    if (editingLayout) {
+      _loadModalAnnotForm(editingLayout);
+    }
+  }
+}
+
+// ── KENDİ ANNOTATION FORMU: CSS | XPath | Regex sekmeleri ─────────────
+// Alan değeri kayıtta GT ile aynı biçimdedir: yalnızca CSS varsa düz string,
+// XPath/Regex de varsa {css, xpath, regex}. XPath varsayılan olarak CSS'e
+// bağlıdır (🔗): CSS değişince yeniden üretilir; elle düzenlenince bağ kopar.
+let _annotRules = {};        // field → {css, xpath, regex, linked}
+let _annotLinks = [];        // 'links' alanı: çoklu CSS seçici (yalnızca CSS sekmesinde)
+let _annotTab   = 'css';
+const _ANNOT_TABS = { css: 'CSS', xpath: 'XPath', regex: 'Regex' };
+
+// {css, xpath, regex} ya da düz CSS string → CSS kısmı
+function _cssOf(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? (v.css || '') : v; }
+
+function _isLinksField(fname) {
+  const f = _annotTemplate?.fields?.[fname] || {};
+  return f.type === 'url' && fname === 'links';
+}
+
+function _nextLayoutId() {
+  const nums = Object.keys(groundTruth.layouts || {}).map(k => +(k.match(/^layout-(\d+)$/)?.[1] || 0));
+  return `layout-${Math.max(0, ...nums) + 1}`;
+}
+
+async function _loadModalAnnotForm(layoutId) {
+  const body = document.getElementById('modalAnnotFormBody');
+  if (!activeDomain) {
+    body.innerHTML = '<div style="color:var(--text3);text-align:center;padding:30px;font-size:13px">' + T('Select a site first.') + '</div>';
+    return;
+  }
+  body.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;font-size:12px">' + T('Loading...') + '</div>';
+
+  const layout      = groundTruth.layouts?.[layoutId] || {};
+  const template    = _templates[layout.template_id || ''] || {};
+  const res  = await fetch(`/api/annotate/${activeDomain}/_?layout_id=${encodeURIComponent(layoutId)}`);
+  const data = await res.json();
+
+  _annotDomain   = activeDomain;
+  _annotFilename = activeFile;
+  _annotLayout   = layout;
+  _annotTemplate = template;
+  _annotTab      = 'css';
+
+  const fields = template.fields || {};
+  if (!Object.keys(fields).length) {
+    body.innerHTML = '<div style="color:var(--text3);padding:20px;font-size:13px">' + T('No template is defined for this layout — an admin must assign one.') + '</div>';
+    return;
+  }
+  const existing = data.selectors || {};
+  _annotRules = {};
+  _annotLinks = [];
+  Object.keys(fields).forEach(f => {
+    const v = existing[f];
+    if (_isLinksField(f)) {
+      _annotLinks = (Array.isArray(v) ? v : (v ? [v] : [])).map(x => typeof x === 'object' ? '' : x).filter(Boolean);
+      return;
+    }
+    const o = (v && typeof v === 'object' && !Array.isArray(v)) ? v : { css: v || '' };
+    _annotRules[f] = { css: o.css || '', xpath: o.xpath || '', regex: o.regex || '', linked: !o.xpath };
+  });
+  _renderAnnotTabs();
+}
+
+function _annotCounts() {
+  const f = Object.keys(_annotTemplate?.fields || {});
+  const plain = f.filter(x => !_isLinksField(x));
+  return {
+    css:   { n: plain.filter(x => _annotRules[x]?.css).length + (f.some(_isLinksField) && _annotLinks.length ? 1 : 0), of: f.length },
+    xpath: { n: plain.filter(x => _annotRules[x]?.xpath).length, of: plain.length },
+    regex: { n: plain.filter(x => _annotRules[x]?.regex).length, of: plain.length },
+  };
+}
+
+function _renderAnnotTabBar() {
+  const el = document.getElementById('annotTabBar');
+  if (!el) return;
+  const c = _annotCounts();
+  el.innerHTML = Object.entries(_ANNOT_TABS).map(([k, label]) => `
+    <button type="button" class="annot-tab ${_annotTab === k ? 'active' : ''}" onclick="switchAnnotTab('${k}')">
+      ${label} <span class="annot-tab-count">${c[k].n}/${c[k].of}</span>
+    </button>`).join('');
+}
+
+function switchAnnotTab(tab) {
+  _syncAnnotLinks();
+  _annotTab = tab;
+  _renderAnnotTabs();
+}
+
+function _syncAnnotLinks() {
+  const list = document.getElementById('annotLinksList');
+  if (list) _annotLinks = [...list.querySelectorAll('.gt-link-selector-input')].map(i => i.value.trim()).filter(Boolean);
+}
+
+function _annotFieldRow(fname) {
+  const fdef  = _annotTemplate.fields[fname];
+  const label = _escHtml(fdef.label || fname);
+  const head  = `<div class="form-label">${label}
+      <span style="font-size:9px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;font-family:var(--mono);color:var(--text3)">${fdef.metric || '—'}</span></div>`;
+
+  if (_isLinksField(fname)) {
+    if (_annotTab !== 'css') return `<div class="form-group">${head}<div class="annot-ref">${T('Link selectors are defined only in the CSS tab.')}</div></div>`;
+    return `<div class="form-group">${head}
+      <div id="annotLinksList"></div>
+      <button type="button" class="btn-new-layout" onclick="_addGTLinkSelector(document.getElementById('annotLinksList'))" style="margin-top:6px">+ ${T('Add another selector')}</button>
+    </div>`;
+  }
+
+  const r   = _annotRules[fname];
+  const f   = _escAttr(fname);
+  const val = _escAttr(r[_annotTab] || '');
+  const ref = _annotTab === 'css' ? '' :
+    `<div class="annot-ref">css ${r.css ? `<code>${_escHtml(r.css)}</code>` : `<span style="color:var(--text3)">— ${T('no CSS')}</span>`}</div>`;
+  const pick = _annotTab === 'regex' ? '' :
+    `<button type="button" class="btn-picker" style="padding:5px 9px;font-size:13px" title="${T('Select element (CSS + XPath)')}" onclick="_annotPick('${f}', this)">🎯</button>`;
+  const gen = _annotTab !== 'regex' ? '' :
+    `<button type="button" class="btn-xpath" title="${T("Generate regex from CSS (REGEXN) — compared with CSS on the layout's pages")}" ${r.css ? '' : 'disabled'} onclick="_annotSuggestRegex('${f}')">↻</button>`;
+  const link = _annotTab !== 'xpath' ? '' :
+    `<button type="button" class="btn-xpath annot-link ${r.linked ? 'on' : ''}" title="${r.linked ? T('Linked to CSS — regenerated when CSS changes. Click to regenerate.') : T('Unlinked (edited manually) — click to relink to CSS and regenerate')}" onclick="_annotRelink('${f}')">${r.linked ? '🔗' : '⛓️‍💥'}</button>`;
+  const ph = { css: _selectorPlaceholder(fname, fdef.type),
+               xpath: T('Select with 🎯 or generate from CSS (🔗)'),
+               regex: T('regex on the raw HTML — a single capture group') }[_annotTab];
+  return `<div class="form-group">${head}${ref}
+    <div class="selector-row">
+      <input type="text" class="form-input annot-rule-input ${_annotTab === 'css' ? 'modal-annot-input' : ''}" data-field="${f}" data-rule="${_annotTab}" value="${val}" placeholder="${_escAttr(ph)}">
+      ${link}${gen}${pick}
+      <button type="button" class="btn-validate" onclick="_annotTest('${f}')">Test</button>
+    </div>
+    <div class="validation-result" id="mAnnotVal_${f}" style="display:none"></div>
+  </div>`;
+}
+
+function _renderAnnotTabs() {
+  const fields   = Object.keys(_annotTemplate.fields || {});
+  const required = fields.filter(f => _annotTemplate.fields[f].required);
+  const optional = fields.filter(f => !_annotTemplate.fields[f].required);
+  const hint = {
+    css:   T('Select an element on the page with 🎯; the XPath is written automatically from the same selection.'),
+    xpath: T('XPaths are linked to CSS (🔗) and regenerated when CSS changes. Editing manually breaks the link (⛓️‍💥).'),
+    regex: T('Regex runs on the raw HTML text and must contain a single capture group. Write it manually or generate it from CSS with ↻ (REGEXN).'),
+  }[_annotTab];
+
+  let html = `<div class="annot-tabs" id="annotTabBar"></div>
+    <div class="annot-hint">${hint}
+      ${_annotTab === 'xpath' ? `<button type="button" class="btn-validate" style="margin-left:8px" onclick="_annotRegenAll()">↻ ${T('Generate linked ones from CSS')}</button>` : ''}
+      ${_annotTab === 'regex' ? `<button type="button" class="btn-validate" style="margin-left:8px" onclick="_annotSuggestRegexAll()">↻ ${T('Generate empty ones from CSS')}</button>` : ''}</div>`;
+  if (required.length) {
+    html += `<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">${T('Required')}</div>`;
+    html += required.map(_annotFieldRow).join('');
+  }
+  if (optional.length) {
+    html += `<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:14px 0 10px">${T('Optional')}</div>`;
+    html += optional.map(_annotFieldRow).join('');
+  }
+  html += `<div style="margin-top:12px">
+      <button type="button" class="btn btn-secondary" style="width:100%;font-size:12px" onclick="showGetFromOther()">👤 ${T('Copy from another user')}</button>
+    </div>`;
+
+  const body = document.getElementById('modalAnnotFormBody');
+  body.innerHTML = html;
+  const list = document.getElementById('annotLinksList');
+  if (list) _annotLinks.forEach(v => _addGTLinkSelector(list, v));
+  _renderAnnotTabBar();
+
+  body.querySelectorAll('.annot-rule-input').forEach(inp => inp.addEventListener('input', () => {
+    const f = inp.dataset.field, rule = inp.dataset.rule, r = _annotRules[f];
+    r[rule] = inp.value.trim();
+    if (rule === 'xpath' && r.linked) { r.linked = false; _renderAnnotTabs(); _focusAnnot(f, 'xpath'); return; }
+    if (rule === 'css' && r.linked) _annotScheduleXPath(f);
+    _renderAnnotTabBar();
+  }));
+}
+
+function _focusAnnot(f, rule) {
+  const el = document.querySelector(`#modalAnnotFormBody .annot-rule-input[data-field="${CSS.escape(f)}"][data-rule="${rule}"]`);
+  if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+}
+
+// CSS'e bağlı XPath'i sunucuda üret (sayfada CSS ile aynı içeriği bulan okunaklı biçim)
+const _annotXPathTimers = {};
+function _annotScheduleXPath(f) {
+  clearTimeout(_annotXPathTimers[f]);
+  _annotXPathTimers[f] = setTimeout(() => _annotRegenXPath(f), 500);
+}
+
+async function _annotRegenXPath(f) {
+  const r = _annotRules[f];
+  if (!r || !r.linked) return;
+  if (!r.css) { r.xpath = ''; }
+  else {
+    const res = await fetch('/api/suggest-xpath', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ selector: r.css, domain: _annotDomain, filename: _annotFilename, merge: _fieldMerge(f, _annotTemplate) }),
+    });
+    const d = await res.json();
+    if (!r.linked) return;          // bu arada elle düzenlendiyse dokunma
+    r.xpath = d.success ? d.xpath : '';
+  }
+  if (_annotTab === 'xpath') {
+    const el = document.querySelector(`#modalAnnotFormBody .annot-rule-input[data-field="${CSS.escape(f)}"][data-rule="xpath"]`);
+    if (el && document.activeElement !== el) el.value = r.xpath;
+  }
+  _renderAnnotTabBar();
+}
+
+async function _annotRelink(f) {
+  _annotRules[f].linked = true;
+  await _annotRegenXPath(f);
+  _renderAnnotTabs();
+}
+
+async function _annotRegenAll() {
+  const fs = Object.keys(_annotRules).filter(f => _annotRules[f].linked && _annotRules[f].css);
+  for (const f of fs) await _annotRegenXPath(f);
+  _renderAnnotTabs();
+  showToast(T('{n} XPaths generated from CSS', {n: fs.length}), 'ok');
+}
+
+// ── Regex üretimi (regex_generator.py — REGEXN'in genişletilmiş hali) ─────
+const _REGEX_STRATEGY = s => (s || '')
+  .replace(/^container(\d*):/, T('container') + ' $1 · ')
+  .replace(/^simple/, T('simple (REGEXN step 1)')).replace(/^balanced/, T('balanced nesting'))
+  .replace(/^anchored\d*/, T('end anchor (REGEXN steps 2–3)')).replace(/^attr/, T('attribute value'))
+  .replace(/\+ata\d*/, ' + ' + T('ancestor context')).replace(/ \(alt(\d+)\)/, ' · ' + T('alternative {n}', {n: '$1'}));
+
+async function _annotSuggestRegex(f, quiet = false) {
+  const r = _annotRules[f];
+  if (!r?.css) { if (!quiet) showToast(T('Enter a CSS selector first'), 'err'); return false; }
+  const res = await fetch('/api/suggest-regex', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ selector: r.css, domain: _annotDomain, filename: _annotFilename, layout_id: editingLayout, field: f }),
+  });
+  const d = await res.json();
+  if (!d.success) { if (!quiet) showToast(d.error || T('Could not generate regex'), 'err'); return false; }
+  r.regex = d.regex;
+  if (_annotTab === 'regex') _renderAnnotTabs();
+  const el = document.getElementById(`mAnnotVal_${f}`);
+  if (el) {
+    el.style.display = '';
+    el.className = 'validation-result ' + (d.passed === d.total ? 'ok' : 'err');
+    el.textContent = `REGEXN · ${_REGEX_STRATEGY(d.strategy)} · ${T('same result as CSS on {passed}/{total} pages', {passed: d.passed, total: d.total})}`;
+  }
+  return d.passed === d.total;
+}
+
+async function _annotSuggestRegexAll() {
+  const fs = Object.keys(_annotRules).filter(f => _annotRules[f].css && !_annotRules[f].regex);
+  let ok = 0;
+  for (const f of fs) if (await _annotSuggestRegex(f, true)) ok++;
+  _renderAnnotTabs();
+  showToast(T('Regex generated for {n} fields — {ok} of them match CSS on all pages', {n: fs.length, ok}), 'ok');
+}
+
+// Picker: CSS'i ', ' ile, XPath'i ' | ' ile ekler (XPath yalnızca bağlıysa ya da XPath sekmesindeyken)
+function _annotPick(f, btn) {
+  const input = btn.closest('.selector-row').querySelector('.annot-rule-input');
+  startPickerForInput(input, _annotTemplate.fields[f]?.label || f, null, {
+    onConfirm: (css, xpath) => {
+      const r = _annotRules[f];
+      const prevCss = r.css;
+      r.css = prevCss ? `${prevCss}, ${css}` : css;
+      if (r.linked || _annotTab === 'xpath') {
+        if (r.xpath || !prevCss) r.xpath = r.xpath ? `${r.xpath} | ${xpath}` : xpath;
+        else _annotRegenXPath(f);   // önceki CSS parçalarının XPath'i yoktu → tümünü üret
+      }
+      _renderAnnotTabs();
+    },
+  });
+}
+
+async function _annotTest(f) {
+  if (!_annotDomain || !_annotFilename) { showToast(T('Select a page first to test'), 'err'); return; }
+  const r = _annotRules[f], rule = _annotTab;
+  const selector = (r[rule] || '').trim();
+  if (!selector) { showToast(T('Enter a {rule} first', {rule: _ANNOT_TABS[rule]}), 'err'); return; }
+  const res = await fetch('/api/validate', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: _annotDomain, filename: _annotFilename, selector, field: f,
+                           merge: _fieldMerge(f, _annotTemplate), rule_type: rule,
+                           compare_css: rule === 'css' ? '' : r.css }),
+  });
+  const data = await res.json();
+  let text = data.message + (data.previews?.length ? ': ' + data.previews[0] : '');
+  const cmp = data.compare;
+  if (cmp) {
+    text += cmp.same       ? '  ·  ✓ ' + T('same content as CSS')
+          : cmp.same_count ? '  ·  ⚠ ' + T('same count as CSS ({n}), different content', {n: cmp.css_count})
+          :                  '  ·  ⚠ ' + T('CSS finds {n} elements', {n: cmp.css_count});
+    if (!cmp.same && cmp.note) text += ` — ${cmp.note}`;
+  }
+  const valEl = document.getElementById(`mAnnotVal_${f}`);
+  valEl.style.display = '';
+  valEl.className     = 'validation-result ' + (data.valid && (!cmp || cmp.same) ? 'ok' : 'err');
+  valEl.textContent   = text;
+}
+
+function _fieldMerge(fname, template) {
+  const base = fname.split('[')[0];
+  return !!(template?.fields?.[base]?.merge);
+}
+
+function _collectAnnotSelectors() {
+  _syncAnnotLinks();
+  const selectors = {};
+  Object.keys(_annotTemplate?.fields || {}).forEach(f => {
+    if (_isLinksField(f)) { if (_annotLinks.length) selectors[f] = [..._annotLinks]; return; }
+    const r = _annotRules[f];
+    if (!r || !(r.css || r.xpath || r.regex)) return;
+    selectors[f] = (r.xpath || r.regex) ? { css: r.css || null, xpath: r.xpath || null, regex: r.regex || null } : r.css;
+  });
+  return selectors;
+}
+
+async function saveModalAnnotForm() {
+  const selectors = _collectAnnotSelectors();
+  if (!Object.keys(selectors).length) { showToast(T('Enter at least one rule'), 'err'); return; }
+
+  // Kurallar her zaman düzenlenen layout'a yazılır (seçili sayfanın atandığı layout'a değil)
+  const filename = _annotFilename || '_';
+  const payload  = { selectors };
+  if (editingLayout) payload.layout_id = editingLayout;
+
+  const res  = await fetch(`/api/annotate/${_annotDomain}/${filename}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (data.success) {
+    showToast(T('Annotation saved ✓'), 'ok');
+  } else {
+    showToast(data.error || T('Save error'), 'err');
+  }
+}
+
+// Annotation modunda yeni layout: yalnızca ad + şablon; kurallar sonra kendi annotation'da girilir
+function _renderLayoutCreateForm() {
+  const opts = Object.values(_templates).map(t => `<option value="${_escAttr(t.id)}">${_escHtml((t.icon || '📄') + ' ' + t.name)}</option>`).join('');
+  document.getElementById('modalAnnotFormBody').innerHTML = `
+    <div class="form-group">
+      <div class="form-label">${T('Layout name')}</div>
+      <input type="text" class="form-input" id="newLayoutName" placeholder="${T('e.g. Standard Article, Gallery Post...')}">
+    </div>
+    <div class="form-group">
+      <div class="form-label">${T('Template')} <span class="optional">— ${T('determines the fields to extract')}</span></div>
+      <select class="form-input" id="newLayoutTemplate"><option value="">— ${T('select')}</option>${opts}</select>
+    </div>
+    <button type="button" class="btn btn-primary" style="width:100%" onclick="createLayoutFromAnnot()">+ ${T('Create layout and go to the rules')}</button>`;
+  setTimeout(() => document.getElementById('newLayoutName')?.focus(), 50);
+}
+
+async function createLayoutFromAnnot() {
+  const name = document.getElementById('newLayoutName').value.trim();
+  const tid  = document.getElementById('newLayoutTemplate').value;
+  if (!name) { showToast(T('Enter a layout name'), 'err'); return; }
+  if (!tid)  { showToast(T('Select a template'), 'err'); return; }
+  const layoutId = _nextLayoutId();
+  const layout   = { name, page_type: _templates[tid]?.page_type || 'article', template_id: tid, selectors: {} };
+  const res = await fetch('/api/layout/save', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, layout_id: layoutId, layout }),
+  });
+  const d = await res.json();
+  if (!d.success) { showToast(d.error || T('Could not create layout'), 'err'); return; }
+  if (!groundTruth.layouts) groundTruth.layouts = {};
+  groundTruth.layouts[layoutId] = layout;
+  renderLayouts();
+  renderAssignPanel();
+  editingLayout = layoutId;
+  document.getElementById('modalTitle').textContent = `✏️ ${name}`;
+  document.getElementById('modalSaveBtn').style.display = '';
+  showToast(T('Layout "{name}" created', {name}), 'ok');
+  _loadModalAnnotForm(layoutId);
+}
+
+function closeModal() {
+  if (_picker.active) cancelPicker();
+  document.getElementById('modalOverlay').classList.remove('open');
+  editingLayout = null;
+  document.querySelectorAll('.validation-result').forEach(el => {
+    el.style.display = 'none';
+    el.textContent   = '';
+    el.className     = 'validation-result';
+  });
+}
+
+function selectType(type) {
+  currentType = type;
+  document.getElementById('typeArticle').classList.toggle('selected', type === 'article');
+  document.getElementById('typeListing').classList.toggle('selected', type === 'listing');
+  // autoDetect sadece GT tab'ında ve article tipinde admin için
+  const gtTabActive = document.getElementById('tabBodyGT')?.style.display !== 'none';
+  document.getElementById('autoDetectGroup').style.display =
+    (type === 'article' && gtTabActive && currentUserRole === 'admin') ? '' : 'none';
+  // Re-render GT fields for the new type (if no template selected)
+  const tid = document.getElementById('layoutTemplate')?.value || '';
+  if (!tid) renderGTFields(null, {}, []);
+}
+
+
+async function validateLinkSelector(btn) {
+  if (!activeFile) { showToast(T('Select a page first'), 'err'); return; }
+  const row      = btn.parentElement;
+  const input    = row.querySelector('.gt-link-selector-input') || row.querySelector('.link-selector-input');
+  const selector = input ? input.value.trim() : '';
+  if (!selector) { showToast(T('Enter a selector first'), 'err'); return; }
+
+  let valDiv = row.nextElementSibling;
+  if (!valDiv || !valDiv.classList.contains('validation-result')) {
+    valDiv = document.createElement('div');
+    valDiv.className = 'validation-result';
+    row.after(valDiv);
+  }
+
+  const res  = await fetch('/api/validate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, filename: activeFile, selector, field: 'links' })
+  });
+  const data = await res.json();
+  valDiv.style.display = '';
+  valDiv.className     = 'validation-result ' + (data.valid ? 'ok' : 'err');
+  valDiv.textContent   = data.message + (data.previews?.length ? ': ' + data.previews[0] : '');
+}
+
+async function validateField(field, btn) {
+  if (!activeFile) { showToast(T('Select a page first'), 'err'); return; }
+  const row      = btn.parentElement;
+  const input    = row.querySelector('.gt-sel-input');
+  const selector = input ? input.value.trim() : '';
+  if (!selector)  { showToast(T('Enter a selector first'), 'err'); return; }
+
+  const tid    = document.getElementById('layoutTemplate')?.value;
+  const tmpl   = tid ? (_templates[tid] || null) : null;
+  const merge  = _fieldMerge(field, tmpl);
+
+  const res  = await fetch('/api/validate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, filename: activeFile, selector, field, merge })
+  });
+  const data = await res.json();
+  const valEl = row.parentElement.querySelector('.validation-result');
+  if (valEl) {
+    valEl.style.display = '';
+    valEl.className     = 'validation-result ' + (data.valid ? 'ok' : 'err');
+    valEl.textContent   = data.message + (data.previews?.length ? ': ' + data.previews[0] : '');
+  }
+}
+
+// ── XPATH / REGEX EXTRA RULES ──────────────────────────
+// CSS selector girişinin yanına, isteğe bağlı XPath (CSS'ten otomatik önerilebilir)
+// ve Regex (tamamen elle) satırlarını enjekte eder. Ground truth şemasını bozmadan
+// çalışır: bu değerler ayrıca window._extraRules[field] = {xpath, regex} içinde tutulur
+// ve saveLayout/collectGTSelectors bunları "selectors[field + '__xpath']" gibi ek
+// anahtarlarla birleştirir (boşsa hiç eklenmez).
+window._extraRules = window._extraRules || {};
+
+function injectRuleExtras(container) {
+  const scope = container || document;
+  scope.querySelectorAll('.gt-sel-input').forEach(input => {
+    const row = input.closest('.selector-row');
+    if (!row || row.dataset.extrasInjected) return;
+    row.dataset.extrasInjected = '1';
+
+    const field = input.dataset.field;
+
+    // GT alanlarına da picker: CSS'le birlikte XPath kutusunu da doldurur (bkz. confirmPicker)
+    if (!row.querySelector('.btn-picker')) {
+      const pick = document.createElement('button');
+      pick.type = 'button';
+      pick.className = 'btn-picker';
+      pick.style.cssText = 'padding:5px 9px;font-size:13px';
+      pick.title = T('Select element (CSS + XPath)');
+      pick.textContent = '🎯';
+      pick.onclick = () => startPickerForInput(input, field);
+      input.insertAdjacentElement('afterend', pick);
+    }
+
+    const block = document.createElement('div');
+    block.className = 'rule-extra-block';
+    block.innerHTML = `
+      <div class="rule-extra-row">
+        <span class="rule-tag">xpath</span>
+        <input type="text" class="form-input rule-xpath-input" placeholder="${T('Select with 🎯, suggest from CSS (↻) or type manually')}">
+        <button type="button" class="btn-xpath" title="${T('Suggest XPath from the CSS selector (verified on the page)')}">↻</button>
+        <button type="button" class="btn-validate btn-rule-test" data-rule="xpath" title="${T('Test the XPath on the page and compare with CSS')}">Test</button>
+      </div>
+      <div class="rule-extra-row">
+        <span class="rule-tag">regex</span>
+        <input type="text" class="form-input rule-regex-input" placeholder="${T('optional — regex on the raw HTML (a single capture group)')}">
+        <button type="button" class="btn-validate btn-rule-test" data-rule="regex" title="${T('Test the regex on the raw HTML and compare with CSS')}">Test</button>
+      </div>
+      <div class="validation-result rule-extra-result" style="display:none"></div>`;
+    row.insertAdjacentElement('afterend', block);
+
+    const xpathInput = block.querySelector('.rule-xpath-input');
+    const regexInput = block.querySelector('.rule-regex-input');
+    const suggestBtn = block.querySelector('.btn-xpath');
+    const resultEl   = block.querySelector('.rule-extra-result');
+
+    // Var olan değer varsa geri yükle
+    const stored = window._extraRules[field] || {};
+    if (xpathInput && stored.xpath) xpathInput.value = stored.xpath;
+    if (regexInput && stored.regex) regexInput.value = stored.regex;
+
+    if (xpathInput) xpathInput.addEventListener('input', () => {
+      window._extraRules[field] = window._extraRules[field] || {};
+      window._extraRules[field].xpath = xpathInput.value.trim();
+    });
+    if (regexInput) regexInput.addEventListener('input', () => {
+      window._extraRules[field] = window._extraRules[field] || {};
+      window._extraRules[field].regex = regexInput.value.trim();
+    });
+
+    const showResult = (ok, text) => {
+      resultEl.style.display = '';
+      resultEl.className     = 'validation-result rule-extra-result ' + (ok ? 'ok' : 'err');
+      resultEl.textContent   = text;
+    };
+    const fieldMerge = () => {
+      const tid = document.getElementById('layoutTemplate')?.value;
+      return _fieldMerge(field, tid ? (_templates[tid] || null) : null);
+    };
+
+    block.querySelectorAll('.btn-rule-test').forEach(btn => btn.addEventListener('click', async () => {
+      if (!activeFile) { showToast(T('Select a page first'), 'err'); return; }
+      const ruleType = btn.dataset.rule;
+      const rule     = (ruleType === 'xpath' ? xpathInput : regexInput).value.trim();
+      if (!rule) { showToast(T('Enter a {rule} first', {rule: ruleType}), 'err'); return; }
+      const res  = await fetch('/api/validate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ domain: activeDomain, filename: activeFile, selector: rule, field,
+                               merge: fieldMerge(), rule_type: ruleType, compare_css: input.value.trim() })
+      });
+      const data = await res.json();
+      let text = `${ruleType}: ${data.message}` + (data.previews?.length ? ': ' + data.previews[0] : '');
+      const cmp = data.compare;
+      if (cmp) {
+        text += cmp.same       ? '  ·  ✓ ' + T('same content as CSS')
+              : cmp.same_count ? '  ·  ⚠ ' + T('same count as CSS ({n}), different content', {n: cmp.css_count})
+              :                  '  ·  ⚠ ' + T('CSS finds {n} elements', {n: cmp.css_count});
+        if (!cmp.same && cmp.note) text += ` — ${cmp.note}`;
+      }
+      showResult(data.valid && (!cmp || cmp.same), text);
+    }));
+
+    if (suggestBtn) suggestBtn.addEventListener('click', async () => {
+      const cssVal = input.value.trim();
+      if (!cssVal) { showToast(T('Enter a CSS selector first'), 'err'); return; }
+      try {
+        const res  = await fetch('/api/suggest-xpath', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ selector: cssVal, domain: activeDomain, filename: activeFile, merge: fieldMerge() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          xpathInput.value = data.xpath;
+          window._extraRules[field] = window._extraRules[field] || {};
+          window._extraRules[field].xpath = data.xpath;
+          if (data.verified === true)  showResult(true,  T('xpath suggested · ✓ finds the same content as CSS on this page'));
+          if (data.verified === false) showResult(false, T('xpath suggested · ⚠ does not find the same content as CSS on this page — check with Test'));
+        } else {
+          showToast(data.error || T('Could not suggest XPath'), 'err');
+        }
+      } catch (e) {
+        showToast(T('XPath suggestion request failed'), 'err');
+      }
+    });
+  });
+}
+
+// ── DYNAMIC GT FIELDS ──────────────────────────────────
+
+// selectors[field] düz CSS string olabilir ya da {css, xpath, regex} objesi olabilir.
+// Her iki durumda da input.value'a CSS kısmını yazar, xpath/regex varsa
+// window._extraRules'a koyar (injectRuleExtras bunları DOM'a yansıtır).
+function _applyGTFieldValue(field, rawVal, input) {
+  if (!rawVal) return;
+  if (typeof rawVal === 'object') {
+    window._extraRules[field] = { xpath: rawVal.xpath || '', regex: rawVal.regex || '' };
+    if (rawVal.css) input.value = rawVal.css;
+    return;
+  }
+  if (typeof rawVal === 'string') input.value = rawVal;
+}
+
+function renderGTFields(templateId, selectors, optionalFields) {
+  const body      = document.getElementById('gtFieldsBody');
+  const template  = templateId ? (_templates[templateId] || {}) : null;
+  const fields    = template ? (template.fields || {}) : null;
+
+  // No template selected — fall back to type-based fallback fields
+  if (!fields) {
+    if (currentType === 'listing') {
+      body.innerHTML = _renderGTListingFallback(selectors);
+      const list = body.querySelector('#gtLinkSelectorList');
+      const stored = selectors?.links;
+      const links  = Array.isArray(stored) ? stored : (stored ? [stored] : []);
+      if (links.length) links.forEach(v => _addGTLinkSelector(list, typeof v === 'object' ? '' : v));
+      else _addGTLinkSelector(list);
+    } else {
+      body.innerHTML = _renderGTArticleFallback(selectors, optionalFields);
+      // Düz input değerlerini DOM'a set et (images ve related_links dahil)
+      body.querySelectorAll('.gt-sel-input').forEach(input => {
+        _applyGTFieldValue(input.dataset.field, selectors[input.dataset.field], input);
+      });
+    }
+    injectRuleExtras(body);
+    return;
+  }
+
+  const required = Object.keys(fields).filter(f => fields[f].required);
+  const optional = Object.keys(fields).filter(f => !fields[f].required);
+  let html = '';
+
+  if (required.length) {
+    html += `<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">${T('Required')}</div>`;
+    html += required.map(f => _renderGTField(f, fields[f], selectors, optionalFields)).join('');
+  }
+  if (optional.length) {
+    html += `<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:14px 0 10px">${T('Optional')}</div>`;
+    html += optional.map(f => _renderGTField(f, fields[f], selectors, optionalFields)).join('');
+  }
+
+  body.innerHTML = html;
+
+  // Düz input değerlerini innerHTML sonrası DOM'a set et (image/url non-links dahil)
+  Object.keys(fields).forEach(f => {
+    const fdef = fields[f];
+    if (fdef.type === 'url' && f === 'links') return;
+    const input = body.querySelector(`.gt-sel-input[data-field="${f}"]`);
+    if (input) _applyGTFieldValue(f, selectors[f], input);
+  });
+
+  // Initialise links block list only
+  Object.keys(fields).forEach(f => {
+    const fdef = fields[f];
+    if (fdef.type === 'url' && f === 'links') {
+      const list   = body.querySelector(`#gtBlocks_${f}`);
+      const stored = selectors[f];
+      const links  = Array.isArray(stored) ? stored : (stored ? [stored] : ['']);
+      links.forEach(v => _addGTLinkSelector(list, typeof v === 'object' ? '' : v));
+      if (!links.length) _addGTLinkSelector(list);
+    }
+  });
+
+  injectRuleExtras(body);
+}
+
+function _renderGTField(fname, fdef, selectors, optionalFields) {
+  const isOpt    = !fdef.required;
+  const isOptSet = optionalFields.includes(fname);
+
+  if (fdef.type === 'image') {
+    return `
+      <div class="form-group">
+        <div class="form-label" style="display:flex;align-items:center">
+          ${fdef.label || fname}
+          ${isOpt ? `<label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer">
+            <input type="checkbox" class="gt-optional-cb" data-field="${fname}" ${isOptSet?'checked':''} style="margin:0"> ${T('optional')}
+          </label>` : ''}
+        </div>
+        <div class="selector-row">
+          <input type="text" class="form-input gt-sel-input" data-field="${fname}"
+            placeholder="${_selectorPlaceholder(fname, fdef.type)}">
+          <button type="button" class="btn-validate" onclick="validateField('${fname}',this)">Test</button>
+        </div>
+        <div class="validation-result" style="display:none"></div>
+      </div>`;
+  }
+
+  if (fdef.type === 'url' && fname !== 'links') {
+    return `
+      <div class="form-group">
+        <div class="form-label" style="display:flex;align-items:center">
+          ${fdef.label || fname}
+          ${isOpt ? `<label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer">
+            <input type="checkbox" class="gt-optional-cb" data-field="${fname}" ${isOptSet?'checked':''} style="margin:0"> ${T('optional')}
+          </label>` : ''}
+        </div>
+        <div class="selector-row">
+          <input type="text" class="form-input gt-sel-input" data-field="${fname}"
+            placeholder="${_selectorPlaceholder(fname, fdef.type)}">
+          <button type="button" class="btn-validate" onclick="validateField('${fname}',this)">Test</button>
+        </div>
+        <div class="validation-result" style="display:none"></div>
+      </div>`;
+  }
+
+  if (fdef.type === 'url' && fname === 'links') {
+    return `
+      <div class="form-group">
+        <div class="form-label">${fdef.label || fname} <span class="optional">${T('required — add multiple if needed')}</span></div>
+        <div id="gtBlocks_${fname}"></div>
+        <button type="button" class="btn-new-layout" onclick="_addGTLinkSelector(this.previousElementSibling)" style="margin-top:6px">+ ${T('Add another selector')}</button>
+      </div>`;
+  }
+
+  return `
+    <div class="form-group">
+      <div class="form-label" style="display:flex;align-items:center">
+        ${fdef.label || fname}
+        ${isOpt ? `<label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer">
+          <input type="checkbox" class="gt-optional-cb" data-field="${fname}" ${isOptSet?'checked':''} style="margin:0"> ${T('optional')}
+        </label>` : ''}
+      </div>
+      <div class="selector-row">
+        <input type="text" class="form-input gt-sel-input" data-field="${fname}"
+          placeholder="${_selectorPlaceholder(fname, fdef.type)}">
+        <button type="button" class="btn-validate" onclick="validateField('${fname}',this)">Test</button>
+      </div>
+      <div class="validation-result" style="display:none"></div>
+    </div>`;
+}
+
+function _renderGTArticleFallback(selectors, optionalFields) {
+  const s   = selectors || {};
+  const opt = optionalFields || [];
+  const optCb = (f) => `<label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer">
+    <input type="checkbox" class="gt-optional-cb" data-field="${f}" ${opt.includes(f)?'checked':''} style="margin:0"> ${T('optional')}
+  </label>`;
+  return `
+    <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">${T('Required')}</div>
+    <div class="form-group">
+      <div class="form-label">${T('Title')}</div>
+      <div class="selector-row">
+        <input type="text" class="form-input gt-sel-input" data-field="title" placeholder="h1.article-title">
+        <button type="button" class="btn-validate" onclick="validateField('title',this)">Test</button>
+      </div>
+      <div class="validation-result" style="display:none"></div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">${T('Body')}</div>
+      <div class="selector-row">
+        <input type="text" class="form-input gt-sel-input" data-field="body" placeholder="div.article-body" value="">
+        <button type="button" class="btn-validate" onclick="validateField('body',this)">Test</button>
+      </div>
+      <div class="validation-result" style="display:none"></div>
+    </div>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:14px 0 10px">${T('Optional')}</div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label" style="display:flex;align-items:center">${T('Date')} ${optCb('date')}</div>
+        <div class="selector-row">
+          <input type="text" class="form-input gt-sel-input" data-field="date" placeholder="time.published" value="">
+          <button type="button" class="btn-validate" onclick="validateField('date',this)">Test</button>
+        </div>
+        <div class="validation-result" style="display:none"></div>
+      </div>
+      <div class="form-group">
+        <div class="form-label" style="display:flex;align-items:center">${T('Author')} ${optCb('author')}</div>
+        <div class="selector-row">
+          <input type="text" class="form-input gt-sel-input" data-field="author" placeholder="span.author" value="">
+          <button type="button" class="btn-validate" onclick="validateField('author',this)">Test</button>
+        </div>
+        <div class="validation-result" style="display:none"></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label" style="display:flex;align-items:center">${T('Category')} ${optCb('category')}</div>
+        <div class="selector-row">
+          <input type="text" class="form-input gt-sel-input" data-field="category" placeholder="a.category" value="">
+          <button type="button" class="btn-validate" onclick="validateField('category',this)">Test</button>
+        </div>
+        <div class="validation-result" style="display:none"></div>
+      </div>
+      <div class="form-group">
+        <div class="form-label" style="display:flex;align-items:center">${T('Summary')} ${optCb('summary')}</div>
+        <div class="selector-row">
+          <input type="text" class="form-input gt-sel-input" data-field="summary" placeholder="p.lead" value="">
+          <button type="button" class="btn-validate" onclick="validateField('summary',this)">Test</button>
+        </div>
+        <div class="validation-result" style="display:none"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label" style="display:flex;align-items:center">
+        ${T('Images')}
+        <label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer">
+          <input type="checkbox" class="gt-optional-cb" data-field="images" ${opt.includes('images')?'checked':''} style="margin:0"> ${T('optional')}
+        </label>
+      </div>
+      <div class="selector-row">
+        <input type="text" class="form-input gt-sel-input" data-field="images" placeholder="figure img, div.photo img">
+        <button type="button" class="btn-validate" onclick="validateField('images',this)">Test</button>
+      </div>
+      <div class="validation-result" style="display:none"></div>
+    </div>
+    <div class="form-group">
+      <div class="form-label" style="display:flex;align-items:center">
+        ${T('Related Links')}
+        <label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);cursor:pointer">
+          <input type="checkbox" class="gt-optional-cb" data-field="related_links" ${opt.includes('related_links')?'checked':''} style="margin:0"> ${T('optional')}
+        </label>
+      </div>
+      <div class="selector-row">
+        <input type="text" class="form-input gt-sel-input" data-field="related_links" placeholder="li.related a[href]">
+        <button type="button" class="btn-validate" onclick="validateField('related_links',this)">Test</button>
+      </div>
+      <div class="validation-result" style="display:none"></div>
+    </div>
+  `;
+}
+
+function _renderGTListingFallback(selectors) {
+  return `
+    <div class="form-group">
+      <div class="form-label">${T('Article link selectors')} <span class="optional">${T('required — add multiple if needed')}</span></div>
+      <div id="gtLinkSelectorList"></div>
+      <button type="button" class="btn-new-layout" onclick="_addGTLinkSelector(document.getElementById('gtLinkSelectorList'))" style="margin-top:6px">+ ${T('Add another selector')}</button>
+    </div>`;
+}
+
+
+function _addGTLinkSelector(list, value = '') {
+  if (!list) return;
+  const index = list.children.length;
+  const div   = document.createElement('div');
+  div.className = 'selector-row';
+  div.style.marginBottom = '8px';
+
+  const input = document.createElement('input');
+  input.type        = 'text';
+  input.className   = 'form-input gt-link-selector-input';
+  input.placeholder = T('e.g. {example}', {example: 'h2.c-article__title a[href]'});
+  input.value       = value;
+
+  const pickBtn = document.createElement('button');
+  pickBtn.type      = 'button';
+  pickBtn.className = 'btn-picker';
+  pickBtn.style.cssText = 'padding:5px 9px;font-size:13px';
+  pickBtn.title     = T('Select element');
+  pickBtn.textContent = '🎯';
+  pickBtn.onclick   = () => startPickerForInput(input, T('Link selector'));
+
+  const testBtn = document.createElement('button');
+  testBtn.className   = 'btn-validate';
+  testBtn.textContent = 'Test';
+  testBtn.onclick     = () => validateLinkSelector(testBtn);
+
+  div.appendChild(input);
+  div.appendChild(pickBtn);
+  div.appendChild(testBtn);
+
+  if (index > 0) {
+    const delBtn = document.createElement('button');
+    delBtn.className   = 'icon-btn danger';
+    delBtn.textContent = '✕';
+    delBtn.title       = T('Remove');
+    delBtn.onclick     = () => div.remove();
+    div.appendChild(delBtn);
+  }
+
+  list.appendChild(div);
+  const valDiv = document.createElement('div');
+  valDiv.className     = 'validation-result';
+  valDiv.style.display = 'none';
+  list.appendChild(valDiv);
+}
+
+function collectGTSelectors() {
+  const selectors = {};
+  const body      = document.getElementById('gtFieldsBody');
+
+  // Plain text/date/price fields
+  body.querySelectorAll('.gt-sel-input').forEach(input => {
+    const val = input.value.trim();
+    if (val) selectors[input.dataset.field] = val;
+  });
+
+  // XPath/Regex ek kuralları — sadece dolu olanlar için, alanı
+  // {css, xpath, regex} objesine dönüştürür; ikisi de boşsa düz CSS string kalır.
+  body.querySelectorAll('.gt-sel-input').forEach(input => {
+    const field  = input.dataset.field;
+    const extras = window._extraRules[field];
+    if (!extras) return;
+    const xpath = (extras.xpath || '').trim();
+    const regex = (extras.regex || '').trim();
+    if (!xpath && !regex) return;
+    const cssVal = selectors[field];
+    if (typeof cssVal !== 'string') return; // links gibi array alanlarına dokunma
+    selectors[field] = { css: cssVal || null, xpath: xpath || null, regex: regex || null };
+  });
+
+  // Link selectors (listing type)
+  const linksList = body.querySelector('#gtLinkSelectorList') || body.querySelector('#gtBlocks_links');
+  if (linksList) {
+    const links = [...linksList.querySelectorAll('.gt-link-selector-input')]
+      .map(i => i.value.trim()).filter(Boolean);
+    if (!links.length) { showToast(T('At least one links selector is required'), 'err'); return null; }
+    selectors.links = links;
+  }
+
+  // Validate required fields if template selected
+  const tid      = document.getElementById('layoutTemplate').value;
+  const template = tid ? _templates[tid] : null;
+  if (template?.fields) {
+    for (const [f, fdef] of Object.entries(template.fields)) {
+      if (fdef.required && !selectors[f]) {
+        showToast(T('{field} is required', {field: fdef.label || f}), 'err');
+        return null;
+      }
+    }
+  } else if (currentType === 'article') {
+    if (!selectors.title || !selectors.body) {
+      showToast(T('Title and Body selectors are required'), 'err');
+      return null;
+    }
+  }
+
+  return selectors;
+}
+
+function fillAnnotFields(s) {
+  const body = document.getElementById('modalAnnotFormBody');
+  if (!body) return;
+  // Sekmeli kendi annotation formu: kural durumuna yaz, bağlı XPath'leri yeniden üret
+  if (document.getElementById('annotTabBar')) {
+    Object.keys(_annotRules).forEach(f => {
+      const val = _cssOf(s[f] || (f === 'category' ? (s.category || s.tags || '') : ''));
+      if (!val) return;
+      _annotRules[f].css = val;
+      if (_annotRules[f].linked) _annotScheduleXPath(f);
+    });
+    Object.keys(_annotTemplate?.fields || {}).filter(_isLinksField).forEach(f => {
+      if (s[f]) _annotLinks = (Array.isArray(s[f]) ? s[f] : [s[f]]).filter(v => typeof v === 'string');
+    });
+    _renderAnnotTabs();
+    return;
+  }
+  // Düz input'lar
+  body.querySelectorAll('.modal-annot-input').forEach(input => {
+    const fname = input.dataset.field;
+    const val   = s[fname] || (fname === 'category' ? (s.category || s.tags || '') : '');
+    if (val) input.value = val;
+  });
+  // links block field
+  body.querySelectorAll('[id^="mAnnotBlocks_"]').forEach(list => {
+    const fname = list.id.replace('mAnnotBlocks_', '');
+    if (!s[fname]) return;
+    const fdef  = _annotTemplate?.fields?.[fname] || {};
+    if (fdef.type === 'url' && fname === 'links') {
+      list.innerHTML = '';
+      const arr = Array.isArray(s[fname]) ? s[fname] : [s[fname]];
+      arr.forEach(v => _addGTLinkSelector(list, typeof v === 'object' ? '' : v));
+    }
+  });
+}
+
+function fillGTFields(s) {
+  const body = document.getElementById('gtFieldsBody');
+  body.querySelectorAll('.gt-sel-input').forEach(input => {
+    const fname = input.dataset.field;
+    const raw   = s[fname] || (fname === 'category' ? (s.category || s.tags || '') : '');
+    _applyGTFieldValue(fname, raw, input);
+  });
+  injectRuleExtras(body);
+}
+
+async function saveLayout() {
+  const name = document.getElementById('layoutName').value.trim();
+  if (!name) { showToast(T('Enter a layout name'), 'err'); return; }
+
+  const selectors = collectGTSelectors();
+  if (selectors === null) return; // validation failed
+
+  const layouts   = groundTruth.layouts || {};
+  const layoutId  = editingLayout || _nextLayoutId();   // silinmiş layout numarasıyla çakışmasın
+
+  // Collect optional_fields from dynamic checkboxes
+  const optionalFields = [];
+  document.querySelectorAll('#gtFieldsBody .gt-optional-cb').forEach(cb => {
+    if (cb.checked) optionalFields.push(cb.dataset.field);
+  });
+
+  const template_id = document.getElementById('layoutTemplate').value || null;
+  const layout = { name, page_type: currentType, selectors };
+  if (template_id) layout.template_id = template_id;
+  if (optionalFields.length) layout.optional_fields = optionalFields;
+
+  await fetch('/api/layout/save', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, layout_id: layoutId, layout })
+  });
+
+  if (!groundTruth.layouts) groundTruth.layouts = {};
+  groundTruth.layouts[layoutId] = layout;
+
+  closeModal();
+  renderLayouts();
+  renderAssignPanel();
+  showToast(T('Layout "{name}" saved', {name}), 'ok');
+  await loadStats();
+}
+
+function editLayout(id) { openModal(id); }
+
+function openAnnotModal(layoutId) {
+  openModal(layoutId, 'annot');
+}
+
+async function deleteLayout(id) {
+  if (!confirm(T('Delete {layout}?', {layout: id}))) return;
+
+  await fetch('/api/layout/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, layout_id: id })
+  });
+
+  delete groundTruth.layouts[id];
+  Object.values(groundTruth.page_assignments || {}).forEach(a => {
+    if (a.layout_id === id) a.layout_id = null;
+  });
+
+  renderLayouts();
+  renderAssignPanel();
+  showToast(T('Layout {layout} deleted', {layout: id}), 'ok');
+}
+
+// ── AUTO DETECT ────────────────────────────────────────
+async function autoDetect() {
+  if (!activeFile) { showToast(T('Select a page first'), 'err'); return; }
+
+  // Parse selected backend/model
+  const modelVal = document.getElementById('modelSelect').value;
+  const [backend, model] = modelVal.split('|');
+
+  // Show loading overlay
+  const modal   = document.querySelector('.modal');
+  const loading = document.createElement('div');
+  loading.className = 'modal-loading';
+  loading.id        = 'modalLoading';
+  loading.innerHTML = `
+    <div class="spinner"></div>
+    <div class="modal-loading-text">${backend} / ${model} — ${T('analysing...')}</div>
+  `;
+  modal.appendChild(loading);
+
+  // Disable all inputs and buttons inside modal
+  const controls = modal.querySelectorAll('input, button, textarea, select');
+  controls.forEach(el => el.disabled = true);
+
+  try {
+    const res  = await fetch('/api/auto_detect', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({ domain: activeDomain, filename: activeFile, backend, model }),
+    });
+    const data = await res.json();
+
+    if (data.success && data.selectors) {
+      const s      = data.selectors;
+      const isGT   = document.getElementById('tabBodyGT').style.display !== 'none';
+      if (isGT) {
+        fillGTFields(s);
+      } else {
+        fillAnnotFields(s);
+      }
+      showToast(T('Auto Detect completed ✓'), 'ok');
+    } else {
+      showToast(T('Error: {msg}', {msg: data.error || T('Unknown error')}), 'err');
+    }
+  } catch (e) {
+    showToast(T('Connection error'), 'err');
+  } finally {
+    const loadingEl = document.getElementById('modalLoading');
+    if (loadingEl) loadingEl.remove();
+    controls.forEach(el => el.disabled = false);
+  }
+}
+
+// ── REDOWNLOAD PAGE ────────────────────────────────────
+function applyJsToggle() {
+  const frame   = document.getElementById('pageFrame');
+  const enabled = document.getElementById('jsToggle')?.checked;
+  frame.setAttribute('sandbox', enabled
+    ? 'allow-same-origin allow-scripts'
+    : 'allow-same-origin');
+}
+
+async function loadPageUrl(filename) {
+  const el = document.getElementById('currentPageUrl');
+  if (!el) return;
+  try {
+    const res  = await fetch(`/api/page/url?domain=${activeDomain}&filename=${filename}`);
+    const data = await res.json();
+    el.textContent = data.url || T('(URL not found)');
+    const input = document.getElementById('redownloadUrl');
+    if (input && data.url) input.value = data.url;
+  } catch {
+    if (el) el.textContent = T('(could not load URL)');
+  }
+}
+
+async function redownloadPage() {
+  const url = document.getElementById('redownloadUrl')?.value?.trim();
+  if (!url) { showToast(T('Enter a URL'), 'err'); return; }
+  if (!activeFile) { showToast(T('Select a page first'), 'err'); return; }
+
+  showToast(T('Downloading...'), 'ok');
+  try {
+    const res  = await fetch('/api/page/redownload', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({ domain: activeDomain, filename: activeFile, url }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('currentPageUrl').textContent = url;
+      // iframe'i yenile
+      const frame = document.getElementById('pageFrame');
+      if (frame) frame.src = frame.src;
+      showToast('✓ ' + T('Downloaded ({size} KB)', {size: (data.size/1024).toFixed(0)}), 'ok');
+    } else {
+      showToast(T('Error: {msg}', {msg: data.error}), 'err');
+    }
+  } catch (e) {
+    showToast(T('Connection error'), 'err');
+  }
+}
+
+// ── ADD PAGE ────────────────────────────────────────────
+async function addPage() {
+  const url      = document.getElementById('addPageUrl')?.value?.trim();
+  const pageType = document.getElementById('addPageType')?.value;
+  if (!url) { showToast(T('Enter a URL'), 'err'); return; }
+
+  showToast(T('Downloading...'), 'ok');
+  try {
+    const res  = await fetch('/api/page/add', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({ domain: activeDomain, page_type: pageType, url }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('addPageUrl').value = '';
+      showToast('✓ ' + T('{file} added ({size} KB)', {file: data.filename, size: (data.size/1024).toFixed(0)}), 'ok');
+      // Sayfa listesini yenile
+      await selectSite(activeDomain);
+    } else {
+      showToast(T('Error: {msg}', {msg: data.error}), 'err');
+    }
+  } catch (e) {
+    showToast(T('Connection error'), 'err');
+  }
+}
+
+// ── BULK ADD PAGES ──────────────────────────────────────
+
+function openBulkAddModal() {
+  if (!activeDomain) { showToast(T('Select a site first'), 'err'); return; }
+  const overlay = document.getElementById('baddOverlay');
+  overlay.classList.add('open');
+  _baddShowStep(1);
+
+  // Populate source file dropdown
+  const sel = document.getElementById('baddSourceFile');
+  const pages = _sitePages || {};
+  const all = [
+    ...(pages.homepage || []),
+    ...(pages.listing  || []),
+    ...(pages.article  || []),
+  ];
+  sel.innerHTML = all.map(f => `<option value="${f}">${f}</option>`).join('');
+  if (all.length) baddLoadIframe();
+}
+
+function closeBulkAddModal() {
+  _baddStopPicker();
+  document.getElementById('baddOverlay').classList.remove('open');
+}
+
+function _baddShowStep(n) {
+  document.querySelectorAll('.badd-step').forEach((s, i) => {
+    s.classList.toggle('active', i + 1 === n);
+  });
+}
+
+function baddLoadIframe() {
+  _baddStopPicker();
+  const fname = document.getElementById('baddSourceFile').value;
+  if (!fname) return;
+  const frame = document.getElementById('baddIframe');
+  frame.src = `/api/page/${activeDomain}/${fname}`;
+  document.getElementById('baddMatchBadge').textContent = '';
+  // Re-highlight after load
+  frame.onload = () => {
+    _baddInjectStyle();
+    const sel = document.getElementById('baddSelector').value.trim();
+    if (sel) baddHighlight(sel);
+  };
+}
+
+function baddSelectorChange() {
+  const sel = document.getElementById('baddSelector').value.trim();
+  if (sel) baddHighlight(sel);
+  else document.getElementById('baddMatchBadge').textContent = '';
+}
+
+function baddHighlight(sel) {
+  const frame = document.getElementById('baddIframe');
+  try {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    doc.querySelectorAll('.__badd_match').forEach(el => el.classList.remove('__badd_match'));
+    let count = 0;
+    try {
+      doc.querySelectorAll(sel).forEach(el => { el.classList.add('__badd_match'); count++; });
+    } catch(e) {}
+    const badge = document.getElementById('baddMatchBadge');
+    badge.textContent = count ? T('{n} matches', {n: count}) : T('no matches');
+    badge.style.color = count ? 'var(--green)' : 'var(--red)';
+  } catch(e) {}
+}
+
+function _baddInjectStyle() {
+  const frame = document.getElementById('baddIframe');
+  try {
+    const doc = frame.contentDocument;
+    if (doc.getElementById('__badd_style')) return;
+    const s = doc.createElement('style');
+    s.id = '__badd_style';
+    s.textContent = `.__badd_match { outline: 2px solid #34d399 !important; outline-offset: 2px !important; }`;
+    doc.head.appendChild(s);
+  } catch(e) {}
+}
+
+function baddStartPicker() {
+  const frame = document.getElementById('baddIframe');
+  if (!frame.src || frame.src === 'about:blank') { showToast(T('Select a source page first'), 'err'); return; }
+  const inputEl = document.getElementById('baddSelector');
+  // Use the full picker with baddIframe as the target frame
+  // Temporarily clear the input so picker doesn't append with comma
+  startPickerForInput(inputEl, T('Link selector'), frame);
+  showToast(T('Click an element…'), 'ok');
+}
+
+function _baddStopPicker() {
+  // no-op: now handled by main picker cancelPicker
+}
+
+async function baddExtract() {
+  const selector = document.getElementById('baddSelector').value.trim();
+  const fname    = document.getElementById('baddSourceFile').value;
+  if (!selector) { showToast(T('Enter a selector'), 'err'); return; }
+  if (!fname)    { showToast(T('Select a source page'), 'err'); return; }
+
+  const res  = await fetch('/api/page/extract-links', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, filename: fname, selector }),
+  });
+  const data = await res.json();
+  if (!data.success) { showToast(T('Error: {msg}', {msg: data.error}), 'err'); return; }
+  if (!data.links.length) { showToast(T('No links found'), 'err'); return; }
+
+  _baddRenderLinks(data.links);
+  _baddShowStep(2);
+}
+
+function _baddRenderLinks(links) {
+  const list = document.getElementById('baddLinkList');
+  list.innerHTML = links.map((l, i) => `
+    <div class="badd-link-row">
+      <input type="checkbox" class="badd-cb" data-href="${_escAttr(l.href)}" data-idx="${i}" onchange="_baddUpdateCount()">
+      <span class="badd-link-href" title="${_escAttr(l.href)}">${_escHtml(l.href)}</span>
+      <span class="badd-link-text">${_escHtml(l.text)}</span>
+    </div>`).join('');
+  document.getElementById('baddSelectAll').checked = false;
+  _baddUpdateCount();
+  document.getElementById('baddLinkCount').textContent = T('{n} links found', {n: links.length});
+}
+
+function _baddUpdateCount() {
+  const checked = document.querySelectorAll('.badd-cb:checked').length;
+  document.getElementById('baddSelCount').textContent = T('{n} selected', {n: checked});
+  document.getElementById('baddDownloadBtn').disabled = checked === 0;
+}
+
+function baddToggleAll(checked) {
+  document.querySelectorAll('.badd-cb').forEach(cb => cb.checked = checked);
+  _baddUpdateCount();
+}
+
+function baddBackToStep1() {
+  _baddShowStep(1);
+}
+
+async function baddDownload() {
+  const urls     = [...document.querySelectorAll('.badd-cb:checked')].map(cb => cb.dataset.href);
+  const pageType = document.getElementById('baddPageType').value;
+  if (!urls.length) return;
+
+  _baddShowStep(3);
+  const progressList = document.getElementById('baddProgressList');
+  progressList.innerHTML = '';
+  document.getElementById('baddProgressSummary').textContent = T('Downloading 0 / {total}…', {total: urls.length});
+  document.getElementById('baddDoneBtn').style.display = 'none';
+
+  // Download one by one to show progress
+  let ok = 0, fail = 0;
+  for (const url of urls) {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:5px 0;border-bottom:1px solid rgba(38,43,56,.4);font-size:12px;display:flex;gap:8px;align-items:center';
+    row.innerHTML = `<span style="color:var(--text3);font-family:var(--mono);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_escHtml(url)}</span><span class="badd-status">⏳</span>`;
+    progressList.appendChild(row);
+    progressList.scrollTop = progressList.scrollHeight;
+
+    try {
+      const res  = await fetch('/api/page/add', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ domain: activeDomain, page_type: pageType, url }),
+      });
+      const data = await res.json();
+      const statusEl = row.querySelector('.badd-status');
+      if (data.success) {
+        ok++;
+        statusEl.className = 'badd-status badd-result-ok';
+        statusEl.textContent = `✓ ${data.filename}`;
+      } else {
+        fail++;
+        statusEl.className = 'badd-status badd-result-err';
+        statusEl.textContent = `✗ ${data.error}`;
+      }
+    } catch(e) {
+      fail++;
+      row.querySelector('.badd-status').textContent = '✗ ' + T('connection error');
+    }
+    document.getElementById('baddProgressSummary').textContent = T('{done} / {total} — {ok} succeeded, {fail} failed', {done: ok + fail, total: urls.length, ok, fail});
+  }
+
+  document.getElementById('baddDoneBtn').style.display = '';
+}
+
+async function baddFinish() {
+  closeBulkAddModal();
+  await selectSite(activeDomain);
+  showToast(T('Pages added ✓'), 'ok');
+}
+
+function _escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function _escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+
+// ── DELETE SITE ─────────────────────────────────────────
+let deleteSiteConfirm = 0;
+let deleteSiteTimer   = null;
+
+async function deleteSite() {
+  deleteSiteConfirm++;
+  clearTimeout(deleteSiteTimer);
+
+  if (deleteSiteConfirm === 1) {
+    showToast('⚠️ ' + T('{site} will be deleted! Are you sure? Click again.', {site: activeDomain}), 'err');
+    deleteSiteTimer = setTimeout(() => { deleteSiteConfirm = 0; }, 5000);
+    return;
+  }
+
+  // Second click — actually delete
+  deleteSiteConfirm = 0;
+  try {
+    const res  = await fetch('/api/site/delete', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({ domain: activeDomain }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('✓ ' + T('{site} deleted', {site: activeDomain}), 'ok');
+      activeDomain = null;
+      activeFile   = null;
+      document.getElementById('mainArea').innerHTML = `
+        <div class="no-site">
+          <div style="font-size:48px;opacity:.2">◈</div>
+          <div>${T('Select a site in the {section} section', {section: `<a href="${MODES[MODE].back}" style="color:var(--accent)">${MODES[MODE].title}</a>`})}</div>
+        </div>`;
+      await loadSites();
+    } else {
+      showToast(T('Error: {msg}', {msg: data.error}), 'err');
+    }
+  } catch (e) {
+    showToast(T('Connection error'), 'err');
+  }
+}
+
+// ── TOAST ──────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── KEYBOARD ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeTestModal(); }
+});
+
+// ── AUTH ───────────────────────────────────────────────
+let currentUser = null;
+let currentUserRole = 'user';
+
+function _setLoggedIn(username, role) {
+  currentUser     = username;
+  currentUserRole = role || 'user';
+  const badge = document.getElementById('userBadge');
+  const roleTag = currentUserRole === 'admin' ? ' <span style="font-size:10px;background:rgba(251,191,36,.2);color:var(--yellow);border-radius:4px;padding:1px 5px;font-weight:700">A</span>' : '';
+  badge.innerHTML = '👤 ' + currentUser + roleTag;
+  badge.classList.remove('hidden');
+  document.getElementById('logoutBtn').classList.remove('hidden');
+  document.getElementById('loginBtn').classList.add('hidden');
+  if (currentUserRole === 'admin') {
+  }
+}
+
+function _setLoggedOut() {
+  currentUser = null;
+  document.getElementById('userBadge').classList.add('hidden');
+  document.getElementById('logoutBtn').classList.add('hidden');
+  document.getElementById('loginBtn').classList.remove('hidden');
+}
+
+async function checkLogin() {
+  const res  = await fetch('/api/me');
+  const data = await res.json();
+  if (data.logged_in) {
+    _setLoggedIn(data.username, data.role);
+    return true;
+  }
+  // Otomatik giriş: localStorage'da kayıtlı bilgi varsa dene
+  const savedUser  = localStorage.getItem('llmwb_username');
+  const savedToken = localStorage.getItem('llmwb_token');
+  if (savedUser && savedToken) {
+    const r2 = await fetch('/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: savedUser, token: savedToken}),
+    });
+    const d2 = await r2.json();
+    if (d2.success) {
+      _setLoggedIn(d2.username, d2.role);
+      return true;
+    }
+    localStorage.removeItem('llmwb_username');
+    localStorage.removeItem('llmwb_token');
+  }
+  showLoginModal();
+  return false;
+}
+
+function showLoginModal() {
+  document.getElementById('loginModal').style.display = 'flex';
+  const saved = localStorage.getItem('llmwb_username');
+  if (saved) document.getElementById('loginInput').value = saved;
+}
+
+function hideLoginModal() {
+  document.getElementById('loginModal').style.display = 'none';
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginInput').value.trim().toLowerCase();
+  const token    = document.getElementById('tokenInput').value.trim();
+  if (!username || !token) { showToast(T('Username and token are required'), 'err'); return; }
+  const res  = await fetch('/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, token}),
+  });
+  const data = await res.json();
+  if (data.success) {
+    localStorage.setItem('llmwb_username', username);
+    localStorage.setItem('llmwb_token', token);
+    _setLoggedIn(data.username, data.role);
+    hideLoginModal();
+    init();
+  } else {
+    showToast(data.error || T('Login failed'), 'err');
+  }
+}
+
+async function doLogout() {
+  await fetch('/logout', {method: 'POST'});
+  localStorage.removeItem('llmwb_username');
+  localStorage.removeItem('llmwb_token');
+  currentUser = null;
+  _setLoggedOut();
+  showLoginModal();
+}
+
+// ── LAYOUT TEMPLATE SELECT POPULATE ──────────────────
+let _templates = {};
+
+async function loadTemplates() {
+  const res  = await fetch('/api/templates');
+  const data = await res.json();
+  _templates = data.templates || {};
+  _populateLayoutTemplateSelect();
+}
+
+function _populateLayoutTemplateSelect() {
+  const sel = document.getElementById('layoutTemplate');
+  if (!sel) return;
+  const current = sel.value;
+  while (sel.options.length > 1) sel.remove(1);
+  Object.values(_templates).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value       = t.id;
+    opt.textContent = `${t.icon || '📄'} ${t.name}`;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+function onLayoutTemplateChange() {
+  const tid   = document.getElementById('layoutTemplate').value;
+  const group = document.getElementById('pageTypeGroup');
+  const note  = document.getElementById('pageTypeNote');
+
+  if (!tid || !_templates[tid]) {
+    group.style.display = '';
+    note.textContent    = '— ' + T('set automatically when a template is selected');
+    const existing = collectGTSelectors();
+    renderGTFields(null, existing, []);
+    return;
+  }
+
+  const t    = _templates[tid];
+  const type = t.page_type || 'article';
+  currentType = type;
+  document.getElementById('typeArticle').classList.toggle('selected', type === 'article');
+  document.getElementById('typeListing').classList.toggle('selected', type === 'listing');
+  group.style.display = 'none';
+
+  // Collect current values before re-render so they aren't lost
+  const existing      = collectGTSelectors();
+  const optionalFields = [...document.querySelectorAll('#gtFieldsBody .gt-optional-cb:not(:checked)')].map(cb => cb.dataset.field);
+  renderGTFields(tid, existing, optionalFields);
+}
+
+
+// ── ANNOTATOR CSS SELECTOR FORM ───────────────────────
+let _annotDomain   = null;
+let _annotFilename = null;
+let _annotLayout   = null;
+let _annotTemplate = null;
+
+async function openAnnotForm(domain, filename) {
+  _annotDomain   = domain;
+  _annotFilename = filename;
+
+  // Layout ve template bilgisi
+  const res  = await fetch(`/api/annotate/${domain}/${filename}`);
+  const data = await res.json();
+
+  _annotLayout   = data.layout   || {};
+  _annotTemplate = data.template || {};
+
+  document.getElementById('annotFormTitle').textContent =
+    `${_annotLayout.name || filename} — ${T('CSS selectors')}`;
+  document.getElementById('annotFormSub').textContent =
+    `${domain} / ${filename}`;
+
+  _renderAnnotForm(data.selectors || {});
+  document.getElementById('annotFormOverlay').classList.add('open');
+}
+
+function closeAnnotForm() {
+  document.getElementById('annotFormOverlay').classList.remove('open');
+}
+
+function _renderAnnotForm(existingSelectors) {
+  const fields   = _annotTemplate.fields || {};
+  const fieldIds = Object.keys(fields);
+
+  if (!fieldIds.length) {
+    document.getElementById('annotFormBody').innerHTML =
+      '<div style="color:var(--text3);padding:20px">' + T('No template is defined for this layout — an admin must assign one.') + '</div>';
+    return;
+  }
+
+  const required = fieldIds.filter(f => fields[f].required);
+  const optional = fieldIds.filter(f => !fields[f].required);
+
+  const renderField = (fname) => {
+    const fdef = fields[fname];
+    const val  = existingSelectors[fname] || '';
+    const metricBadge = `<span style="font-size:9px;background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:var(--mono);color:var(--text3)">${fdef.metric || '—'}</span>`;
+    return `
+      <div class="form-group">
+        <div class="form-label">${fdef.label || fname} ${metricBadge}
+          <span style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-left:4px">${fdef.type || 'text'}</span>
+        </div>
+        <div class="selector-row">
+          <input type="text" class="form-input annot-sel-input" data-field="${fname}"
+            placeholder="${_selectorPlaceholder(fname, fdef.type)}">
+          <button type="button" class="btn-validate" onclick="validateAnnotField('${fname}',this)">Test</button>
+        </div>
+        <div class="validation-result" id="annotVal_${fname}" style="display:none"></div>
+      </div>`;
+  };
+
+  let html = '';
+  if (required.length) {
+    html += `<div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">${T('Required')}</div>`;
+    html += required.map(renderField).join('');
+  }
+  if (optional.length) {
+    html += `<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin:14px 0 10px">${T('Optional')}</div>`;
+    html += optional.map(renderField).join('');
+  }
+
+  document.getElementById('annotFormBody').innerHTML = html;
+
+  // Düz input değerlerini DOM'a set et
+  document.querySelectorAll('#annotFormBody .annot-sel-input').forEach(input => {
+    const val = existingSelectors[input.dataset.field];
+    if (val) input.value = val;
+  });
+}
+
+function _escAttr(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
+
+function _selectorPlaceholder(fname, type) {
+  const hints = { title: 'h1.article-title', body: 'div.article-body', date: 'time.published',
+    author: 'span.author', images: 'figure img', links: 'h2 a[href]', price: 'span.price' };
+  return hints[fname] || (type === 'image' ? 'img[src]' : type === 'url' ? 'a[href]' : `span.${fname}`);
+}
+
+async function validateAnnotField(fname, btn) {
+  if (!_annotDomain || !_annotFilename) return;
+  const input    = btn.parentElement.querySelector('.annot-sel-input');
+  const selector = input.value.trim();
+  const valEl    = document.getElementById(`annotVal_${fname}`);
+  if (!selector) { showToast(T('Enter a selector'), 'err'); return; }
+
+  const merge = _fieldMerge(fname, _annotLayout?.template_id ? (_templates[_annotLayout.template_id] || null) : null);
+  const res  = await fetch('/api/validate', {
+    method:  'POST',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify({ domain: _annotDomain, filename: _annotFilename, selector, field: fname, merge }),
+  });
+  const data = await res.json();
+  valEl.style.display = '';
+  valEl.className     = 'validation-result ' + (data.valid ? 'ok' : 'err');
+  valEl.textContent   = data.message + (data.previews?.length ? ': ' + data.previews[0] : '');
+}
+
+async function saveAnnotForm() {
+  const inputs    = document.querySelectorAll('#annotFormBody .annot-sel-input');
+  const selectors = {};
+  inputs.forEach(inp => {
+    const val = inp.value.trim();
+    if (val) selectors[inp.dataset.field] = val;
+  });
+
+  const res  = await fetch(`/api/annotate/${_annotDomain}/${_annotFilename}`, {
+    method:  'POST',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify({ selectors }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    showToast(T('Annotation saved ✓'), 'ok');
+    closeAnnotForm();
+  } else {
+    showToast(data.error || T('Save error'), 'err');
+  }
+}
+
+// ── GET FROM OTHER USER ───────────────────────────────
+async function showGetFromOther() {
+  if (!_annotDomain || !_annotFilename) return;
+  document.getElementById('getOtherOverlay').classList.add('open');
+  document.getElementById('getOtherBody').innerHTML =
+    '<div style="color:var(--text3);text-align:center;padding:20px">' + T('Loading...') + '</div>';
+
+  const res  = await fetch(`/api/annotate/${_annotDomain}/${_annotFilename}/all`);
+  const data = await res.json();
+  const anns = data.annotations || {};
+  const others = Object.entries(anns).filter(([u]) => u !== currentUser);
+
+  if (!others.length) {
+    document.getElementById('getOtherBody').innerHTML =
+      '<div style="color:var(--text3);padding:20px">' + T('No records from other annotators') + '</div>';
+    return;
+  }
+
+  const fields = _annotTemplate?.fields || {};
+  window._otherSels = [];
+  const _ruleBadges = v => (v && typeof v === 'object' && !Array.isArray(v))
+    ? ['xpath', 'regex'].filter(k => v[k]).map(k => `<span style="font-size:9px;color:var(--accent2);font-family:var(--mono)">+${k}</span>`).join(' ') : '';
+  let html = '';
+  others.forEach(([uname, udata]) => {
+    const sels = udata.selectors || {};
+    const allIdx = window._otherSels.push(sels) - 1;
+    html += `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-weight:600;color:var(--accent2)">👤 ${uname}</span>
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">${udata.updated_at?.slice(0,16).replace('T',' ') || ''}</span>
+      </div>
+      ${Object.entries(sels).map(([fname, sel]) => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:11px;color:var(--text3);font-family:var(--mono);min-width:80px">${fields[fname]?.label || fname}</span>
+          <code style="flex:1;font-size:11px;color:var(--text);background:var(--bg3);padding:2px 6px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_escHtml(Array.isArray(sel) ? sel.join(', ') : _cssOf(sel))}</code>
+          ${_ruleBadges(sel)}
+          <button type="button" class="btn-validate" style="font-size:10px;padding:3px 8px" onclick="adoptSelector('${fname}', window._otherSels[${window._otherSels.push(sel) - 1}])">${T('Take')}</button>
+        </div>`).join('')}
+      <button type="button" class="btn btn-secondary" style="width:100%;margin-top:6px;font-size:11px" onclick="adoptAllSelectors(window._otherSels[${allIdx}])">${T('Take all')}</button>
+    </div>`;
+  });
+
+  document.getElementById('getOtherBody').innerHTML = html;
+}
+
+function closeGetOther() {
+  document.getElementById('getOtherOverlay').classList.remove('open');
+}
+
+// Sekmeli kendi annotation formunda: CSS/XPath/Regex'i birlikte al
+function _adoptIntoAnnotForm(fname, sel) {
+  if (!document.getElementById('annotTabBar')) return false;
+  if (_isLinksField(fname)) { _annotLinks = (Array.isArray(sel) ? sel : [sel]).filter(v => typeof v === 'string'); return true; }
+  const r = _annotRules[fname];
+  if (!r) return true;
+  const o = (sel && typeof sel === 'object' && !Array.isArray(sel)) ? sel : { css: sel };
+  Object.assign(r, { css: o.css || '', xpath: o.xpath || '', regex: o.regex || '', linked: !o.xpath });
+  return true;
+}
+
+function adoptSelector(fname, sel) {
+  if (_adoptIntoAnnotForm(fname, sel)) { _renderAnnotTabs(); showToast(T('"{field}" copied', {field: fname}), 'ok'); closeGetOther(); return; }
+  const input = document.querySelector(`#annotFormBody .annot-sel-input[data-field="${fname}"]`);
+  if (input) {
+    input.value = _cssOf(sel);
+    showToast(T('"{field}" copied', {field: fname}), 'ok');
+  }
+  closeGetOther();
+}
+
+function adoptAllSelectors(sels) {
+  if (document.getElementById('annotTabBar')) {
+    Object.entries(sels).forEach(([fname, sel]) => _adoptIntoAnnotForm(fname, sel));
+    _renderAnnotTabs();
+    showToast(T('{n} rules copied', {n: Object.keys(sels).length}), 'ok');
+    closeGetOther();
+    return;
+  }
+  Object.entries(sels).forEach(([fname, sel]) => {
+    const input = document.querySelector(`#annotFormBody .annot-sel-input[data-field="${fname}"]`);
+    if (input) input.value = _cssOf(sel);
+  });
+  showToast(T('{n} selectors copied', {n: Object.keys(sels).length}), 'ok');
+  closeGetOther();
+}
+
+// ── ELEMENT PICKER ─────────────────────────────────────
+
+const _picker = {
+  active: false,
+  targetInput: null, // direct reference to the input element to fill
+  label: null,       // display label for picker bar
+  el: null,          // base element (changes only on click or ^ Parent)
+  seg: null,         // descriptor for el: {tag, id, classes, _useId, _useClasses}
+  parents: [],       // ancestor descriptors above el (index 0 = direct parent)
+  depth: 0,          // how many parents prepended via + Parent (0 = just el)
+  activeSegIdx: 0,   // which segment is selected for id/class editing (0=leaf, 1..=parents)
+};
+
+let _pickerHighlightEl = null;
+
+function startPicker(fname) {
+  const body  = document.getElementById('tabBodyAnnot');
+  const input = body.querySelector(`.modal-annot-input[data-field="${fname}"]`);
+  const fdef  = _annotTemplate?.fields?.[fname] || {};
+  startPickerForInput(input, fdef.label || fname);
+}
+
+// opts.onConfirm(css, xpath): verilirse input'a yazılmaz, sonuç bu fonksiyona verilir
+// (kendi annotation formu). XPath önizlemesi de gösterilir.
+function startPickerForInput(inputEl, label, frameOverride, opts = {}) {
+  const frame = frameOverride || document.getElementById('pageFrame');
+  if (!frameOverride) {
+    if (!activeFile) { showToast(T('Select a page first'), 'err'); return; }
+    if (!frame || frame.style.display === 'none') { showToast(T('Page not loaded'), 'err'); return; }
+  }
+
+  _picker.active       = true;
+  _picker.frame        = frame;
+  _picker.targetInput  = inputEl;
+  _picker.onConfirm    = opts.onConfirm || null;
+  _picker.label        = label || '—';
+  _picker.el           = null;
+  _picker.seg          = null;
+  _picker.parents      = [];
+  _picker.depth        = 0;
+  _picker.activeSegIdx = 0;
+
+  document.getElementById('pickerFieldLabel').textContent = _picker.label;
+
+  document.getElementById('pickerSelPreview').textContent = '—';
+  document.getElementById('btnPickerConfirm').disabled     = true;
+  document.getElementById('btnPickerParentUp').disabled    = true;
+  document.getElementById('btnPickerParentAdd').disabled   = true;
+  document.getElementById('btnPickerParentRemove').disabled = true;
+  document.getElementById('btnPickerIdAdd').disabled       = true;
+  document.getElementById('btnPickerClassPick').disabled   = true;
+  document.getElementById('pickerClassDropdown').classList.add('hidden');
+  document.getElementById('pickerMatchBadge').className = 'picker-match-badge none';
+  document.getElementById('pickerMatchBadge').textContent = T('select an element');
+
+  // minimize modal only for main picker (not badd)
+  if (!frameOverride) document.getElementById('modalOverlay').classList.add('picker-mode');
+
+  // show picker bar
+  document.getElementById('pickerBar').classList.add('visible');
+
+  // inject picker css into iframe
+  _pickerInjectStyle(frame);
+
+  // attach events to iframe
+  try {
+    const doc = frame.contentDocument;
+    doc.addEventListener('mouseover',  _pickerOnHover,  true);
+    doc.addEventListener('mouseout',   _pickerOnOut,    true);
+    doc.addEventListener('click',      _pickerOnClick,  true);
+  } catch(e) {
+    showToast(T('iframe access error'), 'err');
+    cancelPicker();
+  }
+}
+
+function _pickerInjectStyle(frame) {
+  try {
+    const doc = frame.contentDocument;
+    if (doc.getElementById('__picker_style')) return;
+    const s = doc.createElement('style');
+    s.id = '__picker_style';
+    s.textContent = `
+      .__picker_hover  { outline: 2px dashed #fbbf24 !important; outline-offset: 2px !important; cursor: crosshair !important; }
+      .__picker_picked { outline: 2px solid #5b7cfa !important; outline-offset: 2px !important; }
+      .__picker_multi  { outline: 2px solid #34d399 !important; outline-offset: 2px !important; }
+    `;
+    doc.head.appendChild(s);
+  } catch(e) {}
+}
+
+function _pickerRemoveStyle(frame) {
+  try {
+    const doc = frame.contentDocument;
+    doc.getElementById('__picker_style')?.remove();
+    doc.querySelectorAll('.__picker_hover, .__picker_picked, .__picker_multi').forEach(el => {
+      el.classList.remove('__picker_hover', '__picker_picked', '__picker_multi');
+    });
+  } catch(e) {}
+}
+
+function _pickerOnHover(e) {
+  if (_pickerHighlightEl) _pickerHighlightEl.classList.remove('__picker_hover');
+  _pickerHighlightEl = e.target;
+  e.target.classList.add('__picker_hover');
+}
+
+function _pickerOnOut(e) {
+  e.target.classList.remove('__picker_hover');
+}
+
+function _pickerOnClick(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const el = e.target;
+  _pickerSetActiveEl(el);
+}
+
+function _pickerSegFromEl(el) {
+  return {
+    tag:           el.tagName.toLowerCase(),
+    id:            el.id || '',
+    classes:       Array.from(el.classList).filter(c => !c.startsWith('__picker')),
+    _useId:        false,
+    _useClasses:   [],
+    _attrSelectors: [],
+    _elRef:        el,
+  };
+}
+
+function _segStr(s) {
+  let out = s.tag;
+  if (s._useId && s.id)        out += '#' + CSS.escape(s.id);
+  if (s._useClasses?.length)   out += s._useClasses.map(c => '.' + CSS.escape(c)).join('');
+  if (s._attrSelectors?.length) out += s._attrSelectors.join('');
+  return out;
+}
+
+// ── Picker → XPath ──────────────────────────────────────
+// Aynı segmentlerden okunaklı XPath: 'div.a > h1#t' → //div[contains(@class,'a')]/h1[@id='t'].
+// contains(@class,'a') 'ab' class'ını da yakalayabilir; bu yüzden sayfada CSS ile
+// aynı elemanları bulmuyorsa class testleri tam-token (strict) biçime çevrilir.
+function _xpLit(s) {
+  if (!s.includes("'")) return `'${s}'`;
+  if (!s.includes('"')) return `"${s}"`;
+  return 'concat(' + s.split("'").map(p => `'${p}'`).join(`, "'", `) + ')';
+}
+
+function _segXPath(s, strict) {
+  const tests = [];
+  if (s._useId && s.id) tests.push(`@id=${_xpLit(s.id)}`);
+  (s._useClasses || []).forEach(c => tests.push(strict
+    ? `contains(concat(' ', normalize-space(@class), ' '), ${_xpLit(' ' + c + ' ')})`
+    : `contains(@class, ${_xpLit(c)})`));
+  (s._attrParts || []).forEach(({name, op, val}) => {
+    const a = '@' + name, v = _xpLit(val);
+    tests.push(!op ? a
+      : op === '='  ? `${a}=${v}`
+      : op === '*=' ? `contains(${a}, ${v})`
+      : op === '^=' ? `starts-with(${a}, ${v})`
+      : op === '$=' ? `substring(${a}, string-length(${a}) - string-length(${v}) + 1)=${v}`
+      :               `contains(concat(' ', normalize-space(${a}), ' '), ${_xpLit(' ' + val + ' ')})`);
+  });
+  return s.tag + tests.map(t => `[${t}]`).join('');
+}
+
+function _buildXPathRaw(strict) {
+  if (!_picker.seg) return '';
+  const parts = [];
+  for (let i = _picker.depth - 1; i >= 0; i--) parts.push(_segXPath(_picker.parents[i], strict));
+  parts.push(_segXPath(_picker.seg, strict));
+  return '//' + parts.join('/');
+}
+
+function _xpathNodes(doc, xp) {
+  const r = doc.evaluate(xp, doc, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+  const out = [];
+  for (let i = 0; i < r.snapshotLength; i++) out.push(r.snapshotItem(i));
+  return out;
+}
+
+// {xpath, same} — same: iframe DOM'unda CSS ile birebir aynı elemanlar
+function _buildXPathStr() {
+  const css = _buildSelectorStr();
+  if (!css) return { xpath: '', same: false };
+  try {
+    const doc  = (_picker.frame || document.getElementById('pageFrame')).contentDocument;
+    const want = [...doc.querySelectorAll(css)];
+    for (const strict of [false, true]) {
+      const xp  = _buildXPathRaw(strict);
+      const got = _xpathNodes(doc, xp);
+      if (got.length === want.length && got.every((n, i) => n === want[i])) return { xpath: xp, same: true };
+    }
+  } catch (e) {}
+  return { xpath: _buildXPathRaw(true), same: false };
+}
+
+// Picker'ın hedefi bir GT alanıysa o alanın XPath kutusu; değilse null
+function _pickerXPathInput() {
+  const row = _picker.targetInput?.closest('.selector-row');
+  const blk = row?.nextElementSibling;
+  return blk?.classList.contains('rule-extra-block') ? blk.querySelector('.rule-xpath-input') : null;
+}
+
+// Build full selector string from current state
+function _buildSelectorStr() {
+  if (!_picker.seg) return '';
+  const parts = [];
+  for (let i = _picker.depth - 1; i >= 0; i--) parts.push(_segStr(_picker.parents[i]));
+  parts.push(_segStr(_picker.seg));
+  return parts.join(' > ');
+}
+
+// Render tappable segment pills into #pickerSelPreview
+function _renderSegmentPills() {
+  const container = document.getElementById('pickerSelPreview');
+  if (!_picker.seg) { container.textContent = '—'; return; }
+
+  // order: outermost parent first → leaf last
+  // visible segments: parents[depth-1..0] then seg
+  const segs = []; // [{segObj, idx}] where idx matches activeSegIdx convention
+  for (let i = _picker.depth - 1; i >= 0; i--) {
+    segs.push({ s: _picker.parents[i], idx: i + 1 }); // parents use idx 1..depth
+  }
+  segs.push({ s: _picker.seg, idx: 0 }); // leaf = idx 0
+
+  container.innerHTML = '';
+  segs.forEach(({ s, idx }, pos) => {
+    if (pos > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'picker-seg-sep';
+      sep.textContent = '›';
+      container.appendChild(sep);
+    }
+    const pill = document.createElement('span');
+    pill.className = 'picker-seg' + (_picker.activeSegIdx === idx ? ' active' : '');
+    pill.textContent = _segStr(s);
+    pill.title = T('Edit this segment');
+    pill.onclick = () => { _picker.activeSegIdx = idx; _pickerRefreshUI(); };
+    container.appendChild(pill);
+  });
+}
+
+function _pickerSetActiveEl(el) {
+  if (_picker.el) _picker.el.classList.remove('__picker_picked');
+  el.classList.remove('__picker_hover');
+  el.classList.add('__picker_picked');
+  _picker.el           = el;
+  _picker.seg          = _pickerSegFromEl(el);
+  _picker.parents      = [];
+  _picker.depth        = 0;
+  _picker.activeSegIdx = 0;
+  // pre-build parent chain
+  let cur = el.parentElement;
+  while (cur && cur.tagName !== 'BODY' && cur.tagName !== 'HTML') {
+    _picker.parents.push(_pickerSegFromEl(cur));
+    cur = cur.parentElement;
+  }
+  _pickerRefreshUI();
+}
+
+function _countMatches(sel) {
+  try {
+    const doc = (_picker.frame || document.getElementById('pageFrame')).contentDocument;
+    return doc.querySelectorAll(sel).length;
+  } catch(e) { return -1; }
+}
+
+function _pickerHighlightAll(sel) {
+  try {
+    const doc = (_picker.frame || document.getElementById('pageFrame')).contentDocument;
+    // clear previous multi-highlights (keep __picker_picked on the clicked element)
+    doc.querySelectorAll('.__picker_multi').forEach(el => el.classList.remove('__picker_multi'));
+    if (!sel) return;
+    doc.querySelectorAll(sel).forEach(el => el.classList.add('__picker_multi'));
+  } catch(e) {}
+}
+
+function _pickerRefreshUI() {
+  if (!_picker.seg) return;
+
+  // clamp activeSegIdx to valid range
+  if (_picker.activeSegIdx > _picker.depth) _picker.activeSegIdx = 0;
+
+  _renderSegmentPills();
+
+  const sel   = _buildSelectorStr();
+  const count = _countMatches(sel);
+  _pickerSetMatchBadge(count);
+  _pickerHighlightAll(sel);
+
+  const xpRow = document.getElementById('pickerXPathRow');
+  if (_picker.onConfirm || _pickerXPathInput()) {
+    const { xpath, same } = _buildXPathStr();
+    xpRow.style.display = '';
+    document.getElementById('pickerXPathPreview').textContent = xpath;
+    const badge = document.getElementById('pickerXPathBadge');
+    badge.className   = 'picker-match-badge ' + (same ? 'ok' : 'none');
+    badge.textContent = same ? '= CSS ✓' : '≠ CSS';
+    badge.title       = same ? T('Finds the same elements as CSS on this page') : T('Does not find the same elements as CSS on this page');
+  } else {
+    xpRow.style.display = 'none';
+  }
+
+  // ^ Parent
+  document.getElementById('btnPickerParentUp').disabled    = (_picker.parents.length === 0);
+  // + / − Parent
+  document.getElementById('btnPickerParentAdd').disabled    = (_picker.depth >= _picker.parents.length);
+  document.getElementById('btnPickerParentRemove').disabled = (_picker.depth === 0);
+
+  // ID/Class act on the activeSegIdx segment
+  const activeSeg = _picker.activeSegIdx === 0
+    ? _picker.seg
+    : _picker.parents[_picker.activeSegIdx - 1];
+
+  document.getElementById('btnPickerIdAdd').disabled    = !activeSeg?.id || activeSeg._useId;
+  document.getElementById('btnPickerIdAdd').textContent = activeSeg?.id ? `+ #${activeSeg.id}` : '+ ID';
+
+  const hasUnusedClass = activeSeg?.classes?.some(c => !(activeSeg._useClasses || []).includes(c));
+  document.getElementById('btnPickerClassPick').disabled    = !hasUnusedClass;
+  document.getElementById('btnPickerClassPick').textContent = '+ Class';
+
+  document.getElementById('btnPickerAttr').disabled = !_picker.el;
+
+  document.getElementById('btnPickerConfirm').disabled = (count === 0);
+  document.getElementById('btnPickerConfirm').title    = count === 0 ? T('No matches') : '';
+}
+
+function _pickerSetMatchBadge(count) {
+  const el = document.getElementById('pickerMatchBadge');
+  if (count === 1) { el.className = 'picker-match-badge ok';   el.textContent = T('1 match') + ' ✓'; }
+  else if (count > 1) { el.className = 'picker-match-badge ok'; el.textContent = T('{n} matches', {n: count}) + ' ✓'; }
+  else                { el.className = 'picker-match-badge none'; el.textContent = T('no matches'); }
+}
+
+function pickerParentUp() {
+  // Jump: make the first parent the new base element, reset depth
+  if (_picker.parents.length === 0) return;
+  const parentEl = _picker.parents[0]._elRef;
+  _pickerSetActiveEl(parentEl);
+}
+
+function pickerParentAdd() {
+  if (_picker.depth < _picker.parents.length) {
+    _picker.depth++;
+    _pickerRefreshUI();
+  }
+}
+
+function pickerParentRemove() {
+  if (_picker.depth > 0) {
+    _picker.depth--;
+    _pickerRefreshUI();
+  }
+}
+
+function _pickerActiveSeg() {
+  return _picker.activeSegIdx === 0
+    ? _picker.seg
+    : _picker.parents[_picker.activeSegIdx - 1];
+}
+
+function pickerIdAdd() {
+  const seg = _pickerActiveSeg();
+  if (!seg || !seg.id) return;
+  seg._useId = true;
+  _pickerRefreshUI();
+}
+
+function pickerAttrToggle() {
+  const dropdown = document.getElementById('pickerAttrDropdown');
+  const isHidden = dropdown.classList.contains('hidden');
+  // close class dropdown if open
+  document.getElementById('pickerClassDropdown').classList.add('hidden');
+  if (!isHidden) { dropdown.classList.add('hidden'); return; }
+
+  // collect attributes from active element
+  const el   = _picker.el;
+  const attrs = el ? Array.from(el.attributes)
+    .map(a => a.name)
+    .filter(a => !a.startsWith('__picker') && a !== 'class' && a !== 'id')
+    : [];
+
+  // populate attribute name list as pills + select
+  const list   = document.getElementById('pickerAttrList');
+  const select = document.getElementById('pickerAttrName');
+  list.innerHTML   = '';
+  select.innerHTML = '';
+
+  // build attr→value map from element
+  const attrMap = {};
+  if (el) Array.from(el.attributes).forEach(a => { attrMap[a.name] = a.value; });
+
+  attrs.forEach(attr => {
+    // pill shortcut
+    const pill = document.createElement('button');
+    pill.type      = 'button';
+    pill.className = 'btn-picker';
+    pill.textContent = attr;
+    pill.onclick   = () => { select.value = attr; pickerAttrNameChange(); };
+    list.appendChild(pill);
+
+    // select option
+    const opt = document.createElement('option');
+    opt.value = attr;
+    opt.textContent = attr;
+    select.appendChild(opt);
+  });
+
+  // reset op/val row and preview
+  document.getElementById('pickerAttrOpRow').style.display = 'none';
+  document.getElementById('pickerAttrValPreview').classList.remove('visible');
+  document.getElementById('pickerAttrValPreview').textContent = '';
+  document.getElementById('pickerAttrVal').value = '';
+  select.selectedIndex = -1;
+
+  // store map on select for use in pickerAttrNameChange
+  select._attrMap = attrMap;
+
+  dropdown.classList.remove('hidden');
+}
+
+function pickerAttrNameChange() {
+  const select  = document.getElementById('pickerAttrName');
+  const attrName = select.value;
+  if (!attrName) return;
+
+  const opRow  = document.getElementById('pickerAttrOpRow');
+  const preview = document.getElementById('pickerAttrValPreview');
+  const valInp  = document.getElementById('pickerAttrVal');
+
+  opRow.style.display = '';
+
+  const currentVal = (select._attrMap || {})[attrName];
+  if (currentVal !== undefined && currentVal !== '') {
+    preview.textContent = attrName + '="' + currentVal + '"';
+    preview.classList.add('visible');
+    valInp.placeholder = currentVal;
+  } else {
+    preview.textContent = '';
+    preview.classList.remove('visible');
+    valInp.placeholder = T('value');
+  }
+  valInp.value = '';
+}
+
+function pickerAttrApply() {
+  let attrName = document.getElementById('pickerAttrName').value;
+  const op     = document.getElementById('pickerAttrOp').value;
+  const val    = document.getElementById('pickerAttrVal').value.trim();
+
+  if (attrName === '__custom__' || !attrName) {
+    showToast(T('Select an attribute'), 'err'); return;
+  }
+
+  // build attribute selector string
+  let attrSel = op && val ? `[${attrName}${op}"${val}"]` : `[${attrName}]`;
+
+  // append to active segment's tag in the selector
+  const seg = _pickerActiveSeg();
+  if (!seg._attrSelectors) seg._attrSelectors = [];
+  seg._attrSelectors.push(attrSel);
+  // XPath üretimi için yapısal hali (_segXPath)
+  if (!seg._attrParts) seg._attrParts = [];
+  seg._attrParts.push({ name: attrName, op: val ? op : '', val });
+
+  document.getElementById('pickerAttrDropdown').classList.add('hidden');
+  document.getElementById('pickerAttrOpRow').style.display = 'none';
+  document.getElementById('pickerAttrValPreview').classList.remove('visible');
+  _pickerRefreshUI();
+}
+
+function pickerClassPick() {
+  const seg = _pickerActiveSeg();
+  if (!seg) return;
+  const used = seg._useClasses || [];
+  const available = seg.classes.filter(c => !used.includes(c));
+  if (!available.length) return;
+
+  const dropdown = document.getElementById('pickerClassDropdown');
+  const list     = document.getElementById('pickerClassList');
+  list.innerHTML = '';
+  available.forEach(cls => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-picker';
+    btn.textContent = '.' + cls;
+    btn.onclick = () => {
+      seg._useClasses = [...(seg._useClasses || []), cls];
+      dropdown.classList.add('hidden');
+      _pickerRefreshUI();
+    };
+    list.appendChild(btn);
+  });
+  dropdown.classList.toggle('hidden');
+}
+
+function confirmPicker() {
+  const sel = _buildSelectorStr();
+  if (!sel) return;
+
+  if (_picker.onConfirm) {
+    const cb = _picker.onConfirm, label = _picker.label, { xpath } = _buildXPathStr();
+    cancelPicker();
+    cb(sel, xpath);
+    showToast(`"${label}" → ${sel}`, 'ok');
+    return;
+  }
+  const input = _picker.targetInput;
+  if (input) {
+    input.value = input.value.trim()
+      ? input.value.trim() + ', ' + sel
+      : sel;
+    input.style.borderColor = 'var(--green)';
+    setTimeout(() => input.style.borderColor = '', 1000);
+  }
+  // GT alanıysa XPath kutusunu da doldur (CSS ', ' ile eklenirken XPath ' | ' ile eklenir)
+  const xpInput = _pickerXPathInput();
+  if (xpInput) {
+    const { xpath } = _buildXPathStr();
+    xpInput.value = xpInput.value.trim() ? xpInput.value.trim() + ' | ' + xpath : xpath;
+    xpInput.dispatchEvent(new Event('input'));
+    xpInput.style.borderColor = 'var(--green)';
+    setTimeout(() => xpInput.style.borderColor = '', 1000);
+  }
+  const label = _picker.label;
+  cancelPicker();
+  showToast(`"${label}" → ${sel}`, 'ok');
+}
+
+function cancelPicker() {
+  const wasBadd = _picker.frame && _picker.frame.id === 'baddIframe';
+  _picker.active = false;
+  _picker.onConfirm = null;
+  const frame = _picker.frame || document.getElementById('pageFrame');
+  _picker.frame = null;
+  if (frame) {
+    try {
+      const doc = frame.contentDocument;
+      doc.removeEventListener('mouseover', _pickerOnHover,  true);
+      doc.removeEventListener('mouseout',  _pickerOnOut,    true);
+      doc.removeEventListener('click',     _pickerOnClick,  true);
+    } catch(e) {}
+    _pickerRemoveStyle(frame);
+  }
+  if (!wasBadd) document.getElementById('modalOverlay').classList.remove('picker-mode');
+  document.getElementById('pickerBar').classList.remove('visible');
+  // After badd picker, update highlight in baddIframe
+  if (wasBadd) {
+    const sel = document.getElementById('baddSelector')?.value?.trim();
+    if (sel) baddHighlight(sel);
+  }
+}
+
+// ── ADD SITE ───────────────────────────────────────────
+
+// ── BULK TEST ─────────────────────────────────────────
+let _bulkResults   = [];   // last test results
+let _bulkFieldKeys = [];   // column order
+let _bulkOptKeys   = new Set();
+let _bulkLayoutId  = null;
+
+function openBulkTestModal() {
+  if (!activeDomain) { showToast(T('Select a site first'), 'err'); return; }
+  const sel = document.getElementById('bulkLayoutSelect');
+  sel.innerHTML = '';
+  const layouts = groundTruth.layouts || {};
+  Object.entries(layouts).forEach(([id, l]) => {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = `${id} — ${l.name}`;
+    sel.appendChild(opt);
+  });
+  // kural kaynağı: son seçim hatırlanır; ilk seferde annotatör için kendi kuralları, admin için GT
+  let src = null;
+  try { src = localStorage.getItem('llmwb_bulk_source'); } catch (e) {}
+  document.getElementById('bulkRuleSource').value = src || (currentUserRole === 'admin' ? 'gt' : 'mine');
+  document.getElementById('bulkBody').innerHTML =
+    '<div style="color:var(--text3);font-size:13px;text-align:center;padding:40px">' + T('Select a layout and press "Test".') + '</div>';
+  document.getElementById('bulkFooter').style.display = 'none';
+  document.getElementById('bulkStatusText').textContent = '';
+  document.getElementById('bulkOverlay').classList.add('open');
+}
+
+function closeBulkTestModal() {
+  document.getElementById('bulkOverlay').classList.remove('open');
+}
+
+async function runBulkTest() {
+  if (!activeDomain) return;
+  const layoutId      = document.getElementById('bulkLayoutSelect').value;
+  const inclAssigned  = document.getElementById('bulkIncludeAssigned').checked;
+  _bulkLayoutId       = layoutId;
+
+  const assignments   = groundTruth.page_assignments || {};
+  const sp            = _sitePages || {};
+  const allFiles      = [...(sp.homepage||[]), ...(sp.article||[]), ...(sp.listing||[])].sort();
+
+  // collect filenames to test
+  const filenames = allFiles.filter(f => {
+    const asgn = assignments[f];
+    if (!inclAssigned && asgn && !asgn.skipped) return false;
+    return true;
+  });
+
+  if (!filenames.length) {
+    document.getElementById('bulkBody').innerHTML =
+      '<div style="color:var(--text3);text-align:center;padding:40px">' + T('No pages to test.') + '<br><span style="font-size:11px">' + T('Check the "Include already assigned pages" option.') + '</span></div>';
+    return;
+  }
+
+  document.getElementById('bulkStatusText').textContent = T('Testing {n} pages…', {n: filenames.length});
+  document.getElementById('bulkBody').innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--text3)"><div class="spinner" style="margin:0 auto 12px"></div>' + T('Running test...') + '</div>';
+  document.getElementById('bulkFooter').style.display = 'none';
+
+  const res  = await fetch('/api/bulk_test', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ domain: activeDomain, layout_id: layoutId, filenames,
+                           source: document.getElementById('bulkRuleSource').value }),
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    document.getElementById('bulkBody').innerHTML =
+      `<div style="color:var(--red);text-align:center;padding:40px">${data.error}</div>`;
+    document.getElementById('bulkStatusText').textContent = '';
+    return;
+  }
+
+  _bulkResults   = data.results;
+  _bulkFieldKeys = data.field_keys;
+  _bulkOptKeys   = new Set(data.optional_keys);
+
+  _renderBulkTable(assignments, layoutId);
+}
+
+function _renderBulkTable(assignments, layoutId) {
+  const keys = _bulkFieldKeys;
+  if (!keys.length) {
+    document.getElementById('bulkBody').innerHTML =
+      '<div style="color:var(--text3);text-align:center;padding:40px">' + T('No selectors to test for this layout.') + '</div>';
+    return;
+  }
+
+  // build header
+  let html = '<table class="bulk-table"><thead><tr>';
+  html += '<th style="width:28px"></th>';  // checkbox
+  html += '<th>' + T('Page') + '</th>';
+  keys.forEach(k => {
+    const isOpt = _bulkOptKeys.has(k);
+    html += `<th class="${isOpt ? 'opt' : ''}" title="${isOpt ? T('optional') : T('required')}">${k}</th>`;
+  });
+  html += '<th>' + T('Status') + '</th></tr></thead><tbody>';
+
+  let autoSelectCount = 0;
+
+  _bulkResults.forEach(row => {
+    const isAssigned = assignments[row.filename] && !assignments[row.filename].skipped;
+    const assignedId = assignments[row.filename]?.layout_id;
+    const pass       = row.all_required_pass;
+
+    // auto-check: all required pass AND not already assigned to this layout
+    const autoCheck  = pass && !(assignedId === layoutId);
+
+    if (autoCheck) autoSelectCount++;
+
+    html += `<tr>`;
+    html += `<td style="text-align:center"><input type="checkbox" class="bulk-row-cb" data-file="${row.filename}" ${autoCheck ? 'checked' : ''} onchange="_bulkUpdateCount()"></td>`;
+    html += `<td class="fname">${row.filename}${isAssigned ? `<span class="bulk-assigned-badge">${assignedId}</span>` : ''}</td>`;
+
+    keys.forEach(k => {
+      const f = row.fields[k];
+      if (!f) {
+        html += `<td class="bulk-cell-skip" title="${T('No selector')}">—</td>`;
+      } else if (f.valid) {
+        const tip = f.preview ? f.preview.replace(/"/g,'&quot;') : '';
+        html += `<td class="bulk-cell-ok" title="${tip}">✅</td>`;
+      } else if (_bulkOptKeys.has(k)) {
+        html += `<td class="bulk-cell-opt-fail" title="${T('Not found (optional)')}">⚠️</td>`;
+      } else {
+        html += `<td class="bulk-cell-fail" title="${T('Not found')}">❌</td>`;
+      }
+    });
+
+    if (pass) {
+      html += `<td class="bulk-status-ok">✅ ${T('Passed')}</td>`;
+    } else {
+      const reqFail = keys.filter(k => !_bulkOptKeys.has(k) && row.fields[k] && !row.fields[k].valid).length;
+      html += `<td class="bulk-status-fail">❌ ${T('{n} required fields failed', {n: reqFail})}</td>`;
+    }
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('bulkBody').innerHTML = html;
+
+  const total = _bulkResults.length;
+  const passed = _bulkResults.filter(r => r.all_required_pass).length;
+  document.getElementById('bulkStatusText').textContent =
+    T('{total} pages tested — {passed} passed, {failed} failed', {total, passed, failed: total - passed});
+
+  document.getElementById('bulkFooter').style.display = '';
+  _bulkUpdateCount();
+}
+
+function _bulkUpdateCount() {
+  const checked = document.querySelectorAll('.bulk-row-cb:checked').length;
+  const el = document.getElementById('bulkSelCount');
+  if (el) el.textContent = checked ? T('{n} pages selected', {n: checked}) : T('No pages selected');
+  const btn = document.getElementById('bulkAssignBtn');
+  if (btn) btn.disabled = checked === 0;
+}
+
+async function bulkAssign() {
+  const checkboxes = document.querySelectorAll('.bulk-row-cb:checked');
+  if (!checkboxes.length) return;
+
+  const layoutId = _bulkLayoutId;
+  const btn      = document.getElementById('bulkAssignBtn');
+  btn.disabled   = true;
+  btn.textContent = '⏳ ' + T('Assigning…');
+
+  let done = 0;
+  for (const cb of checkboxes) {
+    const filename = cb.dataset.file;
+    await fetch('/api/page/assign', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ domain: activeDomain, filename, layout_id: layoutId }),
+    });
+    if (!groundTruth.page_assignments) groundTruth.page_assignments = {};
+    groundTruth.page_assignments[filename] = { layout_id: layoutId, skipped: false };
+    updatePageTab(filename, 'assigned');
+    done++;
+  }
+
+  showToast(T('{n} pages assigned to "{layout}"', {n: done, layout: layoutId}) + ' ✓', 'ok');
+  closeBulkTestModal();
+  renderAssignPanel();
+  renderLayouts();
+  await loadStats();
+}
+
+// ---------------------------------------------------------------------------
+// MCP CONFIG
+// ---------------------------------------------------------------------------
+let _mcpBackends = [];
+
+async function openMcpConfig() {
+  document.getElementById('mcpOverlay').classList.add('open');
+  document.getElementById('mcpStatus').textContent = T('Loading...');
+  try {
+    const res  = await fetch('/api/mcp_config');
+    const data = await res.json();
+    _mcpBackends = data.backends || [];
+
+    const sel = document.getElementById('mcpBackend');
+    sel.innerHTML = _mcpBackends.map(b => `<option value="${b}">${b}</option>`).join('');
+    sel.value = data.backend || 'ollama';
+
+    document.getElementById('mcpModel').value    = data.model    || '';
+    document.getElementById('mcpStrategy').value = data.strategy || 'whitelist';
+    _updateMcpStatus(data);
+  } catch(e) {
+    document.getElementById('mcpStatus').textContent = T('Could not load: {msg}', {msg: e.message});
+  }
+}
+
+function closeMcpConfig() {
+  document.getElementById('mcpOverlay').classList.remove('open');
+}
+
+function onMcpBackendChange() {
+  document.getElementById('mcpModel').value = '';
+}
+
+function _updateMcpStatus(cfg) {
+  const backend  = cfg.backend  || '?';
+  const model    = cfg.model    || T('(default)');
+  const strategy = cfg.strategy || '?';
+  document.getElementById('mcpStatus').textContent =
+    T('Active: {backend} / {model} — strategy: {strategy}', {backend, model, strategy});
+}
+
+async function saveMcpConfig() {
+  const backend  = document.getElementById('mcpBackend').value;
+  const model    = document.getElementById('mcpModel').value.trim() || null;
+  const strategy = document.getElementById('mcpStrategy').value;
+  try {
+    const res  = await fetch('/api/mcp_config/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ backend, model, strategy }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      _updateMcpStatus(data.config);
+      showToast(T('MCP settings saved'), 'ok');
+      closeMcpConfig();
+    } else {
+      showToast(data.error || T('Save failed'), 'err');
+    }
+  } catch(e) {
+    showToast(T('Error: {msg}', {msg: e.message}), 'err');
+  }
+}
+
+
+// ── OVERRIDE INIT ──────────────────────────────────────
+const _origInit = init;
+init = async function() {
+  const loggedIn = await checkLogin();
+  if (loggedIn) {
+    await _origInit();
+    await _handleDeepLink();
+  }
+};
+
+// ── DEEP LINK ──────────────────────────────────────────
+// Hub/bölüm sayfalarından gelen /annotate?site=&page=&open=&layout= linkleri.
+// Bir kez çalışır; sonra URL'den open/layout silinir ki yenilemede modal tekrar açılmasın.
+let _deepLinkDone = false;
+async function _handleDeepLink() {
+  if (_deepLinkDone) return;
+  _deepLinkDone = true;
+  const q = new URLSearchParams(location.search);
+  const site = q.get('site'), page = q.get('page'), open = q.get('open'), layout = q.get('layout');
+  if (!site && !open) { location.replace(MODES[MODE].back); return; }
+
+  if (site) await selectSite(site);
+  if (site && page) await selectPage(page);
+
+  const adminOnly = ['templates', 'mcp', 'addsite', 'bulkadd', 'compile'];
+  if (open && adminOnly.includes(open) && currentUserRole !== 'admin') {
+    showToast(T('This action is for admins only'), 'err');
+  } else if (open) {
+    const actions = {
+      report:    () => { location.href = '/reports'; },
+      templates: () => { location.href = '/schema'; },
+      mcp:       () => openMcpConfig(),
+      addsite:   () => { location.href = '/data?new=1'; },
+      bulkadd:   () => openBulkAddModal(),
+      bulktest:  () => openBulkTestModal(),
+      compile:   () => { location.href = `/ground-truth/${encodeURIComponent(site)}` + (layout ? `/${encodeURIComponent(layout)}` : ''); },
+    };
+    if (actions[open]) await actions[open]();
+  }
+
+  q.delete('open'); q.delete('layout');
+  history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+}
+
+init();
+</script>
+
+<!-- TEMPLATE EDITOR MODAL -->
+
+<!-- ANNOTATOR FORM MODAL -->
+<div class="modal-overlay" id="annotFormOverlay" style="z-index:350">
+  <div class="modal" style="width:min(700px,94vw)">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="annotFormTitle">{{ T("CSS selector form") }}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px" id="annotFormSub"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" class="btn-prompt-edit" id="annotGetOtherBtn" onclick="showGetFromOther()">👤 {{ T("Copy from another user") }}</button>
+        <button type="button" class="icon-btn" onclick="closeAnnotForm()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="annotFormBody"></div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeAnnotForm()">{{ T("Cancel") }}</button>
+      <button type="button" class="btn btn-primary" onclick="saveAnnotForm()">💾 {{ T("Save") }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- GET FROM OTHER USER MODAL -->
+<div class="modal-overlay" id="getOtherOverlay" style="z-index:500">
+  <div class="modal" style="width:min(600px,94vw)">
+    <div class="modal-header">
+      <div class="modal-title">👤 {{ T("Copy from another annotator") }}</div>
+      <button type="button" class="icon-btn" onclick="closeGetOther()">✕</button>
+    </div>
+    <div class="modal-body" id="getOtherBody">
+      <div style="color:var(--text3)">{{ T("Loading...") }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SITE MODAL -->
+<!-- BULK TEST MODAL -->
+<!-- COMPILE MODAL -->
+<!-- BULK ADD PAGES MODAL -->
+<div class="badd-overlay" id="baddOverlay">
+  <div class="badd-modal">
+    <div class="bulk-header">
+      <div class="bulk-title">⚡ {{ T("Bulk add pages") }}</div>
+      <button type="button" class="icon-btn" onclick="closeBulkAddModal()">✕</button>
+    </div>
+
+    <!-- STEP 1: Kaynak seç + selector + iframe -->
+    <div class="badd-step active" id="baddStep1">
+      <div class="bulk-toolbar" style="flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:12px;color:var(--text2);white-space:nowrap">{{ T("Source page:") }}</label>
+          <select id="baddSourceFile" class="picker-attr-select" style="font-size:12px;padding:5px 10px;min-width:180px" onchange="baddLoadIframe()"></select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:200px">
+          <input id="baddSelector" type="text" class="form-input" placeholder="{{ T('CSS selector (e.g. h2 a[href])') }}" style="flex:1;font-size:12px;padding:5px 10px;font-family:var(--mono)" oninput="baddSelectorChange()" value="a[href]">
+          <button type="button" class="btn-picker" style="padding:5px 9px;font-size:13px" title="{{ T('Select element') }}" onclick="baddStartPicker()">🎯</button>
+          <button type="button" class="btn btn-primary" style="padding:5px 14px;font-size:12px;white-space:nowrap" onclick="baddExtract()">▶ {{ T("Extract") }}</button>
+        </div>
+        <span id="baddMatchBadge" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+      </div>
+      <div style="flex:1;overflow:hidden;position:relative">
+        <iframe id="baddIframe" style="width:100%;height:100%;border:none;background:#fff"></iframe>
+      </div>
+    </div>
+
+    <!-- STEP 2: Link listesi + sayfa tipi seç -->
+    <div class="badd-step" id="baddStep2">
+      <div class="bulk-toolbar" style="gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="baddBackToStep1()">← {{ T("Back") }}</button>
+        <span id="baddLinkCount" style="font-size:12px;color:var(--text2)"></span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+          <label style="font-size:12px;color:var(--text2)">{{ T("Page type:") }}</label>
+          <select id="baddPageType" class="picker-attr-select" style="font-size:12px;padding:5px 10px">
+            <option value="article">article</option>
+            <option value="listing">listing</option>
+          </select>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none">
+          <input type="checkbox" id="baddSelectAll" style="margin:0" onchange="baddToggleAll(this.checked)"> {{ T("Select all") }}
+        </label>
+      </div>
+      <div class="bulk-body" id="baddLinkList" style="overflow-y:auto"></div>
+      <div class="bulk-footer">
+        <span id="baddSelCount" style="font-size:12px;color:var(--text3);margin-right:auto"></span>
+        <button type="button" class="btn btn-secondary" onclick="closeBulkAddModal()">{{ T("Close") }}</button>
+        <button type="button" class="btn btn-primary" id="baddDownloadBtn" onclick="baddDownload()" disabled>⬇ {{ T("Download selected") }}</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: İndirme ilerlemesi -->
+    <div class="badd-step" id="baddStep3">
+      <div class="bulk-body" id="baddProgressList" style="overflow-y:auto;padding:12px 20px"></div>
+      <div class="bulk-footer">
+        <span id="baddProgressSummary" style="font-size:12px;color:var(--text3);margin-right:auto"></span>
+        <button type="button" class="btn btn-secondary" onclick="closeBulkAddModal()">{{ T("Close") }}</button>
+        <button type="button" class="btn btn-primary" id="baddDoneBtn" onclick="baddFinish()" style="display:none">✓ {{ T("Done") }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bulk-overlay" id="bulkOverlay">
+  <div class="bulk-modal">
+    <div class="bulk-header">
+      <div class="bulk-title">⚡ {{ T("Bulk page assignment") }}</div>
+      <button type="button" class="icon-btn" onclick="closeBulkTestModal()">✕</button>
+    </div>
+    <div class="bulk-toolbar">
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:var(--text2)">{{ T("Layout") }}:</label>
+        <select id="bulkLayoutSelect" class="picker-attr-select" title="{{ T('Layout to test') }}" style="font-size:12px;padding:5px 10px"></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:var(--text2)">{{ T("Rules") }}:</label>
+        <select id="bulkRuleSource" class="picker-attr-select" style="font-size:12px;padding:5px 10px"
+          title="{{ T('Which rules are tested: the approved ground truth or your own annotation') }}"
+          onchange="try { localStorage.setItem('llmwb_bulk_source', this.value) } catch (e) {}">
+          <option value="mine">{{ T("My rules") }}</option>
+          <option value="gt">{{ T("Ground truth") }}</option>
+        </select>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none">
+        <input type="checkbox" id="bulkIncludeAssigned" style="margin:0">
+        {{ T("Include already assigned pages") }}
+      </label>
+      <button type="button" class="btn btn-primary" style="padding:5px 14px;font-size:12px" onclick="runBulkTest()">▶ {{ T("Test") }}</button>
+      <span id="bulkStatusText" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+    </div>
+    <div class="bulk-body" id="bulkBody">
+      <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px">{{ T("Select a layout and press \"Test\".") }}</div>
+    </div>
+    <div class="bulk-footer" id="bulkFooter" style="display:none">
+      <span id="bulkSelCount" style="font-size:12px;color:var(--text3);margin-right:auto"></span>
+      <button type="button" class="btn btn-secondary" onclick="closeBulkTestModal()">{{ T("Close") }}</button>
+      <button type="button" class="btn btn-primary" id="bulkAssignBtn" onclick="bulkAssign()">✓ {{ T("Assign selected") }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- MCP CONFIG MODAL -->
+<div class="mcp-overlay" id="mcpOverlay">
+  <div class="mcp-modal">
+    <div class="mcp-header">
+      <span class="mcp-title">⚙ {{ T("MCP settings") }}</span>
+      <button type="button" class="icon-btn" onclick="closeMcpConfig()">✕</button>
+    </div>
+    <div class="mcp-body">
+      <div class="mcp-field">
+        <label class="mcp-label">Backend</label>
+        <select id="mcpBackend" class="mcp-select" onchange="onMcpBackendChange()"></select>
+      </div>
+      <div class="mcp-field">
+        <label class="mcp-label">Model <span class="mcp-label-hint">({{ T("empty = default") }})</span></label>
+        <input id="mcpModel" class="mcp-input" type="text" placeholder="{{ T('the default model is used') }}">
+      </div>
+      <div class="mcp-field">
+        <label class="mcp-label">{{ T("Strategy") }}</label>
+        <select id="mcpStrategy" class="mcp-select">
+          <option value="whitelist">whitelist</option>
+          <option value="raw_regex">raw_regex</option>
+          <option value="dom_formula">dom_formula</option>
+          <option value="dom_depth_abs">dom_depth_abs</option>
+          <option value="dom_depth_rel">dom_depth_rel</option>
+          <option value="entropy">entropy</option>
+          <option value="hybrid">hybrid</option>
+        </select>
+      </div>
+      <div class="mcp-status" id="mcpStatus">{{ T("Loading...") }}</div>
+    </div>
+    <div class="mcp-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeMcpConfig()">{{ T("Cancel") }}</button>
+      <button type="button" class="btn btn-primary" onclick="saveMcpConfig()">💾 {{ T("Save") }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="login-modal-overlay">
+  <div class="login-box">
+    <div class="login-logo">◈</div>
+    <div class="login-title">WebRuleBench</div>
+    <div class="login-sub">{{ T("Annotation Tool") }}</div>
+    <input id="loginInput" type="text" class="login-input" placeholder="{{ T('Username...') }}"
+      onkeydown="if(event.key==='Enter') document.getElementById('tokenInput').focus()">
+    <input id="tokenInput" type="password" class="login-input mb" placeholder="Token..."
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button type="button" class="btn-login-submit" onclick="doLogin()">{{ T("Log in") }}</button>
+  </div>
+</div>
+</body>
+</html>

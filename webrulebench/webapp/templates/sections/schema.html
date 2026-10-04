@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="toolbar">
+  <button type="button" class="btn primary" data-admin onclick="newTemplate()">{{ T("+ New template") }}</button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>{{ T("Template") }}</th><th>{{ T("Id") }}</th><th>{{ T("Page type") }}</th><th>{{ T("Fields") }}</th><th>{{ T("Required") }}</th><th>{{ T("Prompt") }}</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="7" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li>Bir şablona tıklayın: alanları düzenleme sayfası açılır (düzenleme yalnızca admin; diğer kullanıcılar görüntüler).</li>
+  <li><b>💬 Prompt</b>: şablonun otomatik prompt'unu görün, deneme prompt'ları ekleyin.</li>
+  <li><b>+ Yeni şablon</b> (admin): kısa bir id verin, ardından alanlarını tanımlayın.</li>
+</ol>
+<h3>Şablon nedir?</h3>
+<p>Bir sayfa tipinden hangi alanların çıkarılacağını tanımlar (<span class="mono">layout_templates.json</span>). Her layout bir şablondan türetilir.
+  Alan başına: <b>tip</b> (text, date, image, url, list, price), <b>metrik</b> (rouge, jaccard, exact_match, f1),
+  <b>zorunlu</b> ve <b>merge</b>.</p>
+<h3>Prompt'lar</h3>
+<p><b>Prompt</b> sütunundaki <span class="mono">1 + N</span>: bir otomatik prompt + N eklenmiş deneme prompt'u.
+  Otomatik prompt şablonun alanlarından üretilir ve değiştirilemez; deneme prompt'ları <span class="mono">template_prompts.json</span>'da tutulur.</p>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li>Click a template to open its field editor (editing is admin-only; other users can view).</li>
+  <li><b>💬 Prompt</b>: view the template's automatic prompt and add prompt variants.</li>
+  <li><b>+ New template</b> (admin): give a short id, then define its fields.</li>
+</ol>
+<h3>What is a template?</h3>
+<p>It defines which fields are extracted from a page type (<span class="mono">layout_templates.json</span>). Every layout is derived from a template.
+  Per field: <b>type</b> (text, date, image, url, list, price), <b>metric</b> (rouge, jaccard, exact_match, f1),
+  <b>required</b> and <b>merge</b>.</p>
+<h3>Prompts</h3>
+<p><span class="mono">1 + N</span> in the <b>Prompt</b> column: one automatic prompt + N added prompt variants.
+  The automatic prompt is generated from the template's fields and cannot be changed; prompt variants are stored in <span class="mono">template_prompts.json</span>.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function load() {
+  const data = await (await fetch('/api/templates')).json();
+  const list = Object.values(data.templates || {});
+  const counts = await Promise.all(list.map(t =>
+    fetch(`/api/templates/${encodeURIComponent(t.id)}/prompts`).then(r => r.json()).then(d => (d.prompts || []).length)));
+  const tb = document.getElementById('rows');
+  tb.innerHTML = list.length ? list.map((t, i) => {
+    const fields = Object.values(t.fields || {});
+    const edit = `/schema/${encodeURIComponent(t.id)}`;
+    return `
+    <tr class="clickable" onclick="location.href='${edit}'">
+      <td><span style="font-size:16px;margin-right:8px">${Hub.esc(t.icon || '📄')}</span><b>${Hub.esc(t.name)}</b>
+        <div class="muted" style="margin-top:2px">${Hub.esc(t.description || '')}</div></td>
+      <td class="mono">${Hub.esc(t.id)}</td>
+      <td>${Hub.esc(t.page_type || '')}</td>
+      <td class="num">${fields.length}</td>
+      <td class="num">${fields.filter(f => f.required).length}</td>
+      <td class="num">1 + ${counts[i]}</td>
+      <td onclick="event.stopPropagation()">
+        <a class="btn sm" href="${edit}">${Hub.isAdmin() ? '✏️ ' + T('Edit') : '👁 ' + T('View')}</a>
+        <a class="btn sm primary" href="${edit}/prompts">💬 ${T('Prompt')}</a>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="empty">${T('No templates')}</td></tr>`;
+}
+
+async function newTemplate() {
+  const id = prompt(T('Short id for the new template (letters/digits/underscores):'));
+  if (!id) return;
+  const clean = id.trim().toLowerCase().replace(/\s+/g, '_');
+  const res = await fetch('/api/templates', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id: clean, name: clean, description: '', icon: '📄', page_type: 'article', fields: {}}),
+  });
+  const d = await res.json();
+  if (d.success) location.href = `/schema/${encodeURIComponent(d.id)}`;
+  else Hub.toast(d.error || T('Creation error'), 'err');
+}
+
+Hub.ready().then(load);
+</script>
+{% endblock %}

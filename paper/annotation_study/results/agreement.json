@@ -1,0 +1,279 @@
+{
+ "annotators": [
+  "euzun",
+  "user2",
+  "user3"
+ ],
+ "sample": {
+  "seed": null,
+  "eligible": 70,
+  "criteria": "article layout named 'Article 1', >=3 GT pages, euzun rules present; top 10 by GT pages (ties: alphabetical)",
+  "sites": [
+   {
+    "domain": "525.az",
+    "layout_id": "layout-1",
+    "gt_pages": 49
+   },
+   {
+    "domain": "abante.com.ph",
+    "layout_id": "layout-1",
+    "gt_pages": 45
+   },
+   {
+    "domain": "akipress.com",
+    "layout_id": "layout-1",
+    "gt_pages": 44
+   },
+   {
+    "domain": "alayam.com",
+    "layout_id": "layout-1",
+    "gt_pages": 42
+   },
+   {
+    "domain": "20minutos.es",
+    "layout_id": "layout-2",
+    "gt_pages": 41
+   },
+   {
+    "domain": "abendzeitung.de",
+    "layout_id": "layout-1",
+    "gt_pages": 41
+   },
+   {
+    "domain": "aljazeera.com",
+    "layout_id": "layout-2",
+    "gt_pages": 41
+   },
+   {
+    "domain": "24chasa.bg",
+    "layout_id": "layout-1",
+    "gt_pages": 40
+   },
+   {
+    "domain": "adevarul.ro",
+    "layout_id": "layout-1",
+    "gt_pages": 40
+   },
+   {
+    "domain": "agenciabrasil.ebc.com.br",
+    "layout_id": "layout-2",
+    "gt_pages": 40
+   }
+  ]
+ },
+ "per_field": [
+  {
+   "field": "title",
+   "metric": "rouge",
+   "layouts": 10,
+   "rule_kappa": 0.022,
+   "rule_po": 0.2,
+   "rule_exact_share": 0.2,
+   "content_alpha": 0.975,
+   "content_units": 423,
+   "content_similarity": 0.975
+  },
+  {
+   "field": "body",
+   "metric": "rouge",
+   "layouts": 10,
+   "rule_kappa": 0.261,
+   "rule_po": 0.3,
+   "rule_exact_share": 0.3,
+   "content_alpha": 0.904,
+   "content_units": 423,
+   "content_similarity": 0.907
+  },
+  {
+   "field": "author",
+   "metric": "rouge",
+   "layouts": 6,
+   "rule_kappa": 0.315,
+   "rule_po": 0.389,
+   "rule_exact_share": 0.438,
+   "content_alpha": 0.904,
+   "content_units": 243,
+   "content_similarity": 0.906
+  },
+  {
+   "field": "date",
+   "metric": "rouge",
+   "layouts": 10,
+   "rule_kappa": 0.443,
+   "rule_po": 0.5,
+   "rule_exact_share": 0.5,
+   "content_alpha": 0.988,
+   "content_units": 423,
+   "content_similarity": 0.989
+  },
+  {
+   "field": "category",
+   "metric": "rouge",
+   "layouts": 8,
+   "rule_kappa": 0.118,
+   "rule_po": 0.167,
+   "rule_exact_share": 0.167,
+   "content_alpha": 0.649,
+   "content_units": 338,
+   "content_similarity": 0.661
+  },
+  {
+   "field": "images",
+   "metric": "jaccard",
+   "layouts": 10,
+   "rule_kappa": 0.227,
+   "rule_po": 0.267,
+   "rule_exact_share": 0.267,
+   "content_alpha": 0.945,
+   "content_units": 423,
+   "content_similarity": 0.945
+  },
+  {
+   "field": "images_caption",
+   "metric": "rouge",
+   "layouts": 5,
+   "rule_kappa": 0.053,
+   "rule_po": 0.133,
+   "rule_exact_share": 0.133,
+   "content_alpha": 0.961,
+   "content_units": 203,
+   "content_similarity": 0.962
+  },
+  {
+   "field": "related_links",
+   "metric": "jaccard",
+   "layouts": 7,
+   "rule_kappa": 0.034,
+   "rule_po": 0.095,
+   "rule_exact_share": 0.118,
+   "content_alpha": 0.564,
+   "content_units": 291,
+   "content_similarity": 0.639
+  },
+  {
+   "field": "summary",
+   "metric": "rouge",
+   "layouts": 0,
+   "rule_kappa": null,
+   "rule_po": null,
+   "rule_exact_share": null,
+   "content_alpha": null,
+   "content_units": 0,
+   "content_similarity": null
+  },
+  {
+   "field": "tags",
+   "metric": "jaccard",
+   "layouts": 3,
+   "rule_kappa": -0.2,
+   "rule_po": 0.0,
+   "rule_exact_share": 0.0,
+   "content_alpha": 0.659,
+   "content_units": 121,
+   "content_similarity": 0.669
+  }
+ ],
+ "per_pair": [
+  {
+   "pair": "euzun–user2",
+   "cells": 2767,
+   "content_similarity": 0.877
+  },
+  {
+   "pair": "euzun–user3",
+   "cells": 2642,
+   "content_similarity": 0.857
+  },
+  {
+   "pair": "user2–user3",
+   "cells": 2763,
+   "content_similarity": 0.914
+  }
+ ],
+ "per_layout": [
+  {
+   "domain": "525.az",
+   "layout_id": "layout-1",
+   "pages": 49,
+   "annotators": 3,
+   "rule_agreement": 0.4,
+   "content_agreement": 1.0
+  },
+  {
+   "domain": "abante.com.ph",
+   "layout_id": "layout-1",
+   "pages": 45,
+   "annotators": 3,
+   "rule_agreement": 0.267,
+   "content_agreement": 0.871
+  },
+  {
+   "domain": "akipress.com",
+   "layout_id": "layout-1",
+   "pages": 44,
+   "annotators": 3,
+   "rule_agreement": 0.278,
+   "content_agreement": 0.922
+  },
+  {
+   "domain": "alayam.com",
+   "layout_id": "layout-1",
+   "pages": 42,
+   "annotators": 3,
+   "rule_agreement": 0.267,
+   "content_agreement": 0.93
+  },
+  {
+   "domain": "20minutos.es",
+   "layout_id": "layout-2",
+   "pages": 41,
+   "annotators": 3,
+   "rule_agreement": 0.296,
+   "content_agreement": 0.872
+  },
+  {
+   "domain": "abendzeitung.de",
+   "layout_id": "layout-1",
+   "pages": 41,
+   "annotators": 3,
+   "rule_agreement": 0.238,
+   "content_agreement": 0.851
+  },
+  {
+   "domain": "aljazeera.com",
+   "layout_id": "layout-2",
+   "pages": 41,
+   "annotators": 3,
+   "rule_agreement": 0.125,
+   "content_agreement": 0.879
+  },
+  {
+   "domain": "24chasa.bg",
+   "layout_id": "layout-1",
+   "pages": 40,
+   "annotators": 3,
+   "rule_agreement": 0.444,
+   "content_agreement": 0.932
+  },
+  {
+   "domain": "adevarul.ro",
+   "layout_id": "layout-1",
+   "pages": 40,
+   "annotators": 3,
+   "rule_agreement": 0.185,
+   "content_agreement": 0.803
+  },
+  {
+   "domain": "agenciabrasil.ebc.com.br",
+   "layout_id": "layout-2",
+   "pages": 40,
+   "annotators": 3,
+   "rule_agreement": 0.185,
+   "content_agreement": 0.837
+  }
+ ],
+ "method": {
+  "rule": "Fleiss kappa over layouts (subjects) x annotators; categories = normalized CSS rules (rule_agreement.normalize_rule)",
+  "content": "Krippendorff alpha over (layout, page, field) units; distance = 1 - field metric (ROUGE-1 F1 / Jaccard / exact match) on values extracted by each annotator's rule; D_e estimated from 20000 random value pairs (seed 0)"
+ }
+}

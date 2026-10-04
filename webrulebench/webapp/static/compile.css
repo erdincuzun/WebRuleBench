@@ -1,0 +1,79 @@
+.compile-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1100; display: flex; align-items: stretch; justify-content: stretch; opacity: 0; pointer-events: none; transition: opacity .15s; padding: 20px; box-sizing: border-box; }
+.compile-overlay.open { opacity: 1; pointer-events: all; }
+.compile-modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,.5); transform: translateY(10px); transition: transform .15s; }
+.compile-overlay.open .compile-modal { transform: translateY(0); }
+.compile-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.compile-left { width: 55%; display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow: hidden; }
+.compile-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.compile-table-wrap { flex: 1; overflow: auto; }
+.compile-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.compile-table th { position: sticky; top: 0; background: var(--bg3); padding: 7px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--text2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.compile-table th.user-col { color: var(--accent2); }
+.compile-table th.metric-col { color: var(--yellow); }
+.compile-table td { padding: 6px 10px; border-bottom: 1px solid rgba(38,43,56,.5); vertical-align: middle; }
+.compile-table tr:hover td { background: rgba(255,255,255,.02); }
+.compile-table td.field-name { font-family: var(--mono); font-size: 11px; color: var(--text2); white-space: nowrap; font-weight: 600; }
+.compile-sel-cell { font-family: var(--mono); font-size: 11px; color: var(--text3); cursor: pointer; border-radius: 4px; padding: 3px 6px; transition: background .1s; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.compile-sel-cell:hover { background: rgba(91,124,250,.12); color: var(--accent); }
+.compile-sel-cell.selected { background: rgba(91,124,250,.2); color: var(--accent); outline: 1px solid var(--accent); }
+.compile-sel-cell.hover-preview { background: rgba(251,191,36,.1); color: var(--yellow); }
+.compile-sel-cell.empty { color: var(--text3); opacity: .4; cursor: default; }
+.compile-sel-cell.suggested { outline: 1px dashed var(--accent2); }
+.kappa-badge { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; white-space: nowrap; }
+.kappa-hi  { background: rgba(52,211,153,.15); color: var(--green); }
+.kappa-mid { background: rgba(251,191,36,.15);  color: var(--yellow); }
+.kappa-lo  { background: rgba(248,113,113,.15); color: var(--red); }
+.compile-score-cell { font-family: var(--mono); font-size: 10px; text-align: center; white-space: nowrap; padding: 3px 6px !important; }
+.compile-content-cell { font-family: var(--mono); font-size: 10px; color: var(--text2); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 8px !important; cursor: default; }
+.compile-layer-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--border); background: var(--bg3); flex-shrink: 0; }
+.compile-layer-btn { padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--font); font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.compile-layer-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(91,124,250,.1); }
+.compile-auto-btn { padding: 3px 10px; border-radius: 4px; border: 1px solid rgba(167,139,250,.4); background: rgba(167,139,250,.08); color: var(--accent2); font-family: var(--font); font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; margin-left: auto; }
+.compile-auto-btn:hover { background: rgba(167,139,250,.18); }
+.compile-auto-btn:disabled { opacity: .4; cursor: default; }
+.compile-kappa-global { font-size: 11px; font-family: var(--mono); color: var(--text3); }
+.compile-gt-cell { font-family: var(--mono); font-size: 11px; color: var(--green); padding: 3px 6px; }
+.compile-pages-wrap { border-top: 1px solid var(--border); max-height: 160px; overflow-y: auto; padding: 8px 12px; }
+.compile-page-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; }
+.compile-page-row input { flex-shrink: 0; }
+.compile-preview-toolbar { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+.compile-iframe-wrap { flex: 1; overflow: auto; position: relative; background: #fff; }
+.compile-iframe-wrap iframe { display: block; transform-origin: top left; border: none; background: #fff; }
+.compile-zoom-bar { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.compile-zoom-btn { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); font-size: 14px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; padding: 0; }
+.compile-zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
+.compile-zoom-level { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 36px; text-align: center; cursor: pointer; padding: 2px 4px; border-radius: 3px; transition: background .1s; }
+.compile-zoom-level:hover { background: var(--bg3); color: var(--text); }
+
+/* ── Derleme sayfası (/ground-truth/<site>/<layout>) ──────────────
+   Eski modal markup'ı tam sayfa olarak; index.html'deki temel sınıflar burada kapsamlı. */
+.hub-main.full { max-width: none; padding: 16px 20px 0; }
+.compile-page { display: flex; flex-direction: column; height: calc(100vh - 56px - 16px - 150px); min-height: 520px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.compile-page .compile-body { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.compile-page .bulk-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.compile-page .picker-attr-select { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: var(--mono); font-size: 11px; padding: 3px 6px; outline: none; }
+.compile-page .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.compile-page .btn-secondary { background: var(--bg3); color: var(--text2); }
+.compile-page .empty { padding: 3px 6px; text-align: left; }   /* hub.css .empty (boş tablo mesajı) dolgusunu alma */
+.compile-page.readonly .compile-sel-cell { cursor: default; }
+.compile-page.readonly .compile-page-cb { pointer-events: none; }
+.readonly-note { font-size: 12px; color: var(--yellow); background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 6px; padding: 6px 10px; }
+
+/* ── Kural dili sekmeleri + "Kaydedilecek" sütunu ─── */
+.compile-lang-bar { display: flex; align-items: center; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.compile-lang-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 9px 12px; color: var(--text3); font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer; }
+.compile-lang-tab:hover { color: var(--text); }
+.compile-lang-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+.compile-lang-tab.excluded { opacity: .55; }
+.compile-lang-count { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: 3px; }
+.compile-lang-off { font-size: 9px; font-weight: 600; color: var(--text3); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; }
+.compile-include { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); cursor: pointer; }
+.compile-manual { width: 100%; min-width: 160px; font-family: var(--mono); font-size: 11px; padding: 4px 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); }
+.compile-manual:focus { border-color: var(--accent); outline: none; }
+.compile-manual.manual { border-color: rgba(251,191,36,.5); }
+.compile-manual[readonly] { opacity: .7; }
+
+.compile-table td:has(.compile-gen-btn) { display: flex; gap: 4px; align-items: center; }
+.compile-gen-btn { flex-shrink: 0; width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg3); color: var(--text2); cursor: pointer; font-size: 12px; }
+.compile-gen-btn:hover { border-color: var(--accent); color: var(--accent); }

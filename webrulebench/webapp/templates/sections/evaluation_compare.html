@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/evaluation">← {{ T("LLM Evaluation") }}</a>
+  <h1>⚖ {{ T("Experiment comparison") }}{% include "_help_btn.html" %}</h1>
+  <p class="muted">{{ T("Only the (common) layouts with results in both experiments are compared.") }} Δ = B − A.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="body"><div class="empty">{{ T("Loading...") }}</div></div>
+{% endblock %}
+
+{% block help_title %}{{ T("Comparison") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<p>İki deney, <b>ortak layout'larda</b> alan alan karşılaştırılır; farklı kapsamlı deneylerde yalnızca kesişim kullanılır, böylece fark
+  kapsamdan değil yapılandırmadan gelir. Yapılandırma tablosunda farklı olan satırlar vurgulanır.</p>
+<ul>
+  <li><b>Δ</b> = B − A (yüzde puan). Yeşil B'nin, kırmızı A'nın daha iyi olduğunu gösterir.</li>
+  <li>Layout tablosu |Δ|'ya göre sıralıdır: en çok değişen layout'lar üstte.</li>
+</ul>
+{% else %}
+<p>Two experiments are compared field by field on their <b>common layouts</b>; for experiments with different scopes only the intersection is used, so that
+  the difference comes from the configuration and not from the scope. Rows that differ in the configuration table are highlighted.</p>
+<ul>
+  <li><b>Δ</b> = B − A (percentage points). Green means B is better, red means A is better.</li>
+  <li>The layout table is sorted by |Δ|: the layouts that changed most are at the top.</li>
+</ul>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const q = new URLSearchParams(location.search);
+const sc = v => v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--red)';
+const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${sc(v)}">${(v * 100).toFixed(1)}</span>`;
+const delta = (a, b) => (a === null || b === null || a === undefined || b === undefined) ? '<span class="muted">—</span>'
+  : (d => `<b style="color:${Math.abs(d) < 0.005 ? 'var(--text3)' : d > 0 ? 'var(--green)' : 'var(--red)'}">${d > 0 ? '+' : ''}${(d * 100).toFixed(1)}</b>`)(b - a);
+const mean = xs => { xs = xs.filter(x => x !== null && x !== undefined); return xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null; };
+
+function cfgRows(A, B) {
+  const f = c => ({
+    [T('Model')]: `${c.backend} · ${c.model || T('default')}`,
+    [T('Rule')]: c.rule_source === 'llm_css_regexn' ? 'CSS → REGEXN' : c.rule_type,
+    [T('Prompt')]: Object.entries(c.prompts || {}).map(([t, p]) => `${t}: ${p}`).join(', ') || T('automatic'),
+    [T('Cleaning')]: c.strategy,
+    [T('Sample page')]: c.sample.mode === 'random' ? T('random (seed {seed})', {seed: c.sample.seed}) : T('first GT page'),
+    [T('Max pages')]: c.max_pages || T('all'),
+  });
+  const a = f(A.config), b = f(B.config);
+  return Object.keys(a).map(k => `<tr class="${a[k] !== b[k] ? 'diff' : ''}"><td>${k}</td><td class="mono">${Hub.esc(String(a[k]))}</td><td class="mono">${Hub.esc(String(b[k]))}</td></tr>`).join('');
+}
+
+Hub.ready().then(async () => {
+  const [A, B] = await Promise.all([q.get('a'), q.get('b')].map(id =>
+    id ? fetch(`/api/experiments/${encodeURIComponent(id)}`).then(r => r.ok ? r.json() : null) : null));
+  const el = document.getElementById('body');
+  if (!A || !B) { el.innerHTML = `<div class="empty">${T('One of the experiments was not found.')} <a class="btn sm" href="/evaluation">← ${T('List')}</a></div>`; return; }
+  const key = l => `${l.domain}|${l.layout_id}`;
+  const la = Object.fromEntries((A.layouts || []).filter(l => !l.error).map(l => [key(l), l]));
+  const lb = Object.fromEntries((B.layouts || []).filter(l => !l.error).map(l => [key(l), l]));
+  const common = Object.keys(la).filter(k => lb[k]);
+  const m = (L, f) => mean(common.map(k => f(L[k])));
+  const fields = [...new Set(common.flatMap(k => [...Object.keys(la[k].summary.per_field), ...Object.keys(lb[k].summary.per_field)]))];
+  const rows = common.map(k => ({k, a: la[k], b: lb[k], d: (lb[k].summary.mean ?? 0) - (la[k].summary.mean ?? 0)}))
+    .sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+  const link = E => `<a href="/evaluation/${encodeURIComponent(E.id)}" style="color:var(--accent)">${Hub.esc(E.name)}</a>`;
+
+  el.innerHTML = `
+    <div class="table-wrap" style="margin-bottom:18px"><table>
+      <thead><tr><th></th><th>A · ${link(A)}</th><th>B · ${link(B)}</th></tr></thead>
+      <tbody>${cfgRows(A, B)}</tbody></table></div>
+
+    <p class="muted" style="margin-bottom:10px">${T('Common layouts:')} <b>${common.length}</b> (A: ${Object.keys(la).length}, B: ${Object.keys(lb).length})</p>
+    ${common.length ? `
+    <div class="table-wrap" style="margin-bottom:18px"><table>
+      <thead><tr><th>${T('Measure')}</th><th>A</th><th>B</th><th>Δ</th></tr></thead><tbody>
+      ${[[T('Mean'), l => l.summary.mean], [T('Sample page'), l => l.summary.sample_mean], [T('Generalisation'), l => l.summary.others_mean]].map(([n, f]) =>
+        `<tr><td><b>${n}</b></td><td class="num">${pct(m(la, f))}</td><td class="num">${pct(m(lb, f))}</td><td class="num">${delta(m(la, f), m(lb, f))}</td></tr>`).join('')}
+      ${fields.map(f => { const fa = m(la, l => l.summary.per_field[f] ?? null), fb = m(lb, l => l.summary.per_field[f] ?? null);
+        return `<tr><td class="mono">${Hub.esc(f)}</td><td class="num">${pct(fa)}</td><td class="num">${pct(fb)}</td><td class="num">${delta(fa, fb)}</td></tr>`; }).join('')}
+      <tr><td>${T('Tokens (common layouts)')}</td><td class="num">${common.reduce((s, k) => s + la[k].llm.prompt_tokens + la[k].llm.gen_tokens, 0).toLocaleString(LOCALE)}</td>
+        <td class="num">${common.reduce((s, k) => s + lb[k].llm.prompt_tokens + lb[k].llm.gen_tokens, 0).toLocaleString(LOCALE)}</td><td></td></tr>
+    </tbody></table></div>
+
+    <h2>${T('Per layout')}</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>${T('Site')}</th><th>${T('Layout')}</th><th>A</th><th>B</th><th>Δ</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td class="mono">${Hub.esc(r.a.domain)}</td><td>${Hub.esc(r.a.name || r.a.layout_id)} <span class="muted mono">${Hub.esc(r.a.layout_id)}</span></td>
+        <td class="num">${pct(r.a.summary.mean)}</td><td class="num">${pct(r.b.summary.mean)}</td><td class="num">${delta(r.a.summary.mean, r.b.summary.mean)}</td></tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty">${T('No common layouts — the scopes of the two experiments do not overlap.')}</div>`}`;
+});
+</script>
+{% endblock %}

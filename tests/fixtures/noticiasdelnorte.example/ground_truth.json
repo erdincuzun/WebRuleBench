@@ -1,0 +1,17 @@
+{
+  "domain": "noticiasdelnorte.example",
+  "file": "article_001.html",
+  "page_type": "article",
+  "selectors": {
+    "title": "h1.nota__titulo",
+    "body": "div.nota__cuerpo",
+    "author": "span.nota__autor",
+    "date": "span.nota__fecha",
+    "category": "div.migas a.seccion",
+    "images": "div.nota__foto img",
+    "images_caption": "div.nota__foto p.pie",
+    "related_links": "div.relacionadas a",
+    "summary": "div.nota__bajada",
+    "tags": "div.etiquetas a"
+  }
+}

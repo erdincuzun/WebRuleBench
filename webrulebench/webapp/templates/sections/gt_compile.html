@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block main_class %}full{% endblock %}
+
+{% block section_head %}
+<div class="section-head" style="margin-bottom:14px">
+  <a class="back-link" href="/ground-truth/{{ domain }}">← {{ domain }}</a>
+  <h1><span id="title">⚙ {{ T("Compile") }} — <span class="mono">{{ layout_id }}</span></span>{% include "_help_btn.html" %}</h1>
+  <p id="subtitle" class="muted"></p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="compile-page" id="compileOverlay">
+  <span id="compileTitle" hidden></span>
+  <div class="compile-body">
+    <!-- SOL: selector tablosu + sayfalar -->
+    <div class="compile-left">
+      <div class="compile-lang-bar" id="compileLangBar"></div>
+      <div class="compile-layer-bar">
+        <button type="button" class="compile-layer-btn active" id="compileLayerK1Btn" onclick="compileSetLayer(1)">{{ T("K1 — Selector") }}</button>
+        <button type="button" class="compile-layer-btn" id="compileLayerK2Btn" onclick="compileSetLayer(2)">{{ T("K2 — Content") }}</button>
+        <span class="compile-kappa-global" id="compileKappaGlobal"></span>
+        <button type="button" class="compile-auto-btn" id="compileAutoBtn" onclick="compileAutoSelect()">💡 {{ T("Auto select") }}</button>
+      </div>
+      <div class="compile-table-wrap">
+        <table class="compile-table" id="compileTable">
+          <thead id="compileTableHead"></thead>
+          <tbody id="compileTableBody"></tbody>
+        </table>
+      </div>
+      <div style="padding:8px 12px;border-top:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text2)">
+        {{ T("Page union") }}
+        <span id="compilePageCount" style="color:var(--text3);font-weight:400;margin-left:6px"></span>
+        <label style="float:right;display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer">
+          <input type="checkbox" id="compileSelectAllPages" onchange="compileToggleAllPages(this.checked)"> {{ T("Select all") }}
+        </label>
+      </div>
+      <div class="compile-pages-wrap" id="compilePagesWrap"></div>
+    </div>
+    <!-- SAĞ: önizleme -->
+    <div class="compile-right">
+      <div class="compile-preview-toolbar">
+        <select id="compilePreviewPage" class="picker-attr-select" style="font-size:12px;padding:4px 8px;flex:1" onchange="compileLoadPreview()" title="{{ T('Preview page') }}">
+          <option value="">{{ T("Select page…") }}</option>
+        </select>
+        <button type="button" class="btn btn-secondary sm" onclick="compileRunK2()">⚡ {{ T("Compare content") }}</button>
+        <button type="button" class="btn btn-secondary sm" onclick="compileTestAll()">▶ {{ T("Test") }}</button>
+        <span id="compileTestStatus" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
+        <div class="compile-zoom-bar">
+          <button type="button" class="compile-zoom-btn" onclick="compileZoom(-0.25)" title="{{ T('Zoom out') }}">−</button>
+          <span class="compile-zoom-level" id="compileZoomLabel" onclick="compileZoomReset()" title="{{ T('Reset') }}">100%</span>
+          <button type="button" class="compile-zoom-btn" onclick="compileZoom(+0.25)" title="{{ T('Zoom in') }}">+</button>
+          <button type="button" class="compile-zoom-btn" onclick="compileZoomFit()" title="{{ T('Fit') }}" style="width:auto;padding:0 6px;font-size:11px">⊡</button>
+        </div>
+      </div>
+      <div class="compile-iframe-wrap" id="compileIframeWrap">
+        <iframe id="compileIframe" title="{{ T('Preview') }}"></iframe>
+      </div>
+    </div>
+  </div>
+  <div class="bulk-footer">
+    <span id="compileSummary" style="font-size:12px;color:var(--text3);margin-right:auto"></span>
+    <span class="readonly-note" id="readonlyNote" style="display:none">👁 {{ T("View mode — only admins can save to GT") }}</span>
+    <a class="btn btn-secondary" href="/ground-truth/{{ domain }}">← {{ T("Layouts") }}</a>
+    <button type="button" class="btn btn-primary" id="compileSaveBtn" onclick="compileSave()">💾 {{ T("Save to GT") }}</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block help_title %}⚙ {{ T("Compilation") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li>Tabloda her satır bir alan, her sütun bir annotatördür; <b>Mevcut GT</b> sütunu kayıtlı GT'yi gösterir. Bir hücrenin üzerine gelince önizlemede eşleşen elemanlar vurgulanır.</li>
+  <li><b>K1 — Selector</b>: kural uyumu (aynı normalize kuralı yazan annotatör çiftlerinin oranı) ve en sık yazılan kural önerisi. <b>K2 — İçerik</b>: önizlemedeki sayfada <b>⚡ İçerik Karşılaştır</b> ile ROUGE / Jaccard skorları.</li>
+  <li><b>💡 Otomatik Seç</b> etkin katmanın önerilerini uygular; hücreye tıklayarak alan bazında değiştirebilirsiniz (admin).</li>
+  <li><b>Sayfa Birleşimi</b>: GT'de bu layout'a atanacak sayfaları seçin, sonra <b>💾 GT'ye Kaydet</b>.</li>
+</ol>
+<h3>Kayıt</h3>
+<p>Seçilen kurallar ve sayfalar <span class="mono">ground_truth/approved/{{ domain }}.json</span> dosyasına yazılır; kimin ve ne zaman derlediği
+  layout'a kaydedilir (layout listesindeki "güncelleme var" durumu buna göre hesaplanır). Bir annotatörün seçimi alınırken
+  XPath ve Regex'i de varsa birlikte kaydedilir.</p>
+<h3>Kural dilleri</h3>
+<ul>
+  <li><b>CSS | XPath | Regex</b> sekmeleri her dili ayrı derler: her sekmede o dilin annotatör seçimleri, kural uyumu ve K2 skorları ayrı hesaplanır. Sekmedeki <span class="mono">3/10</span> seçili alan sayısıdır.</li>
+  <li><b>GT'ye dahil</b>: işaretli olmayan dil GT'ye yazılmaz; daha önce GT'de varsa kaydedince çıkarılır. Hangi dillerde GT oluşturulacağına admin karar verir.</li>
+  <li><b>Kaydedilecek</b> sütunu o dil için GT'ye yazılacak kuralı gösterir; hücre seçimiyle dolar, admin elle de yazabilir (boşaltırsanız alan o dilde GT'ye yazılmaz).</li>
+  <li>XPath önizlemede tarayıcının DOM'unda, Regex ham HTML üzerinde (sunucuda) çalışır; Regex eşleşmeleri sayfada vurgulanamaz.</li>
+  <li>Regex sekmesinde <b>↻</b>, alanın CSS'inden (CSS sekmesindeki seçim, yoksa mevcut GT) regex üretir — REGEXN (Uzun, 2020) yaklaşımının
+    genişletilmiş hali; sonuç layout'un sayfalarında CSS ile doğrulanır. Elle kural girilen dil otomatik olarak GT'ye dahil edilir.</li>
+</ul>
+<p>Kayıtta dahil edilen dillerin seçimleri alan bazında birleştirilir: yalnızca CSS varsa düz metin, aksi halde <span class="mono">{css, xpath, regex}</span>.</p>
+<p class="muted" style="margin-top:6px">↻ yalnızca destek amaçlıdır: üretilen regex bir öneridir, düzenleyip kaydetmek kullanıcıya aittir.
+  Üretim şu makaledeki yaklaşımın genişletilmiş halidir:<br>
+  Uzun, E. (2020). A regular expression generator based on CSS selectors for efficient extraction from HTML pages.
+  <i>Turkish Journal of Electrical Engineering &amp; Computer Sciences</i>, 28(6), 3389–3401.
+  <a href="https://doi.org/10.3906/elk-2004-67" target="_blank" rel="noopener" style="color:var(--accent)">doi:10.3906/elk-2004-67</a></p>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li>In the table each row is a field and each column an annotator; the <b>Current GT</b> column shows the saved GT. Hovering over a cell highlights the matching elements in the preview.</li>
+  <li><b>K1 — Selector</b>: rule agreement (share of annotator pairs that wrote the same normalized rule) and the most frequent rule as the suggestion. <b>K2 — Content</b>: ROUGE / Jaccard scores on the preview page with <b>⚡ Compare content</b>.</li>
+  <li><b>💡 Auto select</b> applies the suggestions of the active layer; you can change them per field by clicking a cell (admin).</li>
+  <li><b>Page union</b>: select the pages to be assigned to this layout in the GT, then <b>💾 Save to GT</b>.</li>
+</ol>
+<h3>Saving</h3>
+<p>The selected rules and pages are written to <span class="mono">ground_truth/approved/{{ domain }}.json</span>; who compiled the layout and when
+  is stored with the layout (the "has updates" status in the layout list is computed from this). When an annotator's rule is taken,
+  their XPath and Regex are saved with it if present.</p>
+<h3>Rule languages</h3>
+<ul>
+  <li>The <b>CSS | XPath | Regex</b> tabs compile each language separately: in each tab the annotators' rules, rule agreement and K2 scores of that language are computed separately. The <span class="mono">3/10</span> on a tab is the number of selected fields.</li>
+  <li><b>Include in GT</b>: a language that is not checked is not written to the GT; if it was in the GT before, it is removed on save. The admin decides which languages the GT is created for.</li>
+  <li>The <b>To save</b> column shows the rule that will be written to the GT for that language; it is filled by selecting a cell, and the admin can also type it by hand (if you clear it, the field is not written to the GT in that language).</li>
+  <li>In the preview, XPath runs on the browser's DOM and Regex on the raw HTML (on the server); Regex matches cannot be highlighted on the page.</li>
+  <li>In the Regex tab, <b>↻</b> generates a regex from the field's CSS (the selection in the CSS tab, otherwise the current GT) — an extended version of the
+    REGEXN (Uzun, 2020) approach; the result is verified against the CSS on the layout's pages. A language in which a rule is entered by hand is automatically included in the GT.</li>
+</ul>
+<p>On save, the selections of the included languages are merged per field: plain text if there is only CSS, otherwise <span class="mono">{css, xpath, regex}</span>.</p>
+<p class="muted" style="margin-top:6px">↻ is only an aid: the generated regex is a suggestion; editing and saving it is up to the user.
+  The generator is an extended version of the approach in this paper:<br>
+  Uzun, E. (2020). A regular expression generator based on CSS selectors for efficient extraction from HTML pages.
+  <i>Turkish Journal of Electrical Engineering &amp; Computer Sciences</i>, 28(6), 3389–3401.
+  <a href="https://doi.org/10.3906/elk-2004-67" target="_blank" rel="noopener" style="color:var(--accent)">doi:10.3906/elk-2004-67</a></p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="{{ url_for('static', filename='compile.css') }}">
+<script src="{{ url_for('static', filename='compile.js') }}"></script>
+<script>
+// compile.js'in beklediği ortam (eskiden index.html sağlıyordu)
+const activeDomain = {{ domain|tojson }};
+const LAYOUT_ID    = {{ layout_id|tojson }};
+let _templates = {};
+function showToast(msg, type = 'ok') { Hub.toast(msg, type === 'err' ? 'err' : 'ok'); }
+function _escHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function _escAttr(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+async function selectSite() {}
+// Kaydettikten / kapatınca layout listesine dön
+closeCompileModal = () => { location.href = `/ground-truth/${encodeURIComponent(activeDomain)}`; };
+
+Hub.ready().then(async () => {
+  const [tmpl, lays] = await Promise.all([
+    fetch('/api/templates').then(r => r.json()),
+    fetch(`/api/gt/layouts/${encodeURIComponent(activeDomain)}`).then(r => r.json()),
+  ]);
+  _templates = tmpl.templates || {};
+  const l = (lays.layouts || []).find(x => x.layout_id === LAYOUT_ID);
+  if (l) {
+    const t = _templates[l.template_id];
+    document.getElementById('title').innerHTML = `⚙ ${Hub.esc(l.name)} <span class="pill mono">${Hub.esc(LAYOUT_ID)}</span>`;
+    document.getElementById('subtitle').textContent =
+      `${activeDomain}${t ? ' · ' + (t.icon || '') + ' ' + t.name : ''} · ${l.annotators.length === 1 ? T('1 annotator') : T('{n} annotators', {n: l.annotators.length})} · ${T('{n} pages in GT', {n: l.gt_pages})}`;
+  }
+
+  if (!Hub.isAdmin()) {
+    // salt okunur: seçim, otomatik seçim ve kayıt kapalı; vurgulama/K2/test açık
+    document.getElementById('compileOverlay').classList.add('readonly');
+    document.getElementById('compileAutoBtn').style.display = 'none';
+    document.getElementById('compileSaveBtn').style.display = 'none';
+    document.getElementById('compileSelectAllPages').disabled = true;
+    document.getElementById('readonlyNote').style.display = '';
+    compileSelectCell = () => {};
+    window.COMPILE_READONLY = true;
+  }
+  await openCompileModal(LAYOUT_ID);
+});
+</script>
+{% endblock %}

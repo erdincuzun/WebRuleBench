@@ -1,0 +1,16 @@
+flask>=3.0
+beautifulsoup4>=4.12
+requests>=2.31
+playwright>=1.40
+lxml>=5.0
+cssselect>=1.2
+python-dateutil>=2.8
+
+# Optional — only needed for the MCP server (mcp_server.py)
+mcp>=1.0
+
+# Optional — only needed to run the test suite
+pytest>=7.0
+
+# Optional — only needed for the figures of the annotation study (paper/annotation_study/make_figures.py)
+matplotlib>=3.7

@@ -1,0 +1,22 @@
+% \usepackage{booktabs}
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Inter-annotator agreement on 10 layouts (3 annotators). Rule level: Fleiss' $\kappa$ over layouts on normalized CSS rules and the share of identical rules; content level: Krippendorff's $\alpha$ on the values each annotator's rule extracts from all ground-truth pages (distance $= 1 -$ field metric).}
+  \label{tab:agreement}
+  \begin{tabular}{llrrrr}
+    \toprule
+    Field & Metric & Layouts & Rule $\kappa$ & Identical rules & Content $\alpha$ \\
+    \midrule
+    \texttt{date} & rouge & 10 & 0.44 & 50\% & 0.99 \\
+    \texttt{title} & rouge & 10 & 0.02 & 20\% & 0.97 \\
+    \texttt{images\_caption} & rouge & 5 & 0.05 & 13\% & 0.96 \\
+    \texttt{images} & jaccard & 10 & 0.23 & 27\% & 0.94 \\
+    \texttt{body} & rouge & 10 & 0.26 & 30\% & 0.90 \\
+    \texttt{author} & rouge & 6 & 0.32 & 44\% & 0.90 \\
+    \texttt{tags} & jaccard & 3 & -0.20 & 0\% & 0.66 \\
+    \texttt{category} & rouge & 8 & 0.12 & 17\% & 0.65 \\
+    \texttt{related\_links} & jaccard & 7 & 0.03 & 12\% & 0.56 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

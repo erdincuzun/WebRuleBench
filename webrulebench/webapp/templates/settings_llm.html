@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="javascript:history.length > 1 ? history.back() : location.href = '/'">← {{ T("Back") }}</a>
+  <h1>⚙ {{ T("LLM Models") }}{% include "_help_btn.html" %}</h1>
+  <p>{{ T("LLM backends and models. Evaluation experiments and the MCP server use the records here.") }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <button type="button" class="btn primary" data-admin onclick="openEdit()">+ {{ T("New backend") }}</button>
+  <button type="button" class="btn" onclick="testAll()">⚡ {{ T("Test all") }}</button>
+  <span class="muted" id="fileNote"></span>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>{{ T("Backend") }}</th><th>{{ T("API type") }}</th><th>URL</th><th>{{ T("Model") }}</th><th>{{ T("Key") }}</th><th>{{ T("Generation") }}</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="7" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this) closeEdit()">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="editTitle" style="width:min(720px,100%)">
+    <div class="modal-head">
+      <div class="panel-title" id="editTitle">{{ T("Backend") }}</div>
+      <button type="button" class="icon-btn" onclick="closeEdit()" aria-label="{{ T('Close') }}">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-row" id="presetRow">
+        <label class="grow">{{ T("Start from a preset") }}<select id="ePreset"></select></label>
+      </div>
+      <div class="form-row">
+        <label style="width:190px">{{ T("Name") }}<input type="text" id="eName" placeholder="{{ T('e.g. openrouter') }}"></label>
+        <label style="width:190px">{{ T("API type") }}<select id="eApi"></select></label>
+        <label class="grow">{{ T("Note") }}<input type="text" id="eNotes" placeholder="{{ T('e.g. 40 requests per minute limit') }}"></label>
+      </div>
+      <div class="muted" id="apiHint" style="margin:-6px 0 10px"></div>
+      <div class="form-row">
+        <label class="grow">URL<input type="text" id="eUrl" placeholder="https://…/v1"></label>
+      </div>
+      <div class="form-row">
+        <label style="width:260px">{{ T("Key variable") }}<input type="text" id="eEnvKey" placeholder="{{ T('e.g. OPENROUTER_API_KEY') }}"></label>
+        <label class="grow">{{ T("API key") }} <span id="keyState" style="text-transform:none;letter-spacing:0"></span>
+          <input type="password" id="eKey" placeholder="{{ T('type to change — unchanged if left empty') }}" autocomplete="new-password"></label>
+      </div>
+      <div class="form-row">
+        <label class="grow">{{ T("Default model") }}<input type="text" id="eDefault" list="eModelList" placeholder="{{ T('e.g. llama-3.3-70b-versatile') }}"><datalist id="eModelList"></datalist></label>
+      </div>
+      <div class="lbl" id="modelsLbl">{{ T("Model list (one model per line)") }}</div>
+      <textarea class="prompt-ta short" id="eModels" spellcheck="false" style="min-height:90px"></textarea>
+      <div class="lbl">{{ T("Generation parameters") }} <span class="muted" style="text-transform:none;letter-spacing:0">— {{ T("empty = provider default; saved in experiments") }}</span></div>
+      <div class="form-row">
+        <label style="width:110px">temperature<input type="text" id="p_temperature"></label>
+        <label style="width:110px">top_p<input type="text" id="p_top_p"></label>
+        <label style="width:110px">max_tokens<input type="text" id="p_max_tokens"></label>
+        <label style="width:110px" class="p-local">seed<input type="text" id="p_seed"></label>
+        <label style="width:110px" class="p-ollama">num_ctx<input type="text" id="p_num_ctx"></label>
+      </div>
+      <div class="login-err" id="eErr"></div>
+      <div class="toolbar" style="margin:0">
+        <button type="button" class="btn primary" onclick="saveEdit()">💾 {{ T("Save") }}</button>
+        <button type="button" class="btn" onclick="closeEdit()">{{ T("Cancel") }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="mpModal" onclick="if(event.target===this) closeModelParams()">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="mpTitle" style="width:min(620px,100%)">
+    <div class="modal-head">
+      <div class="panel-title" id="mpTitle">{{ T("Model parameters") }}</div>
+      <button type="button" class="icon-btn" onclick="closeModelParams()" aria-label="{{ T('Close') }}">✕</button>
+    </div>
+    <div class="modal-content">
+      <p class="muted">{{ T("An empty value uses the backend's setting (shown faded inside the field). It applies only to this model; the combined values are saved in experiments.") }}</p>
+      <div class="form-row">
+        <label style="width:110px">temperature<input type="text" id="mp_temperature"></label>
+        <label style="width:110px">top_p<input type="text" id="mp_top_p"></label>
+        <label style="width:110px">max_tokens<input type="text" id="mp_max_tokens"></label>
+        <label style="width:110px">seed<input type="text" id="mp_seed"></label>
+        <label style="width:110px">num_ctx<input type="text" id="mp_num_ctx"></label>
+      </div>
+      <div class="muted" id="mpNote"></div>
+      <div class="login-err" id="mpErr"></div>
+      <div class="toolbar" style="margin:0">
+        <button type="button" class="btn primary" onclick="saveModelParams()">💾 {{ T("Save") }}</button>
+        <button type="button" class="btn" onclick="saveModelParams(true)">↺ {{ T("Revert to backend settings") }}</button>
+        <button type="button" class="btn" onclick="closeModelParams()">{{ T("Cancel") }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block help_title %}⚙ {{ T("LLM Models") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ul>
+  <li><b>Test</b>: seçili modele kısa bir istek gönderir ("yalnızca OK yaz"); süre, yanıt ve token sayısını ya da hatayı gösterir. Herkes test edebilir.</li>
+  <li><b>+ Yeni backend</b>, <b>Düzenle</b>, <b>Sil</b> yalnızca admin'e açıktır. Değişiklik hemen geçerlidir; sunucuyu yeniden başlatmak gerekmez.</li>
+</ul>
+<h3>API tipleri</h3>
+<ul>
+  <li><b>ollama</b> — yerel Ollama (<span class="mono">/api/chat</span>); anahtar gerekmez. Model listesi makinedeki Ollama'dan <b>canlı</b> okunur:
+    <span class="mono">ollama pull</span> ile eklenen model hemen görünür. Kayıtta yalnızca varsayılan model (★) ve formlarda gizlenenler tutulur.
+    "▸ Modeller" parametre sayısı, quantization, bağlam uzunluğu, boyut, yetenekler ve digest'i gösterir.</li>
+  <li><b>anthropic</b> — Anthropic Messages API.</li>
+  <li><b>gemini</b> — Google generateContent; URL'de <span class="mono">{model}</span> yer tutucusu bulunur.</li>
+  <li><b>openai</b> — OpenAI uyumlu <span class="mono">/chat/completions</span>: OpenAI, Groq, NVIDIA NIM, OpenRouter, DeepSeek, LM Studio, vLLM… URL taban adrestir (<span class="mono">…/v1</span>).</li>
+</ul>
+<h3>API anahtarları</h3>
+<p>Anahtar değeri <span class="mono">llm_models.json</span>'da değil, proje kökündeki <span class="mono">.env</span> dosyasında (ya da ortam değişkeninde) tutulur;
+  ortam değişkeni önceliklidir. Sayfada yalnızca son 4 karakter görünür. Backend silinince <span class="mono">.env</span>'deki anahtar silinmez.</p>
+<h3>Tekrarlanabilirlik</h3>
+<p>Ollama modelleri için deney kaydına modelin <b>digest</b>'i (dosya özeti), parametre sayısı, quantization ve bağlam uzunluğu da yazılır:
+  aynı etiket (ör. <span class="mono">qwen2.5-coder:7b</span>) yeniden çekilirse model dosyası değişebilir; digest deneyin hangi dosyayla çalıştığını sabitler.
+  Makinede yüklü olmayan bir modelle deney başlatılamaz.</p>
+<h3>Üretim parametreleri</h3>
+<p>temperature, top_p, max_tokens (ve Ollama için seed, num_ctx) model karşılaştırmasını doğrudan etkiler. Varsayılanlar backend düzeyindedir;
+  "▸ Modeller" tablosundaki <b>Ayar</b> sütunundan (✏️) tek bir model için üzerine yazılabilir — ör. düşünen (<i>thinking</i>) modellerde
+  daha yüksek <b>max_tokens</b>. Her deney kullanılan birleşik değerleri ve modele özel olanları <span class="mono">backend_snapshot</span> olarak kaydeder. <b>max_tokens</b> çok alanlı şablonlarda (özellikle uzun regex'lerde) yanıtın kesilmemesi için yeterli olmalıdır.</p>
+{% else %}
+<h3>Usage</h3>
+<ul>
+  <li><b>Test</b>: sends a short request to the selected model ("reply with OK only"); shows the time, reply and token count, or the error. Anyone can run tests.</li>
+  <li><b>+ New backend</b>, <b>Edit</b> and <b>Delete</b> are admin only. Changes take effect immediately; there is no need to restart the server.</li>
+</ul>
+<h3>API types</h3>
+<ul>
+  <li><b>ollama</b> — local Ollama (<span class="mono">/api/chat</span>); no key needed. The model list is read <b>live</b> from Ollama on the machine:
+    a model added with <span class="mono">ollama pull</span> appears immediately. Only the default model (★) and the models hidden in forms are stored.
+    "▸ Models" shows the parameter count, quantization, context length, size, capabilities and digest.</li>
+  <li><b>anthropic</b> — Anthropic Messages API.</li>
+  <li><b>gemini</b> — Google generateContent; the URL contains the <span class="mono">{model}</span> placeholder.</li>
+  <li><b>openai</b> — OpenAI-compatible <span class="mono">/chat/completions</span>: OpenAI, Groq, NVIDIA NIM, OpenRouter, DeepSeek, LM Studio, vLLM… The URL is the base address (<span class="mono">…/v1</span>).</li>
+</ul>
+<h3>API keys</h3>
+<p>Key values are not stored in <span class="mono">llm_models.json</span> but in the <span class="mono">.env</span> file in the project root (or in an environment variable);
+  the environment variable takes precedence. Only the last 4 characters are shown on the page. Deleting a backend does not delete its key from <span class="mono">.env</span>.</p>
+<h3>Reproducibility</h3>
+<p>For Ollama models the model's <b>digest</b> (file hash), parameter count, quantization and context length are also written to the experiment record:
+  if the same tag (e.g. <span class="mono">qwen2.5-coder:7b</span>) is pulled again the model file may change; the digest pins the file the experiment ran with.
+  An experiment cannot be started with a model that is not installed on the machine.</p>
+<h3>Generation parameters</h3>
+<p>temperature, top_p, max_tokens (and seed, num_ctx for Ollama) directly affect model comparisons. Defaults are set per backend;
+  they can be overridden for a single model in the <b>Settings</b> column (✏️) of the "▸ Models" table — e.g. a higher <b>max_tokens</b> for
+  <i>thinking</i> models. Each experiment saves the combined values used and the model-specific ones as <span class="mono">backend_snapshot</span>. <b>max_tokens</b> must be high enough that the response is not truncated for templates with many fields (especially long regexes).</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let D = null, _edit = null;       // _edit: düzenlenen backend adı (null = yeni)
+// İngilizce kaynak metinler; görüntülenirken T() ile çevrilir
+const API_HINT = {
+  ollama: 'Local Ollama. URL: http://localhost:11434/api/chat — no key needed.',
+  anthropic: 'Anthropic Messages API. URL: https://api.anthropic.com/v1/messages',
+  gemini: 'Google Gemini. The URL must contain the {model} placeholder: …/models/{model}:generateContent',
+  openai: 'OpenAI-compatible. The URL is the base address (…/v1); /chat/completions is appended automatically.',
+  replay: 'Replays recorded responses (demo and tests, no LLM needed). URL: a JSON file in the data folder, e.g. llm_replay.json.',
+};
+const PRESETS = {
+  '': null,
+  openai:     {name: 'openai', api: 'openai', url: 'https://api.openai.com/v1', env_key: 'OPENAI_API_KEY', default_model: 'gpt-4o-mini', notes: 'OpenAI'},
+  openrouter: {name: 'openrouter', api: 'openai', url: 'https://openrouter.ai/api/v1', env_key: 'OPENROUTER_API_KEY', default_model: 'meta-llama/llama-3.3-70b-instruct', notes: 'OpenRouter — many providers with one key'},
+  deepseek:   {name: 'deepseek', api: 'openai', url: 'https://api.deepseek.com/v1', env_key: 'DEEPSEEK_API_KEY', default_model: 'deepseek-chat', notes: 'DeepSeek'},
+  lmstudio:   {name: 'lmstudio', api: 'openai', url: 'http://localhost:1234/v1', env_key: '', default_model: '', notes: 'LM Studio local server'},
+  vllm:       {name: 'vllm', api: 'openai', url: 'http://localhost:8000/v1', env_key: '', default_model: '', notes: 'vLLM local server'},
+  ollama2:    {name: 'ollama-remote', api: 'ollama', url: 'http://192.168.1.10:11434/api/chat', env_key: '', default_model: 'qwen2.5-coder:7b', notes: 'Another Ollama on the network'},
+};
+const PRESET_LABEL = {'': '— empty —', openai: 'OpenAI', openrouter: 'OpenRouter', deepseek: 'DeepSeek', lmstudio: 'LM Studio (local)', vllm: 'vLLM (local)', ollama2: 'Ollama on another machine'};
+
+function paramStr(p) {
+  const parts = [];
+  if (p.temperature !== undefined) parts.push(`t=${p.temperature}`);
+  if (p.top_p !== undefined) parts.push(`top_p=${p.top_p}`);
+  if (p.max_tokens !== undefined) parts.push(`max ${p.max_tokens}`);
+  if (p.seed !== undefined) parts.push(`seed ${p.seed}`);
+  if (p.num_ctx !== undefined) parts.push(`ctx ${p.num_ctx}`);
+  return parts.join(' · ') || `<span class="muted">${T('default')}</span>`;
+}
+
+function keyCell(b) {
+  if (!b.env_key) return `<span class="muted">— ${T('not needed')}</span>`;
+  return b.has_key
+    ? `<span class="pill auto">✓ ${Hub.esc(b.key_hint || T('set'))}</span><div class="muted mono" style="font-size:10px">${Hub.esc(b.env_key)}</div>`
+    : `<span class="pill req">✗ ${T('not set')}</span><div class="muted mono" style="font-size:10px">${Hub.esc(b.env_key)}</div>`;
+}
+
+// Ollama'da liste makineden canlı gelir (catalog); diğer backend'lerde kayıtlı liste
+const visibleModels = b => b.catalog.models.filter(m => !m.hidden && m.installed !== false).map(m => m.name);
+const fmtSize = n => n ? (n / 1e9).toFixed(1) + ' GB' : '—';
+let _openCat = new Set();
+
+function modelSummary(b) {
+  const c = b.catalog, ms = c.models;
+  if (b.api !== 'ollama') return T('{n} models', {n: ms.length});
+  if (c.reachable === false) return `<span style="color:var(--yellow)">⚠ ${T('Ollama is not reachable')}</span>`;
+  const inst = ms.filter(m => m.installed).length, hid = ms.filter(m => m.hidden).length, miss = ms.filter(m => m.installed === false).length;
+  return `${T('{n} installed', {n: inst})}${hid ? ` · ${T('{n} hidden', {n: hid})}` : ''}${miss ? ` · <span style="color:var(--yellow)">⚠ ${T('{n} not installed', {n: miss})}</span>` : ''}`;
+}
+
+function catTable(b) {
+  const n = Hub.esc(b.name), ctx = b.params?.num_ctx;
+  const live = b.api === 'ollama';
+  return `<table class="mini" style="width:100%"><thead><tr><th>${T('Model')}</th>${live ? `<th>${T('Parameters')}</th><th>${T('Quant.')}</th><th>${T('Context')}</th><th>${T('Size')}</th><th>${T('Capabilities')}</th><th>${T('Digest')}</th>` : ''}<th title="${T('Model-specific generation parameters (empty = backend setting)')}">${T('Settings')}</th><th>${T('Status')}</th><th></th></tr></thead><tbody>
+    ${b.catalog.models.map(m => {
+      const i = m.info || {}, mm = Hub.esc(m.name);
+      const mp = b.model_params?.[m.name] || {};
+      const effCtx = mp.num_ctx ?? ctx;
+      const ctxWarn = live && effCtx && i.context_length && effCtx > i.context_length;
+      const status = m.installed === false ? `<span class="pill req">⚠ ${T('not installed')}</span>`
+        : m.hidden ? `<span class="pill">${T('hidden')}</span>` : '<span class="pill auto">✓</span>';
+      return `<tr>
+        <td class="mono">${m.default ? '★ ' : ''}${mm}</td>
+        ${live ? `<td class="mono">${Hub.esc(i.parameter_size || '—')}</td><td class="mono">${Hub.esc(i.quantization || '—')}</td>
+          <td class="mono">${i.context_length ? i.context_length.toLocaleString(LOCALE) : '—'}${ctxWarn ? ` <span style="color:var(--yellow)" title="${T("num_ctx ({n}) exceeds the model's context length", {n: effCtx})}">⚠</span>` : ''}</td>
+          <td class="mono">${fmtSize(i.size)}</td><td style="font-size:10px">${(i.capabilities || []).map(x => Hub.esc(x)).join(', ')}</td>
+          <td class="mono muted" title="${Hub.esc(i.digest || '')}">${i.digest ? Hub.esc(i.digest.slice(0, 12)) : '—'}</td>` : ''}
+        <td class="mono" style="font-size:10px">${Object.keys(mp).length ? `<span style="color:var(--accent2)">${paramStr(mp)}</span>` : `<span class="muted">${T('backend')}</span>`}
+          <button class="btn sm" data-admin title="${T('Generation parameters for this model')}" onclick="openModelParams('${n}', '${mm}')">✏️</button></td>
+        <td>${status}</td>
+        <td style="white-space:nowrap">
+          ${m.installed !== false ? `<button class="btn sm" onclick="testModel('${n}', '${mm}')">⚡</button>` : ''}
+          ${m.default ? '' : `<button class="btn sm" data-admin title="${T('Make default model')}" onclick="modelAction('${n}', '${mm}', 'default')">★</button>`}
+          ${m.default ? '' : `<button class="btn sm" data-admin title="${m.hidden ? T('Show in forms') : T('Hide in forms')}" onclick="modelAction('${n}', '${mm}', '${m.hidden ? 'show' : 'hide'}')">${m.hidden ? '👁 ' + T('show') : '🙈 ' + T('hide')}</button>`}
+        </td></tr>`;
+    }).join('')}</tbody></table>
+    ${live ? `<div class="muted" style="margin-top:6px;font-size:11px">${T('The list is read live from Ollama on the machine (a model added with {cmd} appears here). Hidden models are not listed in experiment forms.', {cmd: '<span class="mono">ollama pull &lt;model&gt;</span>'})}</div>` : ''}`;
+}
+
+// ── modele özel parametreler ──────────────────────────
+let _mp = null;   // {backend, model}
+function openModelParams(backend, model) {
+  _mp = {backend, model};
+  const b = D.backends.find(x => x.name === backend), cur = b.model_params?.[model] || {}, base = b.params || {};
+  document.getElementById('mpTitle').textContent = `⚙ ${model} — ${T('generation parameters')}`;
+  ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx'].forEach(k => {
+    const el = document.getElementById(`mp_${k}`);
+    el.value = cur[k] ?? '';
+    el.placeholder = base[k] !== undefined ? `${base[k]} (${T('backend')})` : T('provider default');
+    el.closest('label').style.display = (k === 'num_ctx' && b.api !== 'ollama') || (k === 'seed' && !['ollama', 'openai'].includes(b.api)) ? 'none' : '';
+  });
+  const ctxLen = b.catalog.models.find(m => m.name === model)?.info?.context_length;
+  document.getElementById('mpNote').textContent = ctxLen ? T("This model's context length: {n} tokens.", {n: ctxLen.toLocaleString(LOCALE)}) : '';
+  document.getElementById('mpErr').textContent = '';
+  document.getElementById('mpModal').classList.add('open');
+}
+function closeModelParams() { document.getElementById('mpModal').classList.remove('open'); }
+async function saveModelParams(reset = false) {
+  const params = {};
+  if (!reset) ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx'].forEach(k => {
+    const el = document.getElementById(`mp_${k}`);
+    if (el.closest('label').style.display !== 'none' && el.value.trim() !== '') params[k] = el.value.trim();
+  });
+  const d = await (await fetch(`/api/llm-models/${encodeURIComponent(_mp.backend)}/model`, {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({model: _mp.model, action: 'params', params})})).json();
+  if (!d.success) { document.getElementById('mpErr').textContent = d.error || T('Could not save'); return; }
+  closeModelParams();
+  await load();
+  Hub.toast(Object.keys(params).length ? T('{model}: model-specific settings saved', {model: _mp.model}) : T('{model}: reverted to backend settings', {model: _mp.model}));
+}
+
+function toggleCat(name) { _openCat.has(name) ? _openCat.delete(name) : _openCat.add(name); render(); }
+
+async function modelAction(name, model, action) {
+  const d = await (await fetch(`/api/llm-models/${encodeURIComponent(name)}/model`, {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({model, action})})).json();
+  if (!d.success) { Hub.toast(d.error || T('Could not be done'), 'err'); return; }
+  await load();
+  Hub.toast(action === 'default' ? '★ ' + T('{model} is the default', {model}) : action === 'hide' ? T('{model} hidden', {model}) : T('{model} shown', {model}));
+}
+
+function testModel(name, model) {
+  const sel = document.getElementById(`m_${name}`);
+  if (sel && ![...sel.options].some(o => o.value === model)) sel.add(new Option(model, model));
+  if (sel) sel.value = model;
+  return test(name);
+}
+
+function render() {
+  const tb = document.getElementById('rows');
+  tb.innerHTML = D.backends.map(b => {
+    const models = visibleModels(b);
+    const n = Hub.esc(b.name);
+    return `
+    <tr>
+      <td><b>${n}</b><div class="muted" style="font-size:11px">${Hub.esc(b.notes || '')}</div></td>
+      <td><span class="pill">${Hub.esc(b.api)}</span></td>
+      <td class="mono" style="font-size:11px;max-width:210px;overflow:hidden;text-overflow:ellipsis" title="${Hub.esc(b.url)}">${Hub.esc(b.url)}</td>
+      <td><select id="m_${n}" title="${T('Model to test')}" style="max-width:170px">${models.map(m =>
+        `<option ${m === b.default_model ? 'selected' : ''}>${Hub.esc(m)}</option>`).join('')}</select>
+        <div class="muted" style="font-size:10px">${modelSummary(b)} · <a href="javascript:toggleCat('${n}')" style="color:var(--accent)">${_openCat.has(b.name) ? '▾' : '▸'} ${T('Models')}</a></div></td>
+      <td>${keyCell(b)}</td>
+      <td class="mono" style="font-size:11px;white-space:normal;min-width:120px">${paramStr(b.params || {})}</td>
+      <td style="white-space:nowrap">
+        <button type="button" class="btn sm primary" onclick="test('${n}')">⚡ ${T('Test')}</button>
+        <button type="button" class="btn sm" data-admin onclick="openEdit('${n}')" title="${T('Edit')}">✏️</button>
+        <button type="button" class="btn sm danger" data-admin onclick="del('${n}')" title="${T('Delete')}">🗑</button>
+      </td>
+    </tr>
+    <tr class="detail-row" id="t_${n}" style="display:none"><td colspan="7"></td></tr>
+    ${_openCat.has(b.name) ? `<tr class="detail-row"><td colspan="7">${catTable(b)}</td></tr>` : ''}`;
+  }).join('');
+  Hub.applyRoleGates(tb);
+  document.getElementById('fileNote').textContent = T('Stored in: {file} · keys: .env', {file: D.file});
+}
+
+async function test(name) {
+  const row = document.getElementById(`t_${name}`), cell = row.firstElementChild;
+  row.style.display = '';
+  cell.innerHTML = `<span class="muted">⏳ ${T('Testing…')}</span>`;
+  const model = document.getElementById(`m_${name}`)?.value || '';
+  const d = await (await fetch(`/api/llm-models/${encodeURIComponent(name)}/test`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({model})})).json();
+  cell.innerHTML = d.success
+    ? `<span class="pill auto">✓ ${T('connected')}</span> <span class="mono">${Hub.esc(d.model)}</span> · ${d.ms} ms · ${T('reply:')} <span class="mono">${Hub.esc(d.reply)}</span>
+       <span class="muted"> · ${T('{n} tokens', {n: `${d.prompt_tokens}+${d.gen_tokens}`})}</span>`
+    : `<span class="pill req">✗ ${T('failed')}</span> <span class="mono">${Hub.esc(d.model || '')}</span> · ${d.ms ?? '—'} ms · <span class="mono" style="color:var(--red)">${Hub.esc(d.error || T('unknown error'))}</span>`;
+  return d.success;
+}
+
+async function testAll() {
+  const res = await Promise.all(D.backends.map(b => test(b.name)));
+  Hub.toast(T('{ok} / {n} backends working', {ok: res.filter(Boolean).length, n: res.length}));
+}
+
+// ── düzenleme ──────────────────────────────────────────
+function fill(b) {
+  document.getElementById('eName').value    = b.name || '';
+  document.getElementById('eApi').value     = b.api || 'openai';
+  document.getElementById('eUrl').value     = b.url || '';
+  document.getElementById('eEnvKey').value  = b.env_key || '';
+  document.getElementById('eDefault').value = b.default_model || '';
+  document.getElementById('eModels').value  = (b.models || []).join('\n');
+  document.getElementById('eNotes').value   = b.notes || '';
+  ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx'].forEach(k =>
+    document.getElementById(`p_${k}`).value = b.params?.[k] ?? '');
+  document.getElementById('eKey').value = '';
+  apiChanged();
+}
+
+function apiChanged() {
+  const api = document.getElementById('eApi').value;
+  document.getElementById('apiHint').textContent = API_HINT[api] ? T(API_HINT[api]) : '';
+  // Ollama: model listesi makineden canlı → elle liste alanı yok
+  const live = api === 'ollama';
+  document.getElementById('eModels').style.display = live ? 'none' : '';
+  document.getElementById('modelsLbl').innerHTML = live
+    ? `${T('Model list')} <span class="muted" style="text-transform:none;letter-spacing:0">— ${T('read live from Ollama; choose the default and hidden models with ★ / 🙈 in the table')}</span>`
+    : T('Model list (one model per line)');
+  document.querySelectorAll('.p-ollama').forEach(e => e.style.display = api === 'ollama' ? '' : 'none');
+  document.querySelectorAll('.p-local').forEach(e => e.style.display = api === 'ollama' || api === 'openai' ? '' : 'none');
+  updateModelList();
+}
+
+function updateModelList() {
+  const cat = _edit ? (D.backends.find(b => b.name === _edit)?.catalog.models || []).map(m => m.name) : [];
+  const typed = document.getElementById('eModels').value.split('\n').map(m => m.trim()).filter(Boolean);
+  document.getElementById('eModelList').innerHTML = [...new Set([...cat, ...typed])].map(m => `<option value="${Hub.esc(m)}">`).join('');
+}
+
+function openEdit(name = null) {
+  _edit = name;
+  const b = name ? D.backends.find(x => x.name === name) : {api: 'openai', params: {temperature: 0, max_tokens: 1024}};
+  document.getElementById('editTitle').textContent = name ? `✏️ ${name}` : '+ ' + T('New backend');
+  document.getElementById('presetRow').style.display = name ? 'none' : '';
+  document.getElementById('ePreset').value = '';
+  document.getElementById('keyState').innerHTML = name && b.env_key
+    ? (b.has_key ? `— ${T('current:')} <span class="mono">${Hub.esc(b.key_hint || T('set'))}</span>` : `— <span style="color:var(--yellow)">${T('not set')}</span>`) : '';
+  document.getElementById('eErr').textContent = '';
+  fill(b);
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEdit() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveEdit() {
+  const err = document.getElementById('eErr'); err.textContent = '';
+  const params = {};
+  ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx'].forEach(k => {
+    const el = document.getElementById(`p_${k}`);
+    if (el.offsetParent !== null && el.value.trim() !== '') params[k] = el.value.trim();
+  });
+  const name = document.getElementById('eName').value.trim().toLowerCase();
+  const body = {
+    rename: name, api: document.getElementById('eApi').value, url: document.getElementById('eUrl').value.trim(),
+    env_key: document.getElementById('eEnvKey').value.trim(), api_key: document.getElementById('eKey').value.trim(),
+    default_model: document.getElementById('eDefault').value.trim(),
+    models: document.getElementById('eModels').value.split('\n'), notes: document.getElementById('eNotes').value.trim(), params,
+  };
+  if (!name) { err.textContent = T('Name is required'); return; }
+  if (!_edit && D.backends.some(b => b.name === name)) { err.textContent = T("'{name}' already exists", {name}); return; }
+  const res = await fetch(`/api/llm-models/${encodeURIComponent(_edit || name)}`, {
+    method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  const d = await res.json();
+  if (!d.success) { err.textContent = d.error || T('Could not save'); return; }
+  closeEdit();
+  await load();
+  Hub.toast('✓ ' + T('{name} saved', {name: d.backend.name}));
+}
+
+async function del(name) {
+  if (!confirm(T('Delete backend "{name}"? (The key in .env is not deleted; old experiments keep their saved settings)', {name}))) return;
+  const d = await (await fetch(`/api/llm-models/${encodeURIComponent(name)}`, {method: 'DELETE'})).json();
+  if (!d.success) { Hub.toast(d.error || T('Could not delete'), 'err'); return; }
+  await load();
+  Hub.toast(T('{name} deleted', {name}));
+}
+
+async function load() {
+  D = await (await fetch('/api/llm-models')).json();
+  render();
+}
+
+Hub.ready().then(async () => {
+  document.getElementById('ePreset').innerHTML = Object.keys(PRESETS).map(k => `<option value="${k}">${T(PRESET_LABEL[k])}</option>`).join('');
+  document.getElementById('ePreset').addEventListener('change', e => {
+    const p = PRESETS[e.target.value];
+    if (p) fill({...p, notes: T(p.notes), params: {temperature: 0, max_tokens: 1024}});
+  });
+  document.getElementById('eApi').innerHTML = ['ollama', 'anthropic', 'gemini', 'openai', 'replay'].map(a => `<option>${a}</option>`).join('');
+  document.getElementById('eApi').addEventListener('change', apiChanged);
+  document.getElementById('eModels').addEventListener('input', updateModelList);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeEdit(); closeModelParams(); } });
+  await load();
+});
+</script>
+{% endblock %}

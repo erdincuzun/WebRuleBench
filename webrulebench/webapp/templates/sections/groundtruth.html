@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="toolbar">
+  <input type="search" id="q" class="picker" placeholder="{{ T('Search domain, name or country...') }}">
+  <select id="fStatus" title="{{ T('Status') }}">
+    <option value="pending">⏳ {{ T("Awaiting compilation") }}</option>
+    <option value="stale">⚠ {{ T("Has updates") }}</option>
+    <option value="approved">✓ {{ T("All approved") }}</option>
+    <option value="">{{ T("All sites") }}</option>
+  </select>
+  <span class="muted" id="count"></span>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>{{ T("Site") }}</th><th>{{ T("Country") }}</th><th>{{ T("Layouts") }}</th><th>{{ T("Annotators") }}</th><th>{{ T("CSS status") }}</th><th>{{ T("Last compiled") }}</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="7" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li>Bir siteye tıklayın: o sitenin layout'ları ve her layout'un kural dili bazında onay durumu listelenir.</li>
+  <li>Layout satırındaki <b>⚙ Derle</b> (admin) ya da <b>👁 İncele</b> ile derleme sayfası açılır.</li>
+  <li>Derleme sayfasında annotatörlerin seçimleri yan yana görünür; öneriyi <b>Otomatik Seç</b> ile uygulayın, gerekirse hücreye tıklayarak değiştirin, <b>GT'ye Kaydet</b>.</li>
+</ol>
+<h3>Durumlar</h3>
+<ul>
+  <li><span class="pill auto">✓ onaylı</span> GT var ve derlemeden sonra annotatörler değişiklik yapmamış.</li>
+  <li><span class="pill req">⚠ güncelleme var</span> Derlemeden sonra en az bir annotatör kuralını değiştirmiş — yeniden derleyin.</li>
+  <li><span class="pill">○ GT yok</span> Bu kural dili için henüz GT oluşturulmamış.</li>
+  <li><b>Derleme bekleyen</b>: annotatörü olan ama GT'si olmayan ya da güncellemesi olan en az bir layout/kural dili.</li>
+</ul>
+<h3>Katman 1 — Selector uyumu</h3>
+<p>Her alan için annotatörlerin kuralları yazım farklarından arındırılır (boşluk, sınıf sırası, tırnak) ve <b>kural uyumu</b> hesaplanır:
+  aynı kuralı yazan annotatör çiftlerinin oranı. ≥ 0.6 yüksek (✓), 0.4–0.6 orta (~), &lt; 0.4 düşük (!). Öneri: en sık yazılan kural.
+  Tek annotatörlü alanlarda hesaplanmaz. Fleiss κ, layout'lar konu sayılarak veri seti düzeyinde Rapor → Annotation &amp; GT sekmesinde verilir;
+  farklı yazılmış ama aynı içeriği çıkaran kurallar Katman 2'de (içerik skoru) görünür.</p>
+<h3>Katman 2 — İçerik skoru</h3>
+<p>Örnek bir sayfada her selector'ın çıkardığı metin referansla (mevcut GT, yoksa başka bir annotatör) exact match, Jaccard, ROUGE-1/2/L ile
+  karşılaştırılır. Öneri: en yüksek ROUGE-L. İki katman bilerek tek skora indirgenmez.</p>
+<h3>Yetki</h3>
+<p>Herkes görüntüleyebilir; seçim yapmak ve GT'ye kaydetmek yalnızca admin'e açıktır. Onaylanan kurallar
+  <span class="mono">ground_truth/approved/&lt;domain&gt;.json</span> dosyasına yazılır ve sonraki tüm otomatik skorlamada referans olur.</p>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li>Click a site: its layouts and the approval status of each layout per rule language are listed.</li>
+  <li>The compilation page opens with <b>⚙ Compile</b> (admin) or <b>👁 Review</b> in a layout row.</li>
+  <li>On the compilation page the annotators' rules are shown side by side; apply the suggestion with <b>Auto select</b>, change it by clicking a cell if needed, then <b>Save to GT</b>.</li>
+</ol>
+<h3>Statuses</h3>
+<ul>
+  <li><span class="pill auto">✓ approved</span> GT exists and the annotators have made no changes since the compilation.</li>
+  <li><span class="pill req">⚠ has updates</span> At least one annotator has changed their rules since the compilation — compile again.</li>
+  <li><span class="pill">○ no GT</span> No GT has been created for this rule language yet.</li>
+  <li><b>Awaiting compilation</b>: at least one layout / rule language that has annotators but no GT, or that has updates.</li>
+</ul>
+<h3>Layer 1 — Selector agreement</h3>
+<p>For each field the annotators' rules are normalized (spaces, class order, quotes) and the <b>rule agreement</b> is computed:
+  the share of annotator pairs that wrote the same rule. ≥ 0.6 high (✓), 0.4–0.6 moderate (~), &lt; 0.4 low (!). Suggestion: the most frequent rule.
+  It is not computed for fields with a single annotator. Fleiss κ is reported at dataset level in Reports → Annotation &amp; GT, with layouts as subjects;
+  rules written differently but extracting the same content show up in layer 2 (content score).</p>
+<h3>Layer 2 — Content score</h3>
+<p>On a sample page the text extracted by each selector is compared with a reference (the existing GT, otherwise another annotator) using exact match, Jaccard and ROUGE-1/2/L.
+  Suggestion: the highest ROUGE-L. The two layers are deliberately not reduced to a single score.</p>
+<h3>Permissions</h3>
+<p>Everyone can view; making selections and saving to GT is available to admins only. Approved rules are written to
+  <span class="mono">ground_truth/approved/&lt;domain&gt;.json</span> and become the reference for all subsequent automatic scoring.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _all = [];
+const fmtDate = iso => iso ? new Date(iso).toLocaleString(LOCALE, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : '—';
+
+function statusPills(s) {
+  return [
+    s.approved ? `<span class="pill auto" title="${T('Approved layouts')}">✓ ${s.approved}</span>` : '',
+    s.stale    ? `<span class="pill req" title="${T('Changed since compilation')}">⚠ ${s.stale}</span>` : '',
+    s.none     ? `<span class="pill" title="${T('No GT')}">○ ${s.none}</span>` : '',
+  ].join(' ');
+}
+
+function render() {
+  const q  = document.getElementById('q').value.toLowerCase();
+  const fs = document.getElementById('fStatus').value;
+  const list = _all.filter(s =>
+    (!q || [s.domain, s.name, s.country].some(v => (v || '').toLowerCase().includes(q))) &&
+    (!fs || (fs === 'pending' ? s.pending > 0 : fs === 'stale' ? s.stale > 0 : (s.stale === 0 && s.none === 0))));
+  document.getElementById('count').textContent = T('{n} / {total} sites', {n: list.length, total: _all.length});
+  document.getElementById('rows').innerHTML = list.length ? list.map(s => {
+    const go = `/ground-truth/${encodeURIComponent(s.domain)}`;
+    return `
+    <tr class="clickable" onclick="location.href='${go}'">
+      <td><a class="mono" href="${go}">${Hub.esc(s.domain)}</a>${s.pending ? ` <span class="pill req" title="${T('Layouts awaiting compilation')}">⏳ ${s.pending}</span>` : ''}</td>
+      <td>${Hub.esc(s.country)}</td>
+      <td class="num">${s.layouts}</td>
+      <td class="num">${s.annotators}</td>
+      <td>${statusPills(s)}</td>
+      <td class="mono">${fmtDate(s.last_compiled)}</td>
+      <td><a class="btn sm primary" href="${go}">${T('Layouts')} →</a></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="empty">${fs === 'pending' ? '🎉 ' + T('No sites awaiting compilation') : T('No matching sites')}</td></tr>`;
+}
+
+Hub.ready().then(async () => {
+  _all = (await (await fetch('/api/gt/overview')).json()).sites || [];
+  // bekleyen yoksa tüm siteleri göster
+  if (!_all.some(s => s.pending)) document.getElementById('fStatus').value = '';
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('fStatus').addEventListener('change', render);
+  render();
+});
+</script>
+{% endblock %}

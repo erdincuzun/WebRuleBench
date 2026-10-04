@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="javascript:history.length > 1 ? history.back() : location.href = '/'">← {{ T("Back") }}</a>
+  <h1>👥 {{ T("Users") }}{% include "_help_btn.html" %}</h1>
+  <p>{{ T("Annotator and admin accounts. Log in with a username + token; a token is shown only once, when it is generated.") }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="denied" class="empty" style="display:none">🔒 {{ T("This page is for admins only.") }}</div>
+<div id="page" style="display:none">
+  <div class="toolbar">
+    <input type="text" id="nName" placeholder="{{ T('new username (e.g. annotator6)') }}" style="width:240px">
+    <select id="nRole"><option value="user">{{ T("annotator") }}</option><option value="admin">{{ T("admin") }}</option></select>
+    <button type="button" class="btn primary" onclick="create()">{{ T("+ New user") }}</button>
+    <label class="muted" style="margin-left:auto;display:flex;gap:6px;align-items:center;cursor:pointer">
+      <input type="checkbox" id="showInactive" checked onchange="render()"> {{ T("Show inactive") }}</label>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>{{ T("User") }}</th><th>{{ T("Role") }}</th><th>{{ T("Status") }}</th><th>{{ T("Last login") }}</th><th title="{{ T('Number of sites with an annotation file') }}">{{ T("Sites") }}</th>
+        <th>{{ T("Last annotation") }}</th><th>{{ T("Experiments") }}</th><th>{{ T("Token") }}</th><th></th></tr></thead>
+      <tbody id="rows"><tr><td colspan="9" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-overlay" id="tokModal">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="tokTitle" style="width:min(560px,100%)">
+    <div class="modal-head"><div class="panel-title" id="tokTitle">{{ T("Token") }}</div></div>
+    <div class="modal-content">
+      <p id="tokIntro"></p>
+      <div class="toolbar" style="margin:0;flex-wrap:nowrap">
+        <input type="text" id="tokVal" readonly style="flex:1;font-size:13px">
+        <button type="button" class="btn primary" onclick="copyTok()">📋 {{ T("Copy") }}</button>
+      </div>
+      <p class="readonly-note">⚠ {{ T('This token will not be shown again. Send it to the person through a secure channel. If it is lost, generate a new one with "Reset token".') }}</p>
+      <div class="toolbar" style="margin:0"><button type="button" class="btn" onclick="closeTok()">{{ T("Copied, close") }}</button></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block help_title %}👥 {{ T("Users") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>İşlemler</h3>
+<ul>
+  <li><b>+ Yeni kullanıcı</b>: güçlü bir token otomatik üretilir ve <b>bir kez</b> gösterilir.</li>
+  <li><b>Token yenile</b>: yeni token üretir; eski token ve onunla açılmış bütün oturumlar (diğer cihazlar dahil) hemen kapanır.
+    Kendi token'ınızı yenilerseniz bu oturum açık kalır ve tarayıcıda kayıtlı token güncellenir.</li>
+  <li><b>Rol</b>: annotatör ↔ admin. Son admin'in rolü düşürülemez.</li>
+  <li><b>Pasifleştir</b>: kullanıcı giriş yapamaz ve açık oturumları kapanır; annotation'ları, κ hesabına katkısı ve geçmişi korunur.
+    Kullanıcı silinmez — annotation, derleme ve deney kayıtları kullanıcı adına bağlıdır. Son admin ve kendi hesabınız pasifleştirilemez.</li>
+</ul>
+<h3>Güvenlik</h3>
+<p>Token'lar <span class="mono">data/users.json</span>'da düz metin değil, tuzlu SHA-256 özeti olarak saklanır; dosya ele geçse bile token okunamaz.
+  Hatalı giriş denemeleri yavaşlatılır ve hata mesajı kullanıcı adının var olup olmadığını söylemez. Her işlem
+  <span class="mono">dataset/deletion_audit.log</span>'a yazılır.</p>
+<h3>Admin token'ını unuttum</h3>
+<p>Başka bir admin varsa sizin token'ınızı bu sayfadan yeniler. Tek admin sizseniz sunucu makinesinde:</p>
+<pre class="cli">webrulebench users reset-token &lt;kullanıcı&gt;
+webrulebench users create-admin &lt;kullanıcı&gt;   <span class="c"># ilk kurulum / yeni admin</span>
+webrulebench users list</pre>
+<p>Web üzerinden kurtarma bilerek yoktur: sunucu dosyalarına erişebilen kişi zaten <span class="mono">users.json</span>'u değiştirebilir.</p>
+{% else %}
+<h3>Actions</h3>
+<ul>
+  <li><b>+ New user</b>: a strong token is generated automatically and shown <b>once</b>.</li>
+  <li><b>Reset token</b>: generates a new token; the old token and all sessions opened with it (including other devices) are closed immediately.
+    If you reset your own token, this session stays open and the token saved in the browser is updated.</li>
+  <li><b>Role</b>: annotator ↔ admin. The last admin cannot be demoted.</li>
+  <li><b>Deactivate</b>: the user cannot log in and their open sessions are closed; their annotations, their contribution to κ and their history are kept.
+    Users are not deleted — annotation, compilation and experiment records are tied to the username. The last admin and your own account cannot be deactivated.</li>
+</ul>
+<h3>Security</h3>
+<p>Tokens are stored in <span class="mono">data/users.json</span> not as plain text but as salted SHA-256 hashes; even if the file is compromised, tokens cannot be read.
+  Failed login attempts are slowed down and the error message does not reveal whether the username exists. Every action is written to
+  <span class="mono">dataset/deletion_audit.log</span>.</p>
+<h3>I forgot the admin token</h3>
+<p>If there is another admin, they can reset your token on this page. If you are the only admin, on the server machine run:</p>
+<pre class="cli">webrulebench users reset-token &lt;user&gt;
+webrulebench users create-admin &lt;user&gt;   <span class="c"># first setup / new admin</span>
+webrulebench users list</pre>
+<p>There is deliberately no recovery over the web: anyone with access to the server files can already change <span class="mono">users.json</span>.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let U = [];
+const fmt = iso => iso ? new Date(iso).toLocaleString(LOCALE, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : '<span class="muted">—</span>';
+
+function render() {
+  const showIn = document.getElementById('showInactive').checked;
+  const me = Hub.me?.username;
+  document.getElementById('rows').innerHTML = U.filter(u => showIn || u.active).map(u => {
+    const n = Hub.esc(u.username), self = u.username === me;
+    return `<tr style="${u.active ? '' : 'opacity:.55'}">
+      <td><b class="mono">${n}</b>${self ? ` <span class="pill">${T('you')}</span>` : ''}</td>
+      <td><select onchange="setRole('${n}', this.value, this)" ${u.active ? '' : 'disabled'}>
+        <option value="user" ${u.role === 'user' ? 'selected' : ''}>${T('annotator')}</option>
+        <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>${T('admin')}</option></select></td>
+      <td>${u.active ? `<span class="pill auto">${T('active')}</span>` : `<span class="pill">${T('inactive')}</span>`}</td>
+      <td class="mono" style="font-size:11px">${fmt(u.last_login)}</td>
+      <td class="num">${u.sites}</td>
+      <td class="mono" style="font-size:11px">${fmt(u.last_annotation)}</td>
+      <td class="num">${u.experiments}</td>
+      <td class="mono muted" style="font-size:10px">${u.token_rotated_at ? T('reset {date}', {date: fmt(u.token_rotated_at)}) : T('initial token')}</td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" onclick="resetTok('${n}')" ${u.active ? '' : 'disabled'}>🔑 ${T('Reset token')}</button>
+        ${u.active
+          ? `<button class="btn sm danger" onclick="setActive('${n}', false)" ${self ? `disabled title="${T('You cannot deactivate your own account')}"` : ''}>⏸ ${T('Deactivate')}</button>`
+          : `<button class="btn sm" onclick="setActive('${n}', true)">▶ ${T('Activate')}</button>`}
+      </td></tr>`;
+  }).join('') || `<tr><td colspan="9" class="empty">${T('No users')}</td></tr>`;
+}
+
+async function api(path, body) {
+  const r = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})});
+  return r.json();
+}
+
+async function create() {
+  const name = document.getElementById('nName').value.trim().toLowerCase();
+  if (!name) { Hub.toast(T('Enter a username'), 'err'); return; }
+  const d = await api('/api/admin/users', {username: name, role: document.getElementById('nRole').value});
+  if (!d.success) { Hub.toast(d.error, 'err'); return; }
+  document.getElementById('nName').value = '';
+  showTok('✓ ' + T('{user} created', {user: d.username}), T('Login token of user {user}:', {user: `<b class="mono">${Hub.esc(d.username)}</b>`}), d.token);
+  load();
+}
+
+async function resetTok(name) {
+  const self = name === Hub.me?.username;
+  if (!confirm(self ? T('Reset your own token? Your sessions on other devices will be closed; this session stays open.')
+                    : T('Generate a new token for {user}? The old token and open sessions become invalid immediately.', {user: name}))) return;
+  const d = await api(`/api/admin/users/${encodeURIComponent(name)}/token`);
+  if (!d.success) { Hub.toast(d.error, 'err'); return; }
+  if (d.self) {        // tarayıcıda hatırlanan giriş bilgisini güncelle
+    try { localStorage.setItem('llmwb_username', name); localStorage.setItem('llmwb_token', d.token); } catch (e) {}
+  }
+  showTok(`🔑 ${name} — ${T('new token')}`, (d.self ? T('New token for {user} (the login saved in this browser was updated):', {user: `<b class="mono">${Hub.esc(name)}</b>`}) : T('New token for {user}:', {user: `<b class="mono">${Hub.esc(name)}</b>`})), d.token);
+  load();
+}
+
+async function setRole(name, role, sel) {
+  const d = await api(`/api/admin/users/${encodeURIComponent(name)}/role`, {role});
+  if (!d.success) { Hub.toast(d.error, 'err'); sel.value = role === 'admin' ? 'user' : 'admin'; return; }
+  Hub.toast(`${name}: ${role === 'admin' ? T('admin') : T('annotator')}`);
+  load();
+}
+
+async function setActive(name, active) {
+  if (!active || confirm(T('Activate {user}?', {user: name}))) {
+    if (!active && !confirm(T('Deactivate {user}? They will not be able to log in and their open sessions will be closed; their annotations are kept.', {user: name}))) return;
+    const d = await api(`/api/admin/users/${encodeURIComponent(name)}/active`, {active});
+    if (!d.success) { Hub.toast(d.error, 'err'); return; }
+    Hub.toast(`${name}: ${active ? T('active') : T('inactive')}`);
+    load();
+  }
+}
+
+function showTok(title, intro, token) {
+  document.getElementById('tokTitle').textContent = title;
+  document.getElementById('tokIntro').innerHTML = intro;
+  document.getElementById('tokVal').value = token;
+  document.getElementById('tokModal').classList.add('open');
+  document.getElementById('tokVal').select();
+}
+function copyTok() {
+  const v = document.getElementById('tokVal').value;
+  navigator.clipboard?.writeText(v).then(() => Hub.toast(T('Copied')), () => { document.getElementById('tokVal').select(); document.execCommand('copy'); });
+}
+function closeTok() { document.getElementById('tokVal').value = ''; document.getElementById('tokModal').classList.remove('open'); }
+
+async function load() {
+  const r = await fetch('/api/admin/users');
+  if (!r.ok) { document.getElementById('denied').style.display = ''; document.getElementById('page').style.display = 'none'; return; }
+  U = (await r.json()).users;
+  document.getElementById('page').style.display = '';
+  render();
+}
+Hub.ready().then(load);
+</script>
+{% endblock %}

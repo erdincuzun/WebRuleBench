@@ -1,0 +1,57 @@
+{
+ "seed": null,
+ "eligible": 70,
+ "criteria": "article layout named 'Article 1', >=3 GT pages, euzun rules present; top 10 by GT pages (ties: alphabetical)",
+ "sites": [
+  {
+   "domain": "525.az",
+   "layout_id": "layout-1",
+   "gt_pages": 49
+  },
+  {
+   "domain": "abante.com.ph",
+   "layout_id": "layout-1",
+   "gt_pages": 45
+  },
+  {
+   "domain": "akipress.com",
+   "layout_id": "layout-1",
+   "gt_pages": 44
+  },
+  {
+   "domain": "alayam.com",
+   "layout_id": "layout-1",
+   "gt_pages": 42
+  },
+  {
+   "domain": "20minutos.es",
+   "layout_id": "layout-2",
+   "gt_pages": 41
+  },
+  {
+   "domain": "abendzeitung.de",
+   "layout_id": "layout-1",
+   "gt_pages": 41
+  },
+  {
+   "domain": "aljazeera.com",
+   "layout_id": "layout-2",
+   "gt_pages": 41
+  },
+  {
+   "domain": "24chasa.bg",
+   "layout_id": "layout-1",
+   "gt_pages": 40
+  },
+  {
+   "domain": "adevarul.ro",
+   "layout_id": "layout-1",
+   "gt_pages": 40
+  },
+  {
+   "domain": "agenciabrasil.ebc.com.br",
+   "layout_id": "layout-2",
+   "gt_pages": 40
+  }
+ ]
+}

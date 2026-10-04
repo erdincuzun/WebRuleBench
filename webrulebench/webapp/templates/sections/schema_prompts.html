@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/schema">← {{ T("Templates & Prompts") }}</a>
+  <h1><span id="title">{{ T("Prompts:") }} <span class="mono">{{ tid }}</span></span>{% include "_help_btn.html" %}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="split">
+  <div class="plist" id="plist"></div>
+  <div class="panel" id="panel"><div class="empty">{{ T("Loading...") }}</div></div>
+</div>
+{% endblock %}
+
+{% block help_title %}💬 {{ T("Prompts") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li><b>⚙ Otomatik prompt</b>: kural dilini (css / xpath / regex) seçip şablondan üretilen prompt'u görün — salt okunurdur.</li>
+  <li><b>📋 Kopyala → yeni prompt</b> ya da <b>+ Yeni prompt</b>: otomatik prompt'tan başlayıp düzenleyin, bir ad verin ve <b>Oluştur</b>.</li>
+  <li>Eklenmiş bir prompt'u seçip düzenleyin, <b>Kopyasını oluştur</b> ile varyant türetin veya silin.</li>
+</ol>
+<h3>Otomatik prompt</h3>
+<p>Bilerek sadedir: yalnızca görevi, bulunacak alanları (şablondaki açıklamalarıyla) ve JSON çıktı biçimini söyler. Şablon değişince kendiliğinden güncellenir.
+  Daha ayrıntılı kurallar denemek için kopyalayıp genişletin (örnek: <b>Ayrıntılı kurallar</b> prompt'ları).</p>
+<h3>Sistem ve kullanıcı prompt'u</h3>
+<p><b>Sistem prompt'u</b> görevi ve kuralları tanımlar. <b>Kullanıcı prompt'u</b> her sayfa için gönderilir ve
+  <span class="mono">{skeleton}</span> (zorunlu) ile <span class="mono">{domain}</span> yer tutucularını içerir; düz süslü parantez için
+  <span class="mono">{{ '{{ }}' }}</span> yazın.</p>
+<h3>Paylaşım</h3>
+<p>Eklenen prompt'ları herkes görür; yalnızca sahibi veya admin değiştirip silebilir. Sürüm tutulmaz — kaydetmek üzerine yazar.</p>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li><b>⚙ Automatic prompt</b>: choose the rule language (css / xpath / regex) and view the prompt generated from the template — it is read-only.</li>
+  <li><b>📋 Copy → new prompt</b> or <b>+ New prompt</b>: start from the automatic prompt, edit it, give it a name and click <b>Create</b>.</li>
+  <li>Select an added prompt to edit it, derive a variant with <b>Duplicate</b>, or delete it.</li>
+</ol>
+<h3>Automatic prompt</h3>
+<p>It is deliberately plain: it only states the task, the fields to find (with their descriptions from the template) and the JSON output format. It updates itself when the template changes.
+  To try more detailed rules, copy it and extend it (example: the <b>Detailed rules</b> prompts).</p>
+<h3>System and user prompt</h3>
+<p>The <b>system prompt</b> defines the task and the rules. The <b>user prompt</b> is sent for every page and contains the
+  <span class="mono">{skeleton}</span> (required) and <span class="mono">{domain}</span> placeholders; for a literal curly brace write
+  <span class="mono">{{ '{{ }}' }}</span>.</p>
+<h3>Sharing</h3>
+<p>Everyone can see added prompts; only the owner or an admin can change or delete them. No versions are kept — saving overwrites.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TID = {{ tid|tojson }};
+const RULE_TYPES = ['css', 'xpath', 'regex'];
+let AUTO = {}, PROMPTS = [];
+let sel = {kind: 'auto', rt: 'css'};   // {kind:'auto', rt} | {kind:'prompt', id} | {kind:'new', draft}
+let dirty = false;
+
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+function confirmLeave() { return !dirty || confirm(T('Unsaved changes will be lost. Continue?')); }
+function setDirty(v = true) {
+  dirty = v;
+  const el = document.getElementById('dirty');
+  if (el) el.textContent = v ? '● ' + T('unsaved changes') : '';
+}
+function canEdit(p) { return p && (Hub.isAdmin() || p.owner === Hub.me?.username); }
+
+function syncUrl() {
+  const q = new URLSearchParams();
+  if (sel.kind === 'auto') q.set('rt', sel.rt);
+  if (sel.kind === 'prompt') q.set('p', sel.id);
+  history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
+}
+
+// Vazgeçilen düzenlemeler PROMPTS içindeki yerel kopyada kalmasın diye yeniden yüklenir
+async function discard() {
+  if (!confirmLeave()) return false;
+  if (dirty) { dirty = false; await reload(); }
+  return true;
+}
+
+async function select(s) {
+  if (!await discard()) return;
+  sel = s;
+  syncUrl(); renderList(); renderPanel();
+}
+
+function renderList() {
+  const el = document.getElementById('plist');
+  el.innerHTML = `
+    <div class="plist-group">${T('Default')}</div>
+    <button class="pitem ${sel.kind === 'auto' ? 'active' : ''}" onclick="select({kind:'auto', rt:'${sel.rt || 'css'}'})">
+      <div class="pitem-name">⚙ ${T('Automatic prompt')}</div>
+      <div class="pitem-meta">${T('generated from the template · read-only')}</div>
+    </button>
+    <div class="plist-group">${T('Added prompts ({n})', {n: PROMPTS.length})}</div>
+    ${PROMPTS.map(p => `
+      <button class="pitem ${sel.kind === 'prompt' && sel.id === p.id ? 'active' : ''}" onclick="select({kind:'prompt', id:'${Hub.esc(p.id)}'})">
+        <div class="pitem-name">${Hub.esc(p.name)}</div>
+        <div class="pitem-meta">${Hub.esc(p.rule_type)} · ${Hub.esc(p.owner)} · ${Hub.esc((p.updated_at || '').slice(0, 10))}</div>
+      </button>`).join('') || `<div class="muted">${T('No prompts added yet.')}</div>`}
+    <button class="btn ${sel.kind === 'new' ? 'primary' : ''}" style="justify-content:center;margin-top:6px" onclick="newFrom('css')">${T('+ New prompt')}</button>`;
+}
+
+function seg(active, onclickFn, disabled = false) {
+  return `<div class="seg">${RULE_TYPES.map(rt =>
+    `<button type="button" class="${rt === active ? 'on' : ''}" ${disabled ? 'disabled' : `onclick="${onclickFn}('${rt}')"`}>${rt}</button>`).join('')}</div>`;
+}
+
+function renderPanel() {
+  const el = document.getElementById('panel');
+  if (sel.kind === 'auto') {
+    const a = AUTO[sel.rt];
+    el.innerHTML = `
+      <div class="panel-head">
+        <div class="panel-title">⚙ ${T('Automatic prompt')}</div>
+        <span class="pill auto">${T('read-only')}</span>
+        ${seg(sel.rt, 'autoRt')}
+        <button class="btn" style="margin-left:auto" onclick="newFrom('${sel.rt}')">📋 ${T('Copy → new prompt')}</button>
+      </div>
+      <p class="muted">${T('Deliberately plain: it only states the task, the fields to find (with their descriptions from the template) and the output format.')}
+        ${T('To change it, {link}; to try more detailed rules, copy it and create a new prompt (example: the "Detailed rules" prompts).', {link: `<a href="/schema/${encodeURIComponent(TID)}" style="color:var(--accent)">${T('edit the template')}</a>`})}</p>
+      <div class="lbl">${T('System prompt')}</div>
+      <textarea class="prompt-ta" readonly spellcheck="false">${Hub.esc(a.system)}</textarea>
+      <div class="lbl">${T('User prompt')}</div>
+      <textarea class="prompt-ta short" readonly spellcheck="false">${Hub.esc(a.user)}</textarea>`;
+    return;
+  }
+
+  const isNew = sel.kind === 'new';
+  const p = isNew ? sel.draft : PROMPTS.find(x => x.id === sel.id);
+  if (!p) { el.innerHTML = `<div class="empty">${T('Prompt not found')}</div>`; return; }
+  const ro = !isNew && !canEdit(p);
+  const dis = ro ? 'readonly' : '';
+
+  el.innerHTML = `
+    <div class="panel-head">
+      <div class="panel-title">${isNew ? T('+ New prompt') : Hub.esc(p.name)}</div>
+      ${isNew ? '' : `<span class="pill">${Hub.esc(p.owner)}</span>`}
+      ${ro ? `<span class="pill">🔒 ${T('read-only')}</span>` : ''}
+    </div>
+    <div class="form-row">
+      <label class="grow">${T('Name')}<input type="text" id="pName" value="${Hub.esc(p.name || '')}" placeholder="${T('e.g. short rules + few-shot')}" ${dis}></label>
+      <div class="form-field">${T('Rule language')} ${seg(p.rule_type, 'draftRt', ro)}</div>
+    </div>
+    <div class="form-row">
+      <label class="grow">${T('Note (optional — what does this prompt try?)')}<input type="text" id="pNotes" value="${Hub.esc(p.notes || '')}" ${dis}></label>
+    </div>
+    <div class="lbl">${T('System prompt')}
+      ${ro ? '' : `<button class="btn sm" onclick="fillAuto()">↺ ${T('Fill with the automatic prompt ({rt})', {rt: Hub.esc(p.rule_type)})}</button>`}</div>
+    <textarea class="prompt-ta" id="pSystem" spellcheck="false" ${dis}>${Hub.esc(p.system_prompt || '')}</textarea>
+    <div class="lbl">${T('User prompt')} <span class="muted" style="text-transform:none;letter-spacing:0">— ${T('{domain} and {skeleton} placeholders; for a literal curly brace use {braces}', {domain: '<span class="mono">{domain}</span>', skeleton: '<span class="mono">{skeleton}</span>', braces: '<span class="mono">{{ '{{ }}' }}</span>'})}</span></div>
+    <textarea class="prompt-ta short" id="pUser" spellcheck="false" ${dis}>${Hub.esc(p.user_prompt || '')}</textarea>
+    <div class="sticky-actions">
+      ${ro ? '' : `<button class="btn primary" onclick="save()">💾 ${isNew ? T('Create') : T('Save')}</button>`}
+      ${isNew ? '' : `<button class="btn" onclick="duplicate()">📋 ${T('Duplicate')}</button>`}
+      <a class="btn" href="/schema">← ${Hub.esc(T('Templates & Prompts'))}</a>
+      <span class="dirty-dot" id="dirty"></span>
+      ${!isNew && !ro ? '<button class="btn danger" style="margin-left:auto" onclick="del()">🗑 ' + T('Delete') + '</button>' : ''}
+    </div>`;
+  el.querySelectorAll('input, textarea').forEach(x => x.addEventListener('input', () => setDirty()));
+  setDirty(dirty);
+}
+
+function autoRt(rt) { sel = {kind: 'auto', rt}; syncUrl(); renderList(); renderPanel(); }
+
+function readForm(p) {
+  p.name          = document.getElementById('pName').value.trim();
+  p.notes         = document.getElementById('pNotes').value.trim();
+  p.system_prompt = document.getElementById('pSystem').value;
+  p.user_prompt   = document.getElementById('pUser').value;
+  return p;
+}
+function current() { return sel.kind === 'new' ? sel.draft : PROMPTS.find(x => x.id === sel.id); }
+
+// Kural dili değişince prompt metni kendiliğinden değişmez; "Otomatik ile doldur" ile yenilenebilir
+function draftRt(rt) {
+  const p = readForm(current());
+  p.rule_type = rt;
+  setDirty(); renderPanel();
+}
+
+function fillAuto() {
+  const p = readForm(current());
+  const hasText = p.system_prompt.trim() || p.user_prompt.trim();
+  if (hasText && !confirm(T('Replace the system and user prompts with the automatic prompt?'))) return;
+  p.system_prompt = AUTO[p.rule_type].system;
+  p.user_prompt   = AUTO[p.rule_type].user;
+  setDirty(); renderPanel();
+}
+
+async function newFrom(rt, base = null) {
+  if (!base && !await discard()) return;
+  sel = {kind: 'new', draft: base ? {...base, name: base.name + ' (' + T('copy') + ')'} : {
+    name: '', rule_type: rt, notes: '', system_prompt: AUTO[rt].system, user_prompt: AUTO[rt].user,
+  }};
+  dirty = true;
+  syncUrl(); renderList(); renderPanel();
+}
+
+function duplicate() {
+  const p = readForm({...current()});
+  dirty = false;
+  newFrom(p.rule_type, {name: p.name, rule_type: p.rule_type, notes: p.notes, system_prompt: p.system_prompt, user_prompt: p.user_prompt});
+}
+
+async function save() {
+  const isNew = sel.kind === 'new';
+  const p = readForm({...current()});
+  const body = {name: p.name, rule_type: p.rule_type, notes: p.notes, system_prompt: p.system_prompt, user_prompt: p.user_prompt};
+  const res = await fetch(isNew ? `/api/templates/${encodeURIComponent(TID)}/prompts` : `/api/template-prompts/${encodeURIComponent(p.id)}`, {
+    method: isNew ? 'POST' : 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body),
+  });
+  const d = await res.json();
+  if (!d.success) { Hub.toast(d.error || T('Save error'), 'err'); return; }
+  await reload();
+  dirty = false;
+  sel = {kind: 'prompt', id: d.prompt.id};
+  syncUrl(); renderList(); renderPanel();
+  Hub.toast((isNew ? T('Prompt created') : T('Prompt saved')) + ' ✓');
+}
+
+async function del() {
+  const p = current();
+  if (!confirm(T('Delete "{name}"?', {name: p.name}))) return;
+  const d = await (await fetch(`/api/template-prompts/${encodeURIComponent(p.id)}`, {method: 'DELETE'})).json();
+  if (!d.success) { Hub.toast(d.error || T('Delete error'), 'err'); return; }
+  await reload();
+  dirty = false;
+  sel = {kind: 'auto', rt: p.rule_type};
+  syncUrl(); renderList(); renderPanel();
+  Hub.toast(T('Prompt deleted'));
+}
+
+async function reload() {
+  const d = await (await fetch(`/api/templates/${encodeURIComponent(TID)}/prompts`)).json();
+  AUTO = d.auto; PROMPTS = d.prompts || [];
+}
+
+Hub.ready().then(async () => {
+  const [tRes] = await Promise.all([fetch(`/api/templates/${encodeURIComponent(TID)}`)]);
+  if (!tRes.ok) { document.getElementById('panel').innerHTML = `<div class="empty">${T('Template not found.')} <a class="btn sm" href="/schema">← ${T('Back to list')}</a></div>`; return; }
+  const t = await tRes.json();
+  document.getElementById('title').innerHTML = `💬 ${Hub.esc(t.icon || '📄')} ${Hub.esc(t.name)} <span class="pill mono">${Hub.esc(TID)}</span>`;
+  await reload();
+  const q = new URLSearchParams(location.search);
+  if (q.get('p') && PROMPTS.some(p => p.id === q.get('p'))) sel = {kind: 'prompt', id: q.get('p')};
+  else if (RULE_TYPES.includes(q.get('rt'))) sel = {kind: 'auto', rt: q.get('rt')};
+  renderList(); renderPanel();
+});
+</script>
+{% endblock %}

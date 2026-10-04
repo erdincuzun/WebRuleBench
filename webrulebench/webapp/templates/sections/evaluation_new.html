@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/evaluation">← {{ T("LLM Evaluation") }}</a>
+  <h1>⚖ {{ T("Comparative experiment") }}{% include "_help_btn.html" %}</h1>
+  <p>{{ T("Run one or more models in one or more rule languages on the same layouts. Each model × rule language is one experiment; if several are selected, a comparison group that runs them one after another is created.") }}
+    {{ T("To try a single model quickly:") }}
+    <a href="/evaluation/quick" style="color:var(--accent)">⚡ {{ T("Quick test") }}</a>.</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="panel" style="margin-bottom:18px">
+  <div class="form-row">
+    <label class="grow">{{ T("Name (automatic if left empty)") }}<input type="text" id="fName" placeholder="{{ T('e.g. Local models — CSS and Regex') }}"></label>
+    <label style="width:190px">{{ T("HTML cleaning") }}<select id="fStrategy"></select></label>
+  </div>
+
+  <div class="lbl">{{ T("Models") }} <span class="muted" style="text-transform:none;letter-spacing:0">— {{ T("to add models / enter keys:") }} <a href="/settings/llm-models" style="color:var(--accent)">⚙ {{ T("LLM Models") }}</a></span></div>
+  <div id="modelList" class="model-grid"></div>
+
+  <div class="lbl">{{ T("Rule languages") }}</div>
+  <div class="toolbar" id="langList" style="margin-bottom:6px"></div>
+
+  <div class="form-row" style="margin-top:10px">
+    <label>{{ T("Sample page") }}
+      <select id="fSample"><option value="first">{{ T("The layout's first GT page") }}</option><option value="random">{{ T("Random (with seed)") }}</option></select></label>
+    <label style="width:110px;display:none" id="seedWrap">{{ T("Seed") }}<input type="text" id="fSeed" value="42"></label>
+    <label style="width:170px" title="{{ T('Maximum number of GT pages to score (empty = all)') }}">{{ T("Max pages") }}<input type="text" id="fMaxPages" placeholder="{{ T('all') }}"></label>
+    <label style="width:170px" title="{{ T('Delay between LLM calls (for rate-limited APIs)') }}">{{ T("Delay (s)") }}<input type="text" id="fDelay" value="0"></label>
+  </div>
+
+  <div class="lbl">{{ T("Prompt (per template)") }}</div>
+  <div id="promptRows" class="form-row" style="margin-bottom:0"></div>
+</div>
+
+<h2>{{ T("Scope") }} <span class="muted" id="scopeCount" style="font-weight:400"></span></h2>
+<div class="toolbar">
+  <input type="search" id="q" class="picker" placeholder="{{ T('Search site, layout...') }}">
+  <select id="fTmpl" title="{{ T('Template') }}"><option value="">{{ T("All templates") }}</option></select>
+  <button type="button" class="btn sm" onclick="selectVisible(true)">{{ T("Select visible") }}</button>
+  <button type="button" class="btn sm" onclick="selectVisible(false)">{{ T("Deselect visible") }}</button>
+</div>
+<div class="table-wrap" style="max-height:420px;overflow:auto">
+  <table>
+    <thead><tr><th></th><th>{{ T("Site") }}</th><th>{{ T("Layout") }}</th><th>{{ T("Template") }}</th><th>{{ T("GT pages") }}</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="5" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+
+<div class="sticky-actions">
+  <button type="button" class="btn primary" id="startBtn" onclick="start()">▶ {{ T("Start") }}</button>
+  <span class="muted" id="estimate"></span>
+  <span class="login-err" id="err"></span>
+</div>
+{% endblock %}
+
+{% block help_title %}⚖ {{ T("Comparative experiment") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Nasıl çalışır?</h3>
+<p>Seçilen her <b>model × kural dili</b> bir deneydir. Tek yapılandırma seçilirse tek bir deney, birden çok seçilirse bir <b>karşılaştırma grubu</b>
+  oluşur; grup üyeleri sırayla çalışır (yerel modeller aynı anda yüklenmesin diye). Her deneyde layout başına bir örnek sayfa LLM'e gönderilir,
+  kurallar layout'un tüm GT sayfalarında skorlanır.</p>
+<h3>Alanlar</h3>
+<ul>
+  <li><b>Modeller</b>: <a href="/settings/llm-models" style="color:var(--accent)">⚙ LLM Modelleri</a> sayfasındaki backend + model çiftleri. Anahtarı olmayan bulut modeli hata verir.</li>
+  <li><b>Kural dilleri</b>: CSS, XPath, Regex; <b>CSS→REGEXN</b> LLM'in CSS ürettiği, regex'e REGEXN ile (yalnızca örnek sayfa kullanılarak) çevrildiği koşuldur.
+    Skorlama her zaman GT içeriğiyle yapılır.</li>
+  <li><b>HTML temizleme</b>: <span class="mono">whitelist</span> (önerilen) ya da <span class="mono">raw_regex</span>.</li>
+  <li><b>Prompt</b>: seçilen kural dilleri aynı prompt diline düşüyorsa (ör. yalnızca CSS ya da CSS + CSS→REGEXN) şablon başına deneme prompt'u seçilebilir;
+    aksi halde her kural dili kendi otomatik prompt'unu kullanır. <b>👁</b> ile LLM'e gidecek metni görün.</li>
+  <li><b>Örnek sayfa</b>: rastgele seçimde seed kaydedilir; aynı seed aynı sayfaları seçer. <b>En fazla sayfa</b> yalnızca skorlama süresini kısaltır.</li>
+</ul>
+{% else %}
+<h3>How does it work?</h3>
+<p>Each selected <b>model × rule language</b> is one experiment. If a single configuration is selected one experiment is created; if several are selected a
+  <b>comparison group</b> is created, whose members run one after another (so that local models are not loaded at the same time). In each experiment one
+  sample page per layout is sent to the LLM and the rules are scored on all GT pages of the layout.</p>
+<h3>Fields</h3>
+<ul>
+  <li><b>Models</b>: backend + model pairs from the <a href="/settings/llm-models" style="color:var(--accent)">⚙ LLM Models</a> page. A cloud model without a key fails.</li>
+  <li><b>Rule languages</b>: CSS, XPath, Regex; <b>CSS→REGEXN</b> is the condition where the LLM generates CSS that is converted to regex with REGEXN (using only the sample page).
+    Scoring is always done against the GT content.</li>
+  <li><b>HTML cleaning</b>: <span class="mono">whitelist</span> (recommended) or <span class="mono">raw_regex</span>.</li>
+  <li><b>Prompt</b>: if the selected rule languages map to the same prompt language (e.g. only CSS, or CSS + CSS→REGEXN), a prompt variant can be chosen per template;
+    otherwise each rule language uses its own automatic prompt. Use <b>👁</b> to see the text that will be sent to the LLM.</li>
+  <li><b>Sample page</b>: for random selection the seed is saved; the same seed selects the same pages. <b>Max pages</b> only shortens scoring time.</li>
+</ul>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let O = null, _chosen = new Set(), _models = new Set(), _langs = new Set(['css']);
+const key = l => `${l.domain}|${l.layout_id}`;
+const LANGS = [['css', 'CSS'], ['xpath', 'XPath'], ['regex', 'Regex'], ['regexn', 'CSS→REGEXN']];
+const llmRule = l => l === 'regexn' ? 'css' : l;
+
+function renderModels() {
+  document.getElementById('modelList').innerHTML = O.backends.map(b => {
+    const ms = [...new Set([b.default_model, ...b.models].filter(Boolean))];
+    return ms.map(m => {
+      const k = `${b.name}|${m}`;
+      return `<label class="model-chip ${_models.has(k) ? 'on' : ''} ${b.has_key ? '' : 'nokey'}" title="${b.has_key ? '' : T('API key not set')}">
+        <input type="checkbox" ${_models.has(k) ? 'checked' : ''} onchange="toggleModel('${Hub.esc(k)}', this.checked)">
+        <span class="mono">${Hub.esc(m)}</span><span class="muted">${Hub.esc(b.name)}${b.info?.[m]?.parameter_size ? ' · ' + Hub.esc(b.info[m].parameter_size) : ''}${b.has_key ? '' : ' · ⚠ ' + T('no key')}</span></label>`;
+    }).join('');
+  }).join('');
+}
+function toggleModel(k, on) { on ? _models.add(k) : _models.delete(k); renderModels(); updateCount(); }
+
+function renderLangs() {
+  document.getElementById('langList').innerHTML = LANGS.map(([k, label]) =>
+    `<label class="model-chip ${_langs.has(k) ? 'on' : ''}"><input type="checkbox" ${_langs.has(k) ? 'checked' : ''}
+       onchange="toggleLang('${k}', this.checked)"> <b>${label}</b></label>`).join('');
+}
+function toggleLang(k, on) { on ? _langs.add(k) : _langs.delete(k); renderLangs(); renderPrompts(); updateCount(); }
+
+function promptRuleType() {
+  const s = new Set([..._langs].map(llmRule));
+  return s.size === 1 ? [...s][0] : null;
+}
+
+function renderPrompts() {
+  const used = new Set(O.layouts.map(l => l.template_id));
+  const lr = promptRuleType();
+  const el = document.getElementById('promptRows');
+  el.innerHTML = Object.entries(O.templates).filter(([tid]) => used.has(tid)).map(([tid, t]) => {
+    if (!lr) return `<div class="grow" style="min-width:260px"><div class="form-field">${Hub.esc((t.icon || '') + ' ' + t.name)}</div>
+      <div class="toolbar" style="margin:4px 0 0">${[...new Set([..._langs].map(llmRule))].map(r =>
+        `<button type="button" class="btn sm" onclick="Hub.showPrompt('${Hub.esc(tid)}', '${r}', 'auto')">👁 ${T('Automatic ({rule})', {rule: r})}</button>`).join('')}</div></div>`;
+    const ps = t.prompts.filter(p => p.rule_type === lr);
+    return `<div class="grow" style="min-width:260px"><div class="form-field">${Hub.esc((t.icon || '') + ' ' + t.name)}</div>
+      <div class="toolbar" style="margin:4px 0 0;flex-wrap:nowrap">
+        <select data-tid="${Hub.esc(tid)}" style="flex:1"><option value="auto">${T('Automatic prompt ({rule})', {rule: lr})}</option>
+          ${ps.map(p => `<option value="${Hub.esc(p.id)}">${Hub.esc(p.name)} · ${Hub.esc(p.owner || '')}</option>`).join('')}</select>
+        <button type="button" class="btn sm" title="${T('Show prompt')}" onclick="Hub.showPrompt('${Hub.esc(tid)}', '${lr}', this.previousElementSibling.value)">👁</button>
+      </div></div>`;
+  }).join('') + `<div class="muted" style="flex-basis:100%">${lr
+    ? `${T('Only prompt variants written for {rule} are listed.', {rule: lr})} ${T('New prompt:')} <a href="/schema" style="color:var(--accent)">${T('Templates & Prompts')}</a>.`
+    : T('Since several prompt languages are selected, each rule language uses its own automatic prompt.')}</div>`;
+}
+
+function visible() {
+  const q = document.getElementById('q').value.toLowerCase(), t = document.getElementById('fTmpl').value;
+  return O.layouts.filter(l => (!t || l.template_id === t) &&
+    (!q || [l.domain, l.site_name, l.name, l.layout_id].some(v => (v || '').toLowerCase().includes(q))));
+}
+function renderRows() {
+  document.getElementById('rows').innerHTML = visible().map(l => `
+    <tr class="clickable" onclick="toggle('${key(l)}')">
+      <td><input type="checkbox" ${_chosen.has(key(l)) ? 'checked' : ''} onclick="event.stopPropagation(); toggle('${key(l)}')"></td>
+      <td><span class="mono">${Hub.esc(l.domain)}</span><div class="muted">${Hub.esc(l.country || '')}</div></td>
+      <td>${Hub.esc(l.name)} <span class="muted mono">${Hub.esc(l.layout_id)}</span></td>
+      <td>${Hub.esc(O.templates[l.template_id]?.name || l.template_id)}${l.template_inferred ? ` <span class="pill" title="${T('Template taken from page_type')}">page_type</span>` : ''}</td>
+      <td class="num">${l.pages}</td>
+    </tr>`).join('') || `<tr><td colspan="5" class="empty">${T('No matching layouts')}</td></tr>`;
+  updateCount();
+}
+function toggle(k) { _chosen.has(k) ? _chosen.delete(k) : _chosen.add(k); renderRows(); }
+function selectVisible(on) { visible().forEach(l => on ? _chosen.add(key(l)) : _chosen.delete(key(l))); renderRows(); }
+
+function updateCount() {
+  const maxp  = parseInt(document.getElementById('fMaxPages').value) || Infinity;
+  const pages = O.layouts.filter(l => _chosen.has(key(l))).reduce((a, l) => a + Math.min(l.pages, maxp), 0);
+  const n = _models.size * _langs.size;
+  document.getElementById('scopeCount').textContent = '— ' + T('{n} / {total} layouts selected', {n: _chosen.size, total: O.layouts.length});
+  document.getElementById('estimate').textContent = !_models.size ? T('Select at least one model')
+    : !_langs.size ? T('Select at least one rule language') : !_chosen.size ? T('Select at least one layout from the scope')
+    : T('{n} configurations ({models} models × {langs} rule languages)', {n, models: _models.size, langs: _langs.size})
+      + (n > 1 ? ' — ' + T('comparison group') : '')
+      + ' · ' + T('{calls} LLM calls · each scores {pages} pages', {calls: n * _chosen.size, pages});
+  document.getElementById('startBtn').textContent = '▶ ' + (n > 1 ? T('Start comparison') : T('Start experiment'));
+}
+
+async function start() {
+  const err = document.getElementById('err'); err.textContent = '';
+  if (!_models.size || !_langs.size || !_chosen.size) { err.textContent = T('Select models, rule languages and scope'); return; }
+  const prompts = {};
+  document.querySelectorAll('#promptRows select[data-tid]').forEach(s => { if (s.value !== 'auto') prompts[s.dataset.tid] = s.value; });
+  const sampleMode = document.getElementById('fSample').value;
+  const common = {
+    strategy: document.getElementById('fStrategy').value,
+    sample: sampleMode === 'random' ? {mode: 'random', seed: document.getElementById('fSeed').value} : {mode: 'first'},
+    max_pages: document.getElementById('fMaxPages').value.trim() || null,
+    delay_s: document.getElementById('fDelay').value.trim() || 0,
+  };
+  const configs = [];
+  _models.forEach(mk => {
+    const [backend, ...m] = mk.split('|');
+    _langs.forEach(l => configs.push({...common, backend, model: m.join('|'),
+      rule_type: l === 'regexn' ? 'regex' : l, rule_source: l === 'regexn' ? 'llm_css_regexn' : 'llm',
+      prompts: promptRuleType() ? prompts : {}}));
+  });
+  const layouts = O.layouts.filter(l => _chosen.has(key(l))).map(l => ({domain: l.domain, layout_id: l.layout_id}));
+  const btn = document.getElementById('startBtn'); btn.disabled = true;
+  const res = await fetch('/api/experiments', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: document.getElementById('fName').value, configs, layouts})});
+  const d = await res.json();
+  if (!d.success) { err.textContent = d.error || T('Could not start'); btn.disabled = false; return; }
+  location.href = d.group ? `/evaluation/group/${encodeURIComponent(d.group)}` : `/evaluation/${encodeURIComponent(d.id)}`;
+}
+
+Hub.ready().then(async () => {
+  O = await (await fetch('/api/experiments/options')).json();
+  const loc = O.backends.find(b => b.name === 'ollama' && b.has_key);
+  if (loc) _models.add(`ollama|${loc.default_model}`);
+  document.getElementById('fStrategy').innerHTML = O.strategies.map(s => `<option ${s === 'whitelist' ? 'selected' : ''}>${Hub.esc(s)}</option>`).join('');
+  document.getElementById('fTmpl').innerHTML += [...new Set(O.layouts.map(l => l.template_id))]
+    .map(t => `<option value="${Hub.esc(t)}">${Hub.esc(O.templates[t]?.name || t)}</option>`).join('');
+  document.getElementById('fSample').addEventListener('change', e => { document.getElementById('seedWrap').style.display = e.target.value === 'random' ? '' : 'none'; });
+  document.getElementById('q').addEventListener('input', renderRows);
+  document.getElementById('fTmpl').addEventListener('change', renderRows);
+  document.getElementById('fMaxPages').addEventListener('input', updateCount);
+  renderModels(); renderLangs(); renderPrompts(); renderRows();
+});
+</script>
+{% endblock %}

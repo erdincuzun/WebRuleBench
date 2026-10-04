@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/evaluation">← {{ T("LLM Evaluation") }}</a>
+  <h1><span id="title">⚖ {{ T("Comparison") }}</span>{% include "_help_btn.html" %}</h1>
+  <div class="toolbar" id="head" style="margin:6px 0 0"></div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="tabs" id="tabs"></div>
+<div id="body"><div class="empty">{{ T("Loading...") }}</div></div>
+{% endblock %}
+
+{% block help_title %}⚖ {{ T("Comparison group") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Sekmeler</h3>
+<ul>
+  <li><b>Sıralama</b>: her model × kural dili deneyi; ortalama, genelleme (örnek sayfa dışı), MATCH oranı, hata, token ve süre. Satıra tıklayınca deneyin ayrıntısı açılır.</li>
+  <li><b>Isı haritası</b>: model × alan ortalaması — hangi model hangi alanda iyi.</li>
+  <li><b>Layout bazında</b>: her layout'ta modellerin ortalaması; en iyisi vurgulanır, en altta kazanma sayıları.</li>
+  <li><b>Cross check</b>: modellerin aynı sayfa ve alanda çıkardığı içeriklerin <i>birbiriyle</i> uyumu (ikili ROUGE-1 F1 / Jaccard / exact match ortalaması,
+    GT'den bağımsız). Kurallar yeniden çalıştırılır; LLM çağrısı yapılmaz.</li>
+</ul>
+<h3>Cross check nasıl okunur?</h3>
+<ul>
+  <li><b>⚠ Şüpheli</b>: modeller birbirine çok uyuyor (≥ 0.9) ama GT skoru düşük (&lt; 0.3) — ya modeller aynı hatayı yapıyor ya da GT'de sorun var; GT'yi kontrol edin.</li>
+  <li><b>🧩 Zor</b>: modeller birbirinden ayrışıyor (uyum &lt; 0.3) — iskelette ayırt edici işaret az olan alanlar.</li>
+  <li>İki modelin de boş döndürdüğü hücreler hesaba katılmaz.</li>
+</ul>
+<h3>Çalışma</h3>
+<p>Üyeler sırayla çalışır. Durdurulan ya da sunucu yeniden başladığı için yarıda kalan grup <b>▶ Sürdür</b> ile kaldığı yerden devam eder.</p>
+{% else %}
+<h3>Tabs</h3>
+<ul>
+  <li><b>Ranking</b>: each model × rule language experiment; mean, generalisation (outside the sample page), MATCH rate, errors, tokens and time. Click a row to open the experiment's details.</li>
+  <li><b>Heat map</b>: model × field mean — which model is good at which field.</li>
+  <li><b>Per layout</b>: the models' mean on each layout; the best one is highlighted, win counts are at the bottom.</li>
+  <li><b>Cross check</b>: agreement of the contents that the models extract on the same page and field <i>with each other</i> (mean pairwise ROUGE-1 F1 / Jaccard / exact match,
+    independent of the GT). The rules are run again; no LLM calls are made.</li>
+</ul>
+<h3>How to read the cross check</h3>
+<ul>
+  <li><b>⚠ Suspicious</b>: the models agree strongly (≥ 0.9) but the GT score is low (&lt; 0.3) — either the models make the same mistake or there is a problem in the GT; check the GT.</li>
+  <li><b>🧩 Hard</b>: the models diverge from each other (agreement &lt; 0.3) — fields with few distinctive markers in the skeleton.</li>
+  <li>Cells where both models returned nothing are not counted.</li>
+</ul>
+<h3>Running</h3>
+<p>Members run one after another. A group that was stopped, or interrupted because the server restarted, continues where it stopped with <b>▶ Resume</b>.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const GID = {{ gid|tojson }};
+let G = null, _tab = 'rank', _cc = null, _pick = new Set(), _timer = null;
+const sc = v => v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--red)';
+const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${sc(v)}">${(v * 100).toFixed(1)}</span>`;
+const bar = v => v === null || v === undefined ? '<span class="muted">—</span>'
+  : `<div class="scorebar"><div style="width:${v * 100}%;background:${sc(v)}"></div></div> ${pct(v)}`;
+// [css sınıfı, ikon, İngilizce etiket] — etiket görüntülenirken T() ile çevrilir
+const STATUS = {queued: ['', '⏳', 'queued'], running: ['auto', '▶', 'running'], done: ['auto', '✓', 'done'],
+  cancelled: ['', '■', 'stopped'], interrupted: ['req', '⚠', 'interrupted'], error: ['req', '✗', 'error']};
+const statusOf = s => { const x = STATUS[s]; return x ? [x[0], `${x[1]} ${T(x[2])}`] : ['', s]; };
+const TABS = [['rank', '🏆', 'Ranking'], ['heat', '🟩', 'Heat map'], ['layout', '🗂', 'Per layout'], ['cross', '🔀', 'Cross check']];
+if (TABS.some(([k]) => k === location.hash.slice(1))) _tab = location.hash.slice(1);   // ör. raporlardan #cross
+const ruleOf = c => c.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : c.rule_type.toUpperCase();
+const short = m => `${m.config.backend_snapshot?.model || m.config.model || m.config.backend} · ${ruleOf(m.config)}`;
+
+// Ollama model bilgisi (deney kaydındaki backend_snapshot.model_info)
+function modelInfo(c) {
+  const i = c.backend_snapshot?.model_info;
+  return i ? ` · ${Hub.esc(i.parameter_size || '')} ${Hub.esc(i.quantization || '')} · <span class="mono" title="${Hub.esc(i.digest || '')}">${Hub.esc((i.digest || '').slice(0, 8))}</span>` : '';
+}
+
+function canEdit() { return Hub.isAdmin() || G.created_by === Hub.me?.username; }
+function groupStatus() {
+  const st = G.members.map(m => m.status);
+  return st.includes('running') ? 'running' : st.includes('queued') ? 'queued' : st.includes('interrupted') ? 'interrupted'
+    : st.includes('error') ? 'error' : st.every(s => s === 'done') ? 'done' : 'cancelled';
+}
+
+function renderHead() {
+  const s = groupStatus(), [cls, label] = statusOf(s);
+  const done = G.members.reduce((a, m) => a + (m.progress?.done || 0), 0), total = G.members.reduce((a, m) => a + (m.progress?.total || 0), 0);
+  const running = s === 'running' || s === 'queued';
+  document.getElementById('title').innerHTML = `⚖ ${Hub.esc(G.name)} <span class="pill mono">${Hub.esc(G.id)}</span>`;
+  const c = G.members[0].config;
+  document.getElementById('head').innerHTML = `
+    <span class="pill ${cls}">${label}</span>
+    ${running || s === 'interrupted' ? `<div class="progress" style="width:160px"><div style="width:${total ? 100 * done / total : 0}%"></div></div>` : ''}
+    <span class="muted mono">${T('{done} / {total} LLM calls', {done, total})}</span>
+    <span class="pill">${T('{n} configurations', {n: G.members.length})}</span><span class="pill">${T('{n} layouts', {n: G.scope.length})}</span>
+    <span class="pill">${T('cleaning:')} ${Hub.esc(c.strategy)}</span>
+    <span class="pill">${c.sample.mode === 'random' ? T('sample: random (seed {seed})', {seed: c.sample.seed}) : T('sample: first GT page')}</span>
+    ${c.max_pages ? `<span class="pill">${T('at most {n} pages', {n: c.max_pages})}</span>` : ''}
+    <span class="pill">${Hub.esc(G.created_by)} · ${new Date(G.created_at).toLocaleString(LOCALE)}</span>
+    <span style="margin-left:auto"></span>
+    <button class="btn sm" id="pairBtn" ${_pick.size === 2 ? '' : 'disabled'} onclick="pair()" title="${T('Tick two rows in the ranking')}">⚖ ${T('Pairwise compare')}</button>
+    ${running && canEdit() ? `<button class="btn sm" onclick="act('cancel')">■ ${T('Stop')}</button>` : ''}
+    ${!running && s !== 'done' && canEdit() ? `<button class="btn sm primary" onclick="act('resume')">▶ ${T('Resume')}</button>` : ''}
+    ${!running && canEdit() ? `<button class="btn sm danger" onclick="del()">🗑 ${T('Delete')}</button>` : ''}`;
+  document.getElementById('tabs').innerHTML = TABS.map(([k, ic, l]) =>
+    `<button type="button" class="tab ${k === _tab ? 'active' : ''}" onclick="setTab('${k}')">${ic} ${T(l)}</button>`).join('');
+}
+
+function setTab(t) { _tab = t; renderHead(); renderBody(); }
+
+function renderBody() {
+  const el = document.getElementById('body');
+  if (_tab === 'rank') el.innerHTML = rankTab();
+  else if (_tab === 'heat') el.innerHTML = heatTab();
+  else if (_tab === 'layout') el.innerHTML = layoutTab();
+  else crossTab(el);
+}
+
+function rankTab() {
+  const ms = [...G.members].sort((a, b) => (b.summary?.mean ?? -1) - (a.summary?.mean ?? -1));
+  return `<div class="table-wrap"><table>
+    <thead><tr><th></th><th>#</th><th>${T('Model · rule')}</th><th>${T('Mean')}</th><th>${T('Sample')}</th><th>${T('Generalisation')}</th><th>MATCH</th><th>${T('Errors')}</th><th>${T('Tokens')}</th><th>${T('LLM time')}</th><th>${T('Status')}</th></tr></thead>
+    <tbody>${ms.map((m, i) => {
+      const s = m.summary || {}, lab = s.labels || {}, tot = Object.entries(lab).filter(([k]) => k !== 'NO_GT').reduce((a, [, v]) => a + v, 0);
+      const [cls, label] = statusOf(m.status);
+      return `<tr class="clickable" onclick="location.href='/evaluation/${encodeURIComponent(m.id)}'">
+        <td onclick="event.stopPropagation()"><input type="checkbox" ${_pick.has(m.id) ? 'checked' : ''} onchange="pickToggle('${m.id}', this.checked)"></td>
+        <td class="num">${s.mean !== undefined && s.mean !== null ? (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1) : ''}</td>
+        <td><b class="mono">${Hub.esc(m.config.backend_snapshot?.model || m.config.model || '')}</b> <span class="pill">${ruleOf(m.config)}</span>
+          <div class="muted" style="font-size:10px">${Hub.esc(m.config.backend)}${modelInfo(m.config)} · t=${m.config.backend_snapshot?.params?.temperature ?? '—'} · max ${m.config.backend_snapshot?.params?.max_tokens ?? '—'}</div></td>
+        <td class="num">${pct(s.mean)}</td><td class="num">${pct(s.sample_mean)}</td><td class="num">${pct(s.others_mean)}</td>
+        <td class="num">${tot ? `${(100 * (lab.MATCH || 0) / tot).toFixed(0)}%` : '—'}</td>
+        <td class="num">${s.failed ? `<span class="pill req">${s.failed}</span>` : '0'}</td>
+        <td class="num">${((s.prompt_tokens || 0) + (s.gen_tokens || 0)).toLocaleString(LOCALE)}</td>
+        <td class="num">${T('{s} s', {s: ((s.llm_ms || 0) / 1000).toFixed(0)})}</td>
+        <td><span class="pill ${cls}">${label}</span> <span class="muted mono" style="font-size:10px">${m.progress?.done ?? 0}/${m.progress?.total ?? 0}</span></td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+
+function heatTab() {
+  const fields = [...new Set(G.members.flatMap(m => Object.keys(m.summary?.per_field || {})))]
+    .filter(f => G.members.some(m => m.summary?.per_field?.[f] !== null && m.summary?.per_field?.[f] !== undefined));
+  const cell = v => v === null || v === undefined ? '<td class="heat" style="background:var(--bg)"><span class="muted">—</span></td>'
+    : `<td class="heat" style="background:${heatColor(v)}" title="${(v * 100).toFixed(1)}">${(v * 100).toFixed(0)}</td>`;
+  return `<div class="table-wrap"><table class="heatmap">
+    <thead><tr><th>${T('Model · rule')}</th>${fields.map(f => `<th class="mono">${Hub.esc(f)}</th>`).join('')}<th>${T('Mean')}</th></tr></thead>
+    <tbody>${G.members.map(m => `<tr><td><a href="/evaluation/${encodeURIComponent(m.id)}" class="mono">${Hub.esc(short(m))}</a></td>
+      ${fields.map(f => cell(m.summary?.per_field?.[f])).join('')}${cell(m.summary?.mean)}</tr>`).join('')}</tbody></table></div>
+    <p class="muted" style="margin-top:8px">${T('Cell: field mean (percent). Empty cell: no page has a GT value for that field.')}</p>`;
+}
+function heatColor(v) {   // kırmızı → sarı → yeşil, koyu tema
+  const h = Math.round(v * 120);
+  return `hsla(${h}, 65%, 40%, ${0.25 + v * 0.55})`;
+}
+
+function layoutTab() {
+  const key = l => `${l.domain}|${l.layout_id}`;
+  const maps = G.members.map(m => Object.fromEntries(m.layouts.map(l => [key(l), l])));
+  const wins = G.members.map(() => 0);
+  const rows = G.scope.map(sk => {
+    const k = `${sk.domain}|${sk.layout_id}`;
+    const vals = maps.map(mp => mp[k] ? (mp[k].error ? 'err' : mp[k].summary?.mean ?? null) : undefined);
+    const nums = vals.filter(v => typeof v === 'number');
+    const best = nums.length ? Math.max(...nums) : null;
+    if (best !== null && nums.length > 1) vals.forEach((v, i) => { if (v === best) wins[i]++; });
+    const name = maps.map(mp => mp[k]?.name).find(Boolean) || sk.layout_id;
+    return `<tr><td class="mono">${Hub.esc(sk.domain)}</td><td>${Hub.esc(name)} <span class="muted mono">${Hub.esc(sk.layout_id)}</span></td>
+      ${vals.map(v => v === undefined ? '<td class="muted">…</td>' : v === 'err' ? '<td><span class="pill req">✗</span></td>'
+        : `<td class="num ${v === best && nums.length > 1 ? 'winner' : ''}">${pct(v)}</td>`).join('')}</tr>`;
+  });
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>${T('Site')}</th><th>${T('Layout')}</th>${G.members.map(m => `<th class="mono" style="font-size:10px">${Hub.esc(short(m))}</th>`).join('')}</tr></thead>
+    <tbody>${rows.join('')}
+      <tr class="totals"><td colspan="2"><b>${T('Layouts won')}</b></td>${wins.map(w => `<td class="num"><b>${w}</b></td>`).join('')}</tr></tbody></table></div>`;
+}
+
+async function crossTab(el) {
+  if (!_cc) {
+    el.innerHTML = `<div class="empty">⏳ ${T('Computing agreement between models (rules are being re-run)…')}</div>`;
+    _cc = await (await fetch(`/api/experiment-groups/${encodeURIComponent(GID)}/cross-check`)).json();
+    if (_tab !== 'cross') return;
+  }
+  const c = _cc;
+  if (c.members < 2) { el.innerHTML = `<div class="empty">${T('Cross check needs at least two members with results.')}</div>`; return; }
+  const gtLink = x => `<a class="btn sm" href="/ground-truth/${encodeURIComponent(x.domain)}/${encodeURIComponent(x.layout_id)}">GT →</a>`;
+  const cellRows = list => list.length ? list.map(x => `<tr><td class="mono">${Hub.esc(x.domain)}</td><td class="mono">${Hub.esc(x.layout_id)}</td>
+      <td class="mono">${Hub.esc(x.field)}</td><td class="num">${x.pages}</td><td>${bar(x.agreement)}</td><td>${bar(x.gt)}</td><td>${gtLink(x)}</td></tr>`).join('')
+    : `<tr><td colspan="7" class="empty">${T('None')}</td></tr>`;
+  el.innerHTML = `
+    <p class="muted" style="margin-bottom:12px">${T('{n} models · {c} common layouts.', {n: c.members, c: c.common_layouts})} <b>${T('Agreement')}</b> = ${T("pairwise similarity of the contents the models extract on the same page and field (independent of the GT)")};
+      <b>GT</b> = ${T("mean of the models' GT scores")}.</p>
+    <div class="cards" style="margin-bottom:14px">
+      <div class="card"><div class="card-title">${T('Agreement per field')}</div>
+        <table class="mini"><thead><tr><th>${T('Field')}</th><th>${T('Agreement')}</th><th>GT</th></tr></thead><tbody>${Object.entries(c.fields)
+          .sort((a, b) => (a[1].agreement ?? 0) - (b[1].agreement ?? 0))
+          .map(([f, v]) => `<tr><td class="mono">${Hub.esc(f)}</td><td>${bar(v.agreement)}</td><td>${bar(v.gt)}</td></tr>`).join('')}</tbody></table></div>
+      <div class="card"><div class="card-title">${T('Agreement per layout')} <span class="muted" style="font-weight:400">(${T('lowest first')})</span></div>
+        <table class="mini"><thead><tr><th>${T('Layout')}</th><th>${T('Agreement')}</th><th>GT</th></tr></thead><tbody>${c.layouts.slice(0, 15).map(l =>
+          `<tr><td><span class="mono">${Hub.esc(l.domain)}</span> <span class="muted">${Hub.esc(l.layout_id)}</span></td><td>${bar(l.agreement)}</td><td>${bar(l.gt)}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+    <h2>⚠ ${T('Suspicious')} <span class="muted" style="font-weight:400">— ${T('the models agree (≥ 0.9) but do not match the GT (< 0.3): check the GT').replace('<', '&lt;')}</span></h2>
+    <div class="table-wrap" style="margin-bottom:14px"><table><thead><tr><th>${T('Site')}</th><th>${T('Layout')}</th><th>${T('Field')}</th><th>${T('Pages')}</th><th>${T('Agreement')}</th><th>GT</th><th></th></tr></thead>
+      <tbody>${cellRows(c.suspicious)}</tbody></table></div>
+    <h2>🧩 ${T('Hard')} <span class="muted" style="font-weight:400">— ${T('the models diverge from each other (agreement < 0.3)').replace('<', '&lt;')}</span></h2>
+    <div class="table-wrap"><table><thead><tr><th>${T('Site')}</th><th>${T('Layout')}</th><th>${T('Field')}</th><th>${T('Pages')}</th><th>${T('Agreement')}</th><th>GT</th><th></th></tr></thead>
+      <tbody>${cellRows(c.hard)}</tbody></table></div>`;
+}
+
+function pickToggle(id, on) {
+  on ? _pick.add(id) : _pick.delete(id);
+  if (_pick.size > 2) _pick.delete([..._pick][0]);
+  renderHead(); if (_tab === 'rank') renderBody();
+}
+function pair() { const [a, b] = [..._pick]; location.href = `/evaluation/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`; }
+
+async function act(a) {
+  const d = await (await fetch(`/api/experiment-groups/${encodeURIComponent(GID)}/${a}`, {method: 'POST'})).json();
+  if (!d.success && d.error) Hub.toast(d.error, 'err');
+  setTimeout(load, 600);
+}
+async function del() {
+  if (!confirm(T('Delete group "{name}" and its {n} experiments? The result files are deleted permanently.', {name: G.name, n: G.members.length}))) return;
+  const d = await (await fetch(`/api/experiment-groups/${encodeURIComponent(GID)}`, {method: 'DELETE'})).json();
+  if (d.success) location.href = '/evaluation'; else Hub.toast(d.error || T('Could not delete'), 'err');
+}
+
+async function load() {
+  const res = await fetch(`/api/experiment-groups/${encodeURIComponent(GID)}`);
+  if (!res.ok) { document.getElementById('body').innerHTML = `<div class="empty">${T('Group not found.')} <a class="btn sm" href="/evaluation">← ${T('List')}</a></div>`; return; }
+  G = await res.json();
+  const running = ['running', 'queued'].includes(groupStatus());
+  if (running) _cc = null;           // sonuçlar değişiyor → cross check yeniden hesaplanır
+  renderHead();
+  if (_tab !== 'cross' || !running) renderBody();
+  clearTimeout(_timer);
+  if (running) _timer = setTimeout(load, 4000);
+}
+Hub.ready().then(load);
+</script>
+{% endblock %}

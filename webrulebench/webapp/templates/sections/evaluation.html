@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="toolbar">
+  <a class="btn primary" href="/evaluation/quick">⚡ {{ T("Quick test") }}</a>
+  <a class="btn primary" href="/evaluation/new">⚖ {{ T("Comparative experiment") }}</a>
+  <button type="button" class="btn" id="cmpBtn" disabled onclick="compare()">⚖ {{ T("Compare (select 2)") }}</button>
+  <input type="search" id="q" class="picker" placeholder="{{ T('Search name, model, owner...') }}">
+  <span class="muted" id="count"></span>
+  <a class="btn sm" href="/settings/llm-models" style="margin-left:auto">⚙ {{ T("LLM Models") }}</a>
+  <a class="btn sm" data-admin href="/annotate?open=mcp">⚙ {{ T("MCP settings") }}</a>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th></th><th>{{ T("Experiment") }}</th><th>{{ T("Model") }}</th><th>{{ T("Rule") }}</th><th>{{ T("Prompt") }}</th><th>{{ T("Layout") }}</th>
+      <th title="{{ T('Mean over all pages') }}">{{ T("Mean") }}</th><th title="{{ T('Mean over pages other than the sample page — how well the rule generalises') }}">{{ T("Generalisation") }}</th>
+      <th>{{ T("Status") }}</th><th>{{ T("Date") }}</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="10" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Deney nedir?</h3>
+<p>Sabit bir yapılandırmanın (model, kural dili, prompt, temizleme stratejisi) seçilen layout'lara uygulanmasıdır. Her layout için
+  <b>bir örnek sayfa</b> LLM'e gönderilir ve bir kural seti üretilir (layout başına tek LLM çağrısı). Kurallar sonra layout'un
+  <b>tüm GT sayfalarında</b> LLM'siz çalıştırılır ve alan bazında GT içeriğiyle, şablondaki metrikle (ROUGE-1 F1, Jaccard, exact match) skorlanır.</p>
+<h3>Sütunlar</h3>
+<ul>
+  <li><b>Ortalama</b>: tüm sayfa × alan skorlarının ortalaması (GT'si olmayan alanlar hariç).</li>
+  <li><b>Genelleme</b>: örnek sayfa dışındaki sayfaların ortalaması — kural, LLM'in görmediği sayfalarda ne kadar çalışıyor.</li>
+  <li><b>Kural</b>: CSS / XPath / Regex; <span class="mono">CSS→REGEXN</span> LLM'in CSS ürettiği ve regex'e REGEXN ile çevrildiği koşuldur.</li>
+</ul>
+<h3>İki yol</h3>
+<ul>
+  <li><b>⚡ Hızlı test</b>: bir modeli tek bir layout'ta otomatik prompt ile dener; sonuç hemen görünür, kaydedilmez (istenirse kaydedilir).</li>
+  <li><b>⚖ Karşılaştırmalı deney</b>: bir ya da birden çok model × kural dili, seçilen layout'larda; birden çok seçilirse bir <b>grup</b> oluşur
+    (sıralama, ısı haritası, layout bazında kazanan ve modeller arası uyum — <b>cross check</b>).</li>
+</ul>
+<h3>Kullanım</h3>
+<ol>
+  <li>Deney arka planda çalışır, ilerlemesi burada görünür. Grup üyeleri tek satırda toplanır.</li>
+  <li>Bir satıra tıklayınca deneyin ayrıntıları (alan, şablon ve layout bazında skorlar, üretilen kurallar) açılır.</li>
+  <li>İki deneyi işaretleyip <b>⚖ Karşılaştır</b> ile ortak layout'larda yan yana görün.</li>
+</ol>
+<h3>Kayıt</h3>
+<p>Her deney <span class="mono">experiments/&lt;id&gt;.json</span> dosyasına yazılır: yapılandırma, kullanılan prompt'ların tam metni, üretilen kurallar,
+  sayfa × alan skorları, token ve süre. Sunucu yeniden başlarsa çalışan deney "yarıda kaldı" olur ve kaldığı yerden sürdürülebilir.
+  Deneyi giriş yapan herkes başlatabilir; durdurma/silme sahibine ve admin'e açıktır.</p>
+<h3>Komut satırı</h3>
+<pre class="cli"><span class="c"># Sayfayı yapısal iskelete indir</span>
+python -m webrulebench.pipeline.skeleton data/dataset/raw/&lt;domain&gt;/article_001.html --show
+
+<span class="c"># Seçilen backend ve kural diliyle kural üret</span>
+python -m webrulebench.pipeline.llm_extractor data/dataset/raw/&lt;domain&gt;/article_001.html --backend ollama --rule-type css</pre>
+{% else %}
+<h3>What is an experiment?</h3>
+<p>An experiment applies a fixed configuration (model, rule language, prompt, cleaning strategy) to the selected layouts. For each layout
+  <b>one sample page</b> is sent to the LLM and a rule set is generated (one LLM call per layout). The rules are then run without the LLM on
+  <b>all GT pages</b> of the layout and scored field by field against the GT content with the template's metric (ROUGE-1 F1, Jaccard, exact match).</p>
+<h3>Columns</h3>
+<ul>
+  <li><b>Mean</b>: mean of all page × field scores (fields without GT are excluded).</li>
+  <li><b>Generalisation</b>: mean over pages other than the sample page — how well the rule works on pages the LLM has not seen.</li>
+  <li><b>Rule</b>: CSS / XPath / Regex; <span class="mono">CSS→REGEXN</span> is the condition where the LLM generates CSS that is converted to regex with REGEXN.</li>
+</ul>
+<h3>Two ways</h3>
+<ul>
+  <li><b>⚡ Quick test</b>: tries one model on a single layout with the automatic prompt; the result is shown immediately and is not saved (it can be saved if you wish).</li>
+  <li><b>⚖ Comparative experiment</b>: one or more models × rule languages on the selected layouts; if several are selected a <b>group</b> is created
+    (ranking, heat map, per-layout winner and agreement between models — <b>cross check</b>).</li>
+</ul>
+<h3>Usage</h3>
+<ol>
+  <li>The experiment runs in the background and its progress is shown here. Group members are collected in a single row.</li>
+  <li>Click a row to open the experiment's details (scores per field, template and layout, generated rules).</li>
+  <li>Tick two experiments and use <b>⚖ Compare</b> to see them side by side on their common layouts.</li>
+</ol>
+<h3>Storage</h3>
+<p>Each experiment is written to <span class="mono">experiments/&lt;id&gt;.json</span>: configuration, full text of the prompts used, generated rules,
+  page × field scores, tokens and duration. If the server restarts, a running experiment becomes "interrupted" and can be resumed where it stopped.
+  Anyone who is logged in can start an experiment; stopping/deleting is open to its owner and admins.</p>
+<h3>Command line</h3>
+<pre class="cli"><span class="c"># Reduce a page to its structural skeleton</span>
+python -m webrulebench.pipeline.skeleton data/dataset/raw/&lt;domain&gt;/article_001.html --show
+
+<span class="c"># Generate rules with the selected backend and rule language</span>
+python -m webrulebench.pipeline.llm_extractor data/dataset/raw/&lt;domain&gt;/article_001.html --backend ollama --rule-type css</pre>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _all = [], _sel = new Set(), _timer = null;
+const fmtDate = iso => iso ? new Date(iso).toLocaleString(LOCALE, {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}) : '—';
+const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${scoreColor(v)}">${(v * 100).toFixed(1)}</span>`;
+function scoreColor(v) { return v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--red)'; }
+// [css sınıfı, ikon, İngilizce etiket] — etiket görüntülenirken T() ile çevrilir
+const STATUS = {
+  queued: ['', '⏳', 'queued'], running: ['auto', '▶', 'running'], done: ['auto', '✓', 'done'],
+  cancelled: ['', '■', 'stopped'], interrupted: ['req', '⚠', 'interrupted'], error: ['req', '✗', 'error'],
+};
+const statusOf = s => { const x = STATUS[s]; return x ? [x[0], `${x[1]} ${T(x[2])}`] : ['', s]; };
+
+function ruleLabel(c) { return c.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : c.rule_type.toUpperCase(); }
+function promptLabel(c) {
+  const n = Object.keys(c.prompts || {}).filter(t => c.prompts[t] && c.prompts[t] !== 'auto').length;
+  return n ? T('Prompt variant in {n} templates', {n}) : T('automatic');
+}
+
+// Grup üyeleri tek bir satırda toplanır (en iyi üyenin skoru gösterilir)
+function rowsOf(list) {
+  const out = [], seen = {};
+  list.forEach(e => {
+    const g = e.group?.id;
+    if (!g) { out.push(e); return; }
+    if (!seen[g]) { seen[g] = {isGroup: true, id: g, name: e.group.name, members: [], created_at: e.created_at, created_by: e.created_by}; out.push(seen[g]); }
+    seen[g].members.push(e);
+  });
+  return out;
+}
+
+function groupRow(g) {
+  const st = g.members.map(m => m.status);
+  const status = st.includes('running') ? 'running' : st.includes('queued') ? 'queued' : st.includes('interrupted') ? 'interrupted'
+    : st.includes('error') ? 'error' : st.every(x => x === 'done') ? 'done' : 'cancelled';
+  const [cls, label] = statusOf(status);
+  const best = [...g.members].filter(m => m.summary?.mean !== null && m.summary?.mean !== undefined)
+    .sort((a, b) => b.summary.mean - a.summary.mean)[0];
+  const done = g.members.reduce((a, m) => a + (m.progress?.done || 0), 0), total = g.members.reduce((a, m) => a + (m.progress?.total || 0), 0);
+  const go = `/evaluation/group/${encodeURIComponent(g.id)}`;
+  const models = [...new Set(g.members.map(m => m.config?.model || m.config?.backend))];
+  const rules = [...new Set(g.members.map(m => ruleLabel(m.config || {})))];
+  return `
+    <tr class="clickable" onclick="location.href='${go}'">
+      <td></td>
+      <td><a href="${go}"><b>⚖ ${Hub.esc(g.name)}</b></a><div class="muted mono" style="font-size:10px">${Hub.esc(g.id)} · ${Hub.esc(g.created_by || '')}</div></td>
+      <td class="mono" style="font-size:11px">${T('{n} models', {n: models.length})}<div class="muted">${Hub.esc(models.slice(0, 3).join(', '))}${models.length > 3 ? '…' : ''}</div></td>
+      <td>${rules.map(r => `<span class="pill">${r}</span>`).join(' ')}</td>
+      <td class="muted">${T('comparison')}</td>
+      <td class="num">${done} / ${total}</td>
+      <td class="num">${best ? pct(best.summary.mean) : pct(null)}${best ? `<div class="muted mono" style="font-size:10px">🥇 ${Hub.esc(best.config?.model || '')}</div>` : ''}</td>
+      <td class="num">${best ? pct(best.summary.others_mean) : pct(null)}</td>
+      <td><span class="pill ${cls}">${label}</span>${status === 'running' || status === 'queued' || status === 'interrupted'
+        ? `<div class="progress"><div style="width:${total ? 100 * done / total : 0}%"></div></div>` : ''}</td>
+      <td class="mono">${fmtDate(g.created_at)}</td>
+    </tr>`;
+}
+
+function render() {
+  const q = document.getElementById('q').value.toLowerCase();
+  const filtered = _all.filter(e => !q || [e.name, e.config?.model, e.config?.backend, e.created_by, e.group?.name].some(v => (v || '').toLowerCase().includes(q)));
+  const list = rowsOf(filtered);
+  document.getElementById('count').textContent = T('{n} records', {n: list.length});
+  document.getElementById('rows').innerHTML = list.length ? list.map(e => {
+    if (e.isGroup) return groupRow(e);
+    const c = e.config || {}, s = e.summary || {}, pr = e.progress || {};
+    const [cls, label] = statusOf(e.status);
+    const bar = e.status === 'running' || e.status === 'queued' || e.status === 'interrupted'
+      ? `<div class="progress"><div style="width:${pr.total ? 100 * pr.done / pr.total : 0}%"></div></div>` : '';
+    const go = `/evaluation/${encodeURIComponent(e.id)}`;
+    return `
+    <tr class="clickable" onclick="location.href='${go}'">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${_sel.has(e.id) ? 'checked' : ''} onchange="toggleSel('${e.id}', this.checked)" title="${T('Select for comparison')}"></td>
+      <td><a href="${go}"><b>${Hub.esc(e.name)}</b></a>${e.kind === 'quick' ? ` <span class="pill">⚡ ${T('quick test')}</span>` : ''}<div class="muted mono" style="font-size:10px">${Hub.esc(e.id)} · ${Hub.esc(e.created_by || '')}</div></td>
+      <td class="mono" style="font-size:11px">${Hub.esc(c.backend)}<div class="muted">${Hub.esc(c.model || T('default'))}</div></td>
+      <td><span class="pill">${ruleLabel(c)}</span></td>
+      <td class="muted">${promptLabel(c)}</td>
+      <td class="num">${pr.done ?? 0} / ${pr.total ?? 0}${s.failed ? ` <span class="pill req" title="${T('Failed layouts')}">${s.failed} ✗</span>` : ''}</td>
+      <td class="num">${pct(s.mean)}</td>
+      <td class="num">${pct(s.others_mean)}</td>
+      <td><span class="pill ${cls}">${label}</span>${bar}</td>
+      <td class="mono">${fmtDate(e.created_at)}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10" class="empty">${T('No experiments yet')} — <a href="/evaluation/quick" style="color:var(--accent)">⚡ ${T('Quick test')}</a> ${T('or')} <a href="/evaluation/new" style="color:var(--accent)">⚖ ${T('Comparative experiment')}</a></td></tr>`;
+  document.getElementById('cmpBtn').disabled = _sel.size !== 2;
+}
+
+function toggleSel(id, on) {
+  if (on) _sel.add(id); else _sel.delete(id);
+  if (_sel.size > 2) { _sel.delete([..._sel][0]); render(); }
+  document.getElementById('cmpBtn').disabled = _sel.size !== 2;
+}
+function compare() { const [a, b] = [..._sel]; location.href = `/evaluation/compare?a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`; }
+
+async function load() {
+  _all = (await (await fetch('/api/experiments')).json()).experiments || [];
+  render();
+  clearTimeout(_timer);
+  if (_all.some(e => e.status === 'running' || e.status === 'queued')) _timer = setTimeout(load, 3000);
+}
+
+Hub.ready().then(() => {
+  document.getElementById('q').addEventListener('input', render);
+  load();
+});
+</script>
+{% endblock %}

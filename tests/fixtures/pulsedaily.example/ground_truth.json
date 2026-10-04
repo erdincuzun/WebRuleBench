@@ -1,0 +1,17 @@
+{
+  "domain": "pulsedaily.example",
+  "file": "article_001.html",
+  "page_type": "article",
+  "selectors": {
+    "title": "[data-testid=\"headline\"]",
+    "body": "[data-testid=\"article-body\"]",
+    "author": "[data-testid=\"byline\"] a",
+    "date": "[data-testid=\"timestamp\"] time",
+    "category": "[data-testid=\"section-link\"]",
+    "images": "[data-testid=\"hero-image\"] img",
+    "images_caption": "[data-testid=\"hero-image\"] figcaption",
+    "related_links": "[data-testid=\"related\"] a",
+    "summary": "[data-testid=\"standfirst\"]",
+    "tags": "[data-testid=\"tag-list\"] a"
+  }
+}

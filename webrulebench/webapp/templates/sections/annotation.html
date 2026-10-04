@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <div class="section-crumb"><a href="/">{{ T("Home") }}</a> / {{ T("Section {n}", n=sections.index(section) + 1) }}</div>
+  <h1>{{ section.icon }} {{ T(section.title) }}
+{% include "_help_btn.html" %}</h1>
+  <p>{{ T(section.desc) }} {{ T("Click a site to open the annotation screen.") }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <input type="search" id="q" class="picker" placeholder="{{ T('Search domain, name or country...') }}">
+  <select id="status" title="{{ T('Status') }}">
+    <option value="">{{ T("All statuses") }}</option>
+    <option value="gt">{{ T("GT transferred") }}</option>
+    <option value="ready">{{ T("Ready") }}</option>
+    <option value="partial">{{ T("Partial") }}</option>
+    <option value="empty">{{ T("Not started") }}</option>
+  </select>
+  <select id="mine" title="{{ T('My progress') }}">
+    <option value="">{{ T("My progress: all") }}</option>
+    <option value="none">{{ T("Mine: not started") }}</option>
+    <option value="partial">{{ T("Mine: in progress") }}</option>
+    <option value="done">{{ T("Mine: completed") }}</option>
+  </select>
+  <span class="muted" id="count"></span>
+</div>
+<p class="muted" id="mySummary" style="margin:-4px 0 12px"></p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>{{ T("Site") }}</th><th>{{ T("Country") }}</th><th>{{ T("Pages") }}</th><th>{{ T("Layouts") }}</th>
+      <th title="{{ T('Layouts of this site for which you have saved rules') }}">{{ T("My progress") }}</th><th>{{ T("My last edit") }}</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="7" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li>Listeden bir siteye tıklayın; annotation ekranı açılır.</li>
+  <li>Sağ panelde layout'u seçin ya da <b>+ New Layout</b> ile oluşturun (admin), şablonunu seçin.</li>
+  <li>Sol panelden sayfa seçin, alanlar için 🎯 ile sayfada element seçin veya kuralı elle yazın; <b>Test</b> ile doğrulayın.</li>
+  <li>Sayfayı layout'a atayın (<b>Assign Layout</b>). Aynı layout'a ait çok sayfa için <b>⚡ Toplu atama</b> kullanın.</li>
+</ol>
+<h3>İki sekme</h3>
+<p><b>Kendi Annotation'ım</b>: her annotatörün bağımsız CSS seçimleri — derleme ve Fleiss κ bunlardan hesaplanır.
+  <b>Ground Truth</b> (admin): onaylı kurallar; burada CSS'e ek olarak XPath ve Regex de tanımlanır.</p>
+<h3>Kural dilleri</h3><div class="card">
+        <div class="card-title">CSS selector</div>
+        <div class="card-desc">Ana kural dili. Sayfada 🎯 ile tıklayarak üretilir ya da elle yazılır; BeautifulSoup
+          <span class="mono">select()</span> ile test edilir. Virgülle alternatif verilebilir: <span class="mono">merge</span> kapalıysa
+          ilk eşleşen, açıksa hepsi kullanılır.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">XPath <span class="pill">GT sekmesi</span></div>
+        <div class="card-desc">🎯 ile seçilen elemandan CSS ile birlikte otomatik yazılır ya da CSS'ten önerilir (↻); <span class="mono">lxml</span> ile
+          test edilir ve sonuç CSS ile karşılaştırılır. Alternatifler <span class="mono">|</span> ile birleştirilir.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Regex</div>
+        <div class="card-desc">Ham HTML metni üzerinde çalışır ve tek yakalama grubu içermelidir. Elle yazılır ya da <b>↻</b> ile alanın CSS'inden
+          üretilir: REGEXN yaklaşımının (Uzun, 2020) genişletilmiş hali. Üretilen kalıp layout'un sayfalarında CSS ile karşılaştırılır ve
+          "6/6 sayfada aynı" gibi bir doğrulama sonucu gösterilir. Pseudo-class (<span class="mono">:nth-child</span>, <span class="mono">:first-child</span>) içeren seçiciler desteklenmez.</div>
+</div>
+<p class="muted" style="margin-top:6px">↻ yalnızca destek amaçlıdır: üretilen regex bir öneridir, düzenleyip kaydetmek kullanıcıya aittir.
+  Üretim şu makaledeki yaklaşımın genişletilmiş halidir:<br>
+  Uzun, E. (2020). A regular expression generator based on CSS selectors for efficient extraction from HTML pages.
+  <i>Turkish Journal of Electrical Engineering &amp; Computer Sciences</i>, 28(6), 3389–3401.
+  <a href="https://doi.org/10.3906/elk-2004-67" target="_blank" rel="noopener" style="color:var(--accent)">doi:10.3906/elk-2004-67</a></p>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li>Click a site in the list to open the annotation screen.</li>
+  <li>In the right panel choose a layout or create one with <b>+ New Layout</b> (admin), and choose its template.</li>
+  <li>Choose a page in the left panel, then pick an element on the page with 🎯 for each field or write the rule by hand; check it with <b>Test</b>.</li>
+  <li>Assign the page to the layout (<b>Assign Layout</b>). For many pages of the same layout use <b>⚡ Bulk assign</b>.</li>
+</ol>
+<h3>Two tabs</h3>
+<p><b>My annotation</b>: each annotator's independent CSS rules — compilation and Fleiss κ are computed from these.
+  <b>Ground Truth</b> (admin): the approved rules; here XPath and Regex are defined in addition to CSS.</p>
+<h3>Rule languages</h3><div class="card">
+        <div class="card-title">CSS selector</div>
+        <div class="card-desc">The main rule language. Generated by clicking on the page with 🎯 or written by hand; tested with BeautifulSoup
+          <span class="mono">select()</span>. Alternatives can be separated by commas: if <span class="mono">merge</span> is off the
+          first match is used, if it is on all of them are used.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">XPath <span class="pill">GT tab</span></div>
+        <div class="card-desc">Written automatically together with the CSS from the element picked with 🎯, or suggested from the CSS (↻); tested with
+          <span class="mono">lxml</span> and the result is compared with the CSS. Alternatives are combined with <span class="mono">|</span>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Regex</div>
+        <div class="card-desc">Runs on the raw HTML text and must contain a single capturing group. Written by hand or generated with <b>↻</b> from the
+          field's CSS: an extended version of the REGEXN approach (Uzun, 2020). The generated pattern is compared with the CSS on the layout's pages and
+          a check result such as "same on 6/6 pages" is shown. Selectors with pseudo-classes (<span class="mono">:nth-child</span>, <span class="mono">:first-child</span>) are not supported.</div>
+</div>
+<p class="muted" style="margin-top:6px">↻ is only an aid: the generated regex is a suggestion; editing and saving it is up to the user.
+  The generator is an extended version of the approach in this paper:<br>
+  Uzun, E. (2020). A regular expression generator based on CSS selectors for efficient extraction from HTML pages.
+  <i>Turkish Journal of Electrical Engineering &amp; Computer Sciences</i>, 28(6), 3389–3401.
+  <a href="https://doi.org/10.3906/elk-2004-67" target="_blank" rel="noopener" style="color:var(--accent)">doi:10.3906/elk-2004-67</a></p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _all = [];
+
+function render() {
+  const q  = document.getElementById('q').value.toLowerCase();
+  const st = document.getElementById('status').value;
+  const mine = document.getElementById('mine').value;
+  const list = _all.filter(s =>
+    (!q || [s.domain, s.name, s.country].some(v => (v || '').toLowerCase().includes(q))) &&
+    (!st || Hub.siteStatus(s) === st) && (!mine || s.my_status === mine));
+  document.getElementById('count').textContent = T('{n} / {total} sites', {n: list.length, total: _all.length});
+  document.getElementById('rows').innerHTML = list.length ? list.map(s => {
+    const go = Hub.annotateUrl({site: s.domain, mode: 'annotation'});
+    return `
+    <tr class="clickable" onclick="location.href='${go}'">
+      <td><span class="dot ${Hub.siteStatus(s)}"></span><a class="mono" href="${go}">${Hub.esc(s.domain)}</a>
+        ${s.name && s.name !== s.domain ? `<div class="muted" style="font-size:11px;margin-left:14px">${Hub.esc(s.name)}</div>` : ''}</td>
+      <td>${Hub.esc(s.country)}</td>
+      <td class="num">${s.total_pages}</td>
+      <td class="num">${s.layouts}</td>
+      <td>${myCell(s)}</td>
+      <td class="mono" style="font-size:11px">${s.my_last ? new Date(s.my_last).toLocaleString(LOCALE, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : '<span class="muted">—</span>'}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap;text-align:right">
+        <a class="btn sm primary" href="${go}" title="${Hub.esc(T('Annotation'))}">✏️</a>
+        ${s.layouts ? `<a class="btn sm" href="${Hub.annotateUrl({site: s.domain, open: 'bulktest', mode: 'annotation'})}" title="${Hub.esc(T('Bulk assign'))}">⚡</a>` : ''}
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="empty">${T('No matching sites')}</td></tr>`;
+}
+
+function myCell(s) {
+  if (s.my_status === 'na') return '<span class="muted">—</span>';
+  const lbl = {none: T('Not started'), partial: T('In progress'), done: T('Completed')}[s.my_status];
+  const cls = {none: '', partial: 'req', done: 'auto'}[s.my_status];
+  return `<span class="pill ${cls}">${lbl}</span> <span class="muted mono" style="font-size:10px">${s.my_layouts} / ${s.layouts}</span>`;
+}
+
+function renderSummary() {
+  const c = {none: 0, partial: 0, done: 0};
+  _all.forEach(s => { if (c[s.my_status] !== undefined) c[s.my_status]++; });
+  document.getElementById('mySummary').textContent = (c.partial || c.done)
+    ? T('You have rules on {n} sites: {done} completed, {partial} in progress.', {n: c.partial + c.done, done: c.done, partial: c.partial})
+    : T('You have not saved rules on any site yet.');
+}
+
+Hub.ready().then(async () => {
+  _all = await Hub.sites();
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('status').addEventListener('change', render);
+  document.getElementById('mine').addEventListener('change', render);
+  renderSummary();
+  render();
+});
+</script>
+{% endblock %}

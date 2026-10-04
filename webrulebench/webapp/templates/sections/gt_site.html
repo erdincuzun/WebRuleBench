@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/ground-truth">← {{ T("Ground Truth Approval") }}</a>
+  <h1>✅ <span class="mono">{{ domain }}</span>{% include "_help_btn.html" %}</h1>
+  <p id="siteMeta">{{ T("Layouts and approval status per rule language.") }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>{{ T("Layout") }}</th><th>{{ T("Template") }}</th><th>{{ T("Annotators") }}</th><th>{{ T("Pages") }}</th><th>CSS</th><th>XPath</th><th>Regex</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="8" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block help_title %}✅ {{ domain }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li>Her satır bir layout'tur. CSS, XPath ve Regex sütunları o kural dilinin GT durumunu gösterir.</li>
+  <li><b>⚙ Derle</b> (admin) ya da <b>👁 İncele</b> ile derleme sayfasına gidin.</li>
+</ol>
+<h3>Sütunlar</h3>
+<ul>
+  <li><b>Annotatörler</b>: bu layout'a sayfa atamış ya da kural girmiş kullanıcılar.</li>
+  <li><b>Sayfa</b>: GT'de bu layout'a atanmış sayfa sayısı / annotatörlerin atadığı sayfaların birleşimi.</li>
+  <li><b>Kural dili hücresi</b>: durum, kuralı giren annotatör sayısı ve ortalama kural uyumu — aynı (normalize) kuralı yazan annotatör çiftlerinin oranı (en az iki annotatör varsa).</li>
+</ul>
+<h3>Durumlar</h3>
+<ul>
+  <li><span class="pill auto">✓ onaylı</span> GT var ve derlemeden sonra değişiklik yok.</li>
+  <li><span class="pill req">⚠ güncelleme var</span> Derlemeden sonra en az bir annotatör kuralını değiştirmiş.</li>
+  <li><span class="pill">○ GT yok</span> Bu dil için GT oluşturulmamış.</li>
+</ul>
+<p>Derleme ekranında CSS, XPath ve Regex ayrı sekmelerdedir; admin hangi kural dillerinin GT'ye dahil edileceğini seçer. Her dilin onay zamanı ayrı tutulur.</p>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li>Each row is a layout. The CSS, XPath and Regex columns show the GT status of that rule language.</li>
+  <li>Go to the compilation page with <b>⚙ Compile</b> (admin) or <b>👁 Review</b>.</li>
+</ol>
+<h3>Columns</h3>
+<ul>
+  <li><b>Annotators</b>: users who have assigned pages to this layout or entered rules for it.</li>
+  <li><b>Pages</b>: number of pages assigned to this layout in the GT / union of the pages assigned by the annotators.</li>
+  <li><b>Rule language cell</b>: status, number of annotators who entered a rule, and the mean rule agreement — the share of annotator pairs that wrote the same (normalized) rule (if there are at least two annotators).</li>
+</ul>
+<h3>Statuses</h3>
+<ul>
+  <li><span class="pill auto">✓ approved</span> GT exists and nothing has changed since the compilation.</li>
+  <li><span class="pill req">⚠ has updates</span> At least one annotator has changed their rules since the compilation.</li>
+  <li><span class="pill">○ no GT</span> No GT has been created for this language.</li>
+</ul>
+<p>On the compilation screen CSS, XPath and Regex have separate tabs; the admin chooses which rule languages are included in the GT. The approval time is kept per language.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DOMAIN = {{ domain|tojson }};
+const fmtDate = iso => iso ? new Date(iso).toLocaleString(LOCALE, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
+const STATUS = {
+  approved: ['auto', '✓ ' + T('approved')],
+  stale:    ['req',  '⚠ ' + T('has updates')],
+  none:     ['',     '○ ' + T('no GT')],
+};
+
+function langCell(l) {
+  const [cls, label] = STATUS[l.status];
+  const k = l.kappa === null ? '' : ` · ${T('agreement')} ${l.kappa.toFixed(2)}`;
+  const when = l.compiled_at ? `<div class="muted mono" style="font-size:10px">${fmtDate(l.compiled_at)}${l.compiled_by ? ' · ' + Hub.esc(l.compiled_by) : ''}</div>` : '';
+  return `<td><span class="pill ${cls}">${label}</span>
+    <div class="muted" style="font-size:11px;margin-top:3px">${l.annotators === 1 ? T('1 annotator') : T('{n} annotators', {n: l.annotators})}${k}</div>${when}</td>`;
+}
+
+Hub.ready().then(async () => {
+  const res = await fetch(`/api/gt/layouts/${encodeURIComponent(DOMAIN)}`);
+  if (!res.ok) { document.getElementById('rows').innerHTML = `<tr><td colspan="8" class="empty">${T('Site not found')}</td></tr>`; return; }
+  const d = await res.json();
+  const [tmpls, sites] = await Promise.all([fetch('/api/templates').then(r => r.json()), Hub.sites()]);
+  const site = sites.find(s => s.domain === DOMAIN);
+  if (site) document.getElementById('siteMeta').textContent =
+    `${site.name}${site.country ? ' · ' + site.country : ''} — ${T('{n} layouts, approval status per rule language.', {n: d.layouts.length})}`;
+  const tb = document.getElementById('rows');
+  tb.innerHTML = d.layouts.length ? d.layouts.map(l => {
+    const t  = tmpls.templates?.[l.template_id];
+    const go = `/ground-truth/${encodeURIComponent(DOMAIN)}/${encodeURIComponent(l.layout_id)}`;
+    return `
+    <tr>
+      <td><b>${Hub.esc(l.name)}</b>${l.pending ? ' <span class="pill req">⏳</span>' : ''}<div class="muted mono">${Hub.esc(l.layout_id)}</div></td>
+      <td>${t ? Hub.esc((t.icon || '') + ' ' + t.name) : '<span class="muted">—</span>'}</td>
+      <td>${l.annotators.length ? l.annotators.map(u => `<span class="pill">${Hub.esc(u)}</span>`).join(' ') : '<span class="muted">—</span>'}</td>
+      <td class="num" title="${T('Assigned in GT / union of annotators')}">${l.gt_pages} / ${l.union_pages}</td>
+      ${langCell(l.langs.css)}${langCell(l.langs.xpath)}${langCell(l.langs.regex)}
+      <td>${Hub.isAdmin()
+        ? `<a class="btn sm primary" href="${go}">⚙ ${T('Compile')}</a>`
+        : `<a class="btn sm" href="${go}">👁 ${T('Review')}</a>`}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty">${T('This site has no layouts')}</td></tr>`;
+});
+</script>
+{% endblock %}

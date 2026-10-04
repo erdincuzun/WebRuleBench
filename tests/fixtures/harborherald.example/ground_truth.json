@@ -1,0 +1,17 @@
+{
+  "domain": "harborherald.example",
+  "file": "article_001.html",
+  "page_type": "article",
+  "selectors": {
+    "title": "h1.entry-title",
+    "body": "div.entry-content",
+    "author": "span.byline a.author",
+    "date": "time.published",
+    "category": "a.crumb-section",
+    "images": "figure.wp-block-image img",
+    "images_caption": "figure.wp-block-image figcaption",
+    "related_links": "section.related-posts a",
+    "summary": "p.entry-summary",
+    "tags": "ul.post-tags a"
+  }
+}

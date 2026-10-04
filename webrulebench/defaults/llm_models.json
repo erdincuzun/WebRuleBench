@@ -1,0 +1,72 @@
+{
+  "backends": {
+    "ollama": {
+      "api": "ollama",
+      "url": "http://localhost:11434/api/chat",
+      "default_model": "qwen2.5-coder:14b",
+      "models": [],
+      "env_key": null,
+      "notes": "Local Ollama server",
+      "params": {
+        "temperature": 0.0,
+        "max_tokens": 512,
+        "seed": 42,
+        "num_ctx": 16384
+      }
+    },
+    "claude": {
+      "api": "anthropic",
+      "url": "https://api.anthropic.com/v1/messages",
+      "default_model": "claude-sonnet-4-6",
+      "models": [],
+      "env_key": "ANTHROPIC_API_KEY",
+      "notes": "Anthropic Claude API",
+      "params": {
+        "max_tokens": 512
+      }
+    },
+    "gemini": {
+      "api": "gemini",
+      "url": "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+      "default_model": "gemini-2.5-flash-lite",
+      "models": [],
+      "env_key": "GEMINI_API_KEY",
+      "notes": "Google Gemini AI Studio",
+      "params": {
+        "temperature": 0.1,
+        "max_tokens": 512
+      }
+    },
+    "groq": {
+      "api": "openai",
+      "url": "https://api.groq.com/openai/v1",
+      "default_model": "llama-3.3-70b-versatile",
+      "models": [],
+      "env_key": "GROQ_API_KEY",
+      "notes": "Groq — OpenAI-compatible, fast inference",
+      "params": {
+        "temperature": 0.0,
+        "max_tokens": 512
+      }
+    },
+    "nvidia": {
+      "api": "openai",
+      "url": "https://integrate.api.nvidia.com/v1",
+      "default_model": "qwen/qwen3-coder-480b-a35b-instruct",
+      "env_key": "NVIDIA_API_KEY",
+      "notes": "NVIDIA NIM — OpenAI-compatible, 40 requests per minute limit",
+      "models": [
+        "qwen/qwen3-coder-480b-a35b-instruct",
+        "nicoboss/DeepSeek-R1-Distill-Qwen-32B-Uncensored",
+        "meta/llama-3.3-70b-instruct",
+        "mistralai/mistral-7b-instruct-v0.3",
+        "microsoft/phi-3-medium-128k-instruct"
+      ],
+      "params": {
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "max_tokens": 4096
+      }
+    }
+  }
+}

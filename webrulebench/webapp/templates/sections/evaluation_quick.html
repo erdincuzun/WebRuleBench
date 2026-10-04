@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/evaluation">← {{ T("LLM Evaluation") }}</a>
+  <h1>⚡ {{ T("Quick test") }}{% include "_help_btn.html" %}</h1>
+  <p>{{ T("Quickly try a model on a single layout: automatic prompt, whitelist cleaning, at most 5 pages.") }}
+    {{ T("The result is not saved; you can save it as an experiment if you wish.") }}</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="panel" style="margin-bottom:18px">
+  <div class="form-row">
+    <label class="grow">{{ T("Model") }}<select id="fModel"></select></label>
+    <label class="grow">{{ T("Layout") }}<input type="search" id="fLayout" list="layoutList" placeholder="{{ T('search site or layout (e.g. 20minutos)') }}"><datalist id="layoutList"></datalist></label>
+    <div class="form-field">{{ T("Rule language") }} <span class="seg" id="fRule"></span></div>
+  </div>
+  <div class="toolbar" style="margin:0">
+    <button type="button" class="btn primary" id="runBtn" onclick="run()">▶ {{ T("Run") }}</button>
+    <button type="button" class="btn" id="promptBtn" onclick="showPrompt()" title="{{ T('Prompt that will be sent to the LLM') }}">👁 {{ T("Prompt") }}</button>
+    <span class="muted" id="status"></span>
+    <span class="login-err" id="err"></span>
+  </div>
+</div>
+<div id="result"></div>
+{% endblock %}
+
+{% block help_title %}⚡ {{ T("Quick test") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Ne yapar?</h3>
+<p>Seçilen layout'un ilk GT sayfası iskelete çevrilip modele gönderilir (tek LLM çağrısı); üretilen kurallar layout'un en fazla 5 GT sayfasında
+  skorlanır. Prompt şablonun otomatik prompt'udur, temizleme <span class="mono">whitelist</span>'tir.</p>
+<h3>Sonuç</h3>
+<ul>
+  <li><b>Ortalama / Örnek sayfa / Genelleme</b>: tüm sayfalar, LLM'e gönderilen sayfa ve diğer sayfalar.</li>
+  <li>Alan tablosunda üretilen kural ve sayfa etiketleri (MATCH, PARTIAL, WRONG, MISS, NO_GT) görünür.</li>
+  <li>Sonuç bir saat boyunca kaydedilebilir; <b>💾 Deney olarak kaydet</b> ile deney listesine eklenir.</li>
+</ul>
+<p>Farklı prompt, strateji, birden çok model ya da layout için <a href="/evaluation/new" style="color:var(--accent)">⚖ Karşılaştırmalı deney</a>.</p>
+{% else %}
+<h3>What does it do?</h3>
+<p>The first GT page of the selected layout is converted to a skeleton and sent to the model (one LLM call); the generated rules are scored on at most
+  5 GT pages of the layout. The prompt is the template's automatic prompt and cleaning is <span class="mono">whitelist</span>.</p>
+<h3>Result</h3>
+<ul>
+  <li><b>Mean / Sample page / Generalisation</b>: all pages, the page sent to the LLM and the other pages.</li>
+  <li>The field table shows the generated rule and the page labels (MATCH, PARTIAL, WRONG, MISS, NO_GT).</li>
+  <li>The result can be saved for one hour; <b>💾 Save as experiment</b> adds it to the experiment list.</li>
+</ul>
+<p>For a different prompt or strategy, several models or layouts, use <a href="/evaluation/new" style="color:var(--accent)">⚖ Comparative experiment</a>.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+let O = null, _rule = 'css', R = null;
+const sc = v => v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--red)';
+const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${sc(v)}">${(v * 100).toFixed(1)}</span>`;
+const bar = v => v === null || v === undefined ? '<span class="muted">—</span>'
+  : `<div class="scorebar"><div style="width:${v * 100}%;background:${sc(v)}"></div></div> ${pct(v)}`;
+const layoutLabel = l => `${l.domain} · ${l.name} (${l.layout_id})`;
+
+function renderRule() {
+  document.getElementById('fRule').innerHTML = O.rule_types.map(r =>
+    `<button type="button" class="${r === _rule ? 'on' : ''}" onclick="_rule='${r}';renderRule()">${r}</button>`).join('');
+}
+function chosenLayout() { return O.layouts.find(l => layoutLabel(l) === document.getElementById('fLayout').value); }
+
+function showPrompt() {
+  const l = chosenLayout();
+  if (!l) { Hub.toast(T('Select a layout first'), 'err'); return; }
+  Hub.showPrompt(l.template_id, _rule, 'auto');
+}
+
+async function run() {
+  const err = document.getElementById('err'); err.textContent = '';
+  const l = chosenLayout();
+  if (!l) { err.textContent = T('Select a layout from the list'); return; }
+  const [backend, ...m] = document.getElementById('fModel').value.split('|');
+  const btn = document.getElementById('runBtn'); btn.disabled = true;
+  const st = document.getElementById('status'); const t0 = Date.now();
+  const tick = setInterval(() => st.textContent = '⏳ ' + T('{s} s — the model is responding…', {s: ((Date.now() - t0) / 1000).toFixed(0)}), 500);
+  document.getElementById('result').innerHTML = '';
+  try {
+    const res = await fetch('/api/quick-test', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({config: {backend, model: m.join('|'), rule_type: _rule}, domain: l.domain, layout_id: l.layout_id})});
+    const d = await res.json();
+    if (!d.success) { err.textContent = d.error || T('Could not run'); return; }
+    R = d;
+    st.textContent = '✓ ' + T('{s} s', {s: ((Date.now() - t0) / 1000).toFixed(1)});
+    render();
+  } finally { clearInterval(tick); btn.disabled = false; }
+}
+
+function render() {
+  const r = R.result, s = r.summary, llm = r.llm;
+  const labelsOf = f => { const c = {}; Object.values(r.pages).forEach(row => { const x = row[f]?.label; if (x) c[x] = (c[x] || 0) + 1; }); return c; };
+  document.getElementById('result').innerHTML = `
+    ${llm.success ? '' : `<p class="readonly-note" style="margin-bottom:12px">⚠ ${T('Could not read the model response:')} ${Hub.esc(llm.error || '')}</p>`}
+    <div class="stats">
+      <div class="stat-card"><div class="stat-val">${pct(s.mean)}</div><div class="stat-label">${T('Mean')}</div></div>
+      <div class="stat-card"><div class="stat-val">${pct(s.sample_mean)}</div><div class="stat-label">${T('Sample page')}</div></div>
+      <div class="stat-card"><div class="stat-val">${pct(s.others_mean)}</div><div class="stat-label">${T('Generalisation')}</div></div>
+      <div class="stat-card"><div class="stat-val">${r.n_pages}</div><div class="stat-label">${T('Pages')}</div></div>
+      <div class="stat-card"><div class="stat-val">${(llm.prompt_tokens + llm.gen_tokens).toLocaleString(LOCALE)}</div><div class="stat-label">${T('Tokens')}</div></div>
+      <div class="stat-card"><div class="stat-val">${T('{s} s', {s: (llm.elapsed_ms / 1000).toFixed(1)})}</div><div class="stat-label">${T('LLM time')}</div></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>${T('Field')}</th><th>${T('Generated rule')}</th><th>${T('Score')}</th><th>${T('Labels (pages)')}</th></tr></thead>
+      <tbody>${Object.keys(s.per_field).map(f => `<tr><td class="mono">${Hub.esc(f)}</td>
+        <td class="mono rule-cell" title="${Hub.esc(r.rules[f] || '')}">${r.rules[f] ? Hub.esc(r.rules[f]) : `<span class="muted">— ${T('no rule')}</span>`}</td>
+        <td>${bar(s.per_field[f])}</td>
+        <td class="mono" style="font-size:10px">${Object.entries(labelsOf(f)).map(([x, n]) => `${x} ${n}`).join(' · ')}</td></tr>`).join('')}</tbody>
+    </table></div>
+    <div class="sticky-actions">
+      <input type="text" id="saveName" placeholder="${T('Name (empty = automatic)')}" style="width:300px">
+      <button type="button" class="btn primary" onclick="save()">💾 ${T('Save as experiment')}</button>
+      <button type="button" class="btn" onclick="viewPrompt()">👁 ${T('Prompt used')}</button>
+      <button type="button" class="btn" onclick="viewRaw()">🧾 ${T('Raw response')}</button>
+      <a class="btn" href="/ground-truth/${encodeURIComponent(r.domain)}/${encodeURIComponent(r.layout_id)}">${T('Go to GT')} →</a>
+      <span class="muted">${Hub.esc(r.domain)} · ${T('sample:')} <span class="mono">${Hub.esc(r.sample_page)}</span></span>
+    </div>`;
+}
+
+function viewPrompt() {
+  const r = R.result, p = R.prompts_used[r.prompt_key];
+  Hub.showText(`${p.name} · ${r.template_id} · ${R.config.rule_type}`,
+    [{label: T('System prompt'), text: p.system}, {label: T('User prompt'), text: p.user}]);
+}
+function viewRaw() {
+  const llm = R.result.llm;
+  Hub.showText(T('Raw LLM response'), [{label: `${R.config.backend_snapshot.model} · ${T('{n} tokens', {n: `${llm.prompt_tokens}+${llm.gen_tokens}`})}`, text: llm.raw_response || ''}]);
+}
+
+async function save() {
+  const d = await (await fetch(`/api/quick-test/${encodeURIComponent(R.token)}/save`, {method: 'POST',
+    headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: document.getElementById('saveName').value})})).json();
+  if (!d.success) { Hub.toast(d.error || T('Could not save'), 'err'); return; }
+  location.href = `/evaluation/${encodeURIComponent(d.id)}`;
+}
+
+Hub.ready().then(async () => {
+  O = await (await fetch('/api/experiments/options')).json();
+  document.getElementById('fModel').innerHTML = O.backends.map(b =>
+    `<optgroup label="${Hub.esc(b.name)}${b.has_key ? '' : ' — ' + T('no key')}">${[...new Set([b.default_model, ...b.models].filter(Boolean))]
+      .map(m => `<option value="${Hub.esc(b.name)}|${Hub.esc(m)}">${Hub.esc(m)}${b.info?.[m]?.parameter_size ? ' · ' + Hub.esc(b.info[m].parameter_size) : ''}</option>`).join('')}</optgroup>`).join('');
+  document.getElementById('layoutList').innerHTML = O.layouts.map(l => `<option value="${Hub.esc(layoutLabel(l))}">`).join('');
+  const q = new URLSearchParams(location.search);
+  const pre = O.layouts.find(l => l.domain === q.get('site') && (!q.get('layout') || l.layout_id === q.get('layout')));
+  if (pre) document.getElementById('fLayout').value = layoutLabel(pre);
+  renderRule();
+});
+</script>
+{% endblock %}

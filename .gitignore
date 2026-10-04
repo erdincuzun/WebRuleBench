@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Data: everything a user creates lives in data/ (or WRB_DATA_DIR) — never committed.
+# Includes pages, annotations, ground truth, experiments, users and API keys (.env).
+data/
+demo/data/
+.env
+
+# Generated results of the paper scripts
+paper/experiments/results/
+
+# Local/machine-specific
+.DS_Store
+.claude/
+
+# Paper drafts and internal documents stay local; only the annotation study is published
+paper/*
+!paper/annotation_study/

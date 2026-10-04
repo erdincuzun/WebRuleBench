@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webrulebench"
+dynamic = ["version"]
+description = "Open-source environment for benchmarking LLM-generated web extraction rules (CSS, XPath, regex) against multi-annotator ground truth"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "Erdinç Uzun", email = "erdincuzun@nku.edu.tr"},
+  {name = "Burak Sevinç"},
+]
+keywords = ["web data extraction", "large language models", "css selector", "xpath", "benchmark", "inter-annotator agreement"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Framework :: Flask",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+dependencies = [
+  "flask>=3.0",
+  "beautifulsoup4>=4.12",
+  "requests>=2.31",
+  "lxml>=5.0",
+  "cssselect>=1.2",
+  "python-dateutil>=2.8",
+]
+
+[project.optional-dependencies]
+fetch = ["playwright>=1.40"]          # fallback downloader for JavaScript-rendered pages
+mcp = ["mcp>=1.0"]                    # MCP server (mcp_server.py)
+figures = ["matplotlib>=3.7"]         # paper/annotation_study/make_figures.py
+dev = ["pytest>=7.0", "ruff>=0.5"]
+
+[project.scripts]
+webrulebench = "webrulebench.cli:main"
+
+[project.urls]
+Repository = "https://github.com/erdincuzun/WebRuleBench"
+
+[tool.setuptools.packages.find]
+include = ["webrulebench*"]
+
+[tool.setuptools.package-data]
+"webrulebench" = ["defaults/*.json"]
+"webrulebench.webapp" = ["templates/*.html", "templates/sections/*.html", "static/*", "static/vendor/*",
+                         "i18n/*/*.json", "i18n/README.md"]
+
+[tool.setuptools.dynamic]
+version = {attr = "webrulebench.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 130
+extend-exclude = ["data", "demo/data", "paper/experiments/results", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E9", "F"]                   # syntax errors and pyflakes (undefined names, unused imports, ...)
+
+[tool.ruff.lint.per-file-ignores]
+"webrulebench/webapp/routes/*.py" = ["F403", "F405"]    # blueprints share webapp.core via `from webapp.core import *`
+"webrulebench/webapp/core.py" = ["F401"]                # imports are re-exported to the blueprints (see __all__)

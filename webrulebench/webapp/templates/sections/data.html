@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="toolbar">
+  <button type="button" class="btn primary" data-admin onclick="openSiteForm()">{{ T("+ New site") }}</button>
+  <input type="search" id="q" class="picker" placeholder="{{ T('Search domain, name or country...') }}">
+  <select id="fCountry" title="{{ T('Country') }}"></select>
+  <span class="muted" id="count"></span>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>{{ T("Site") }}</th><th>{{ T("Name") }}</th><th>{{ T("Country") }}</th><th>{{ T("Pages") }}</th><th title="{{ T('Pages assigned to a layout in the approved ground truth') }}">{{ T("GT pages") }}</th><th>{{ T("Layout") }}</th><th></th></tr></thead>
+    <tbody id="rows"><tr><td colspan="7" class="empty">{{ T("Loading...") }}</td></tr></tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" id="siteModal" onclick="if(event.target===this) closeSiteForm()">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="siteFormTitle">
+    <div class="modal-head">
+      <div class="panel-title" id="siteFormTitle">{{ T("Site") }}</div>
+      <button type="button" class="icon-btn" onclick="closeSiteForm()" aria-label="{{ T('Close') }}">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="form-row" id="sfUrlRow">
+        <label class="grow">{{ T("Site URL") }} *<input type="text" id="sfUrl" placeholder="{{ T('https://example.com/any-page') }}"></label>
+      </div>
+      <div class="form-row" id="sfDomainRow">
+        <label class="grow">{{ T("Domain") }}<input type="text" id="sfDomain" readonly></label>
+      </div>
+      <div class="form-row">
+        <label class="grow">{{ T("Site name") }} *<input type="text" id="sfName" placeholder="{{ T('e.g. The Guardian, BBC News') }}"></label>
+      </div>
+      <div class="form-row">
+        <label class="grow">{{ T("Country") }} *<select id="sfCountry"></select></label>
+      </div>
+      <div class="muted" id="sfHint"></div>
+      <div id="sfNewCountry" style="display:none">
+        <div class="form-row">
+          <label class="grow">{{ T("Country name (English)") }} *<input type="text" id="ncName" placeholder="{{ T('e.g. Bulgaria') }}"></label>
+          <label style="width:110px">{{ T("ISO code") }} *<input type="text" id="ncCode" maxlength="2" placeholder="BG" style="text-transform:uppercase"></label>
+        </div>
+        <div class="form-row">
+          <label class="grow">{{ T("Continent") }}<input type="text" id="ncContinent" list="continentList" placeholder="{{ T('e.g. Europe') }}"></label>
+          <label style="width:110px">{{ T("Language") }}<input type="text" id="ncLang" maxlength="5" placeholder="bg"></label>
+        </div>
+        <datalist id="continentList"></datalist>
+      </div>
+      <div class="form-row">
+        <label class="grow">{{ T("Note") }}<input type="text" id="sfNotes" placeholder="{{ T('e.g. complex structure, loaded via JS') }}"></label>
+      </div>
+      <div class="login-err" id="sfErr"></div>
+      <div class="toolbar" style="margin:0">
+        <button type="button" class="btn primary" id="sfSubmit" onclick="submitSiteForm()">{{ T("Save") }}</button>
+        <button type="button" class="btn" onclick="closeSiteForm()">{{ T("Cancel") }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li><b>+ Yeni site</b> (admin): URL, ad ve ülke girin. Ana sayfa indirilir ve site <span class="mono">sites.json</span>'a seçilen ülkenin altına eklenir.</li>
+  <li><b>✏️</b> (admin): sitenin adını, ülkesini ve notunu düzeltin. Domain değiştirilemez — sayfa klasörü ve GT dosyaları ona bağlıdır.</li>
+  <li><b>Aç</b>: siteyi annotation ekranında açar. Bir sayfa seçince sağ panelde <b>Yeni Sayfa Ekle</b> ve
+    <b>Sayfayı yeniden indir</b> araçları bulunur (admin).</li>
+  <li><b>⚡ Toplu ekle</b> (admin): bir listing sayfasından CSS selector ile linkler çıkarılır, bulunan sayfalar sırayla indirilir.</li>
+</ol>
+<h3>Ülke</h3>
+<ul>
+  <li>Ülke listeden seçilir; listede yoksa <b>+ Yeni ülke…</b> ile İngilizce adı, ISO 3166 kodu (TR, FR…), kıtası ve dili girilir.</li>
+  <li>Bilgisi eksik siteler için ülke, domain uzantısından önerilir (<span class="mono">.fr → France</span>); kaydetmeden önce kontrol edin.
+    <span class="mono">.com</span> gibi genel uzantılarda öneri yapılmaz.</li>
+  <li>Ülke filtresindeki <b>Bilgisi eksik</b>, <span class="mono">sites.json</span>'da kaydı olmayan siteleri gösterir.</li>
+</ul>
+<h3>Genel bilgi</h3>
+<ul>
+  <li>Sayfalar önce <span class="mono">requests</span> ile, başarısız olursa Playwright ile indirilir ve
+    <span class="mono">dataset/raw/&lt;domain&gt;/{article|listing}_NNN.html</span> olarak kaydedilir.</li>
+  <li>Bir sayfa yeniden indirilince içeriği değiştiği için o sayfanın layout ataması GT'den silinir.</li>
+  <li>Ekleme, düzenleme ve silme işlemleri <span class="mono">dataset/deletion_audit.log</span> dosyasına yazılır.</li>
+  <li>Durum noktaları: <span class="dot gt"></span>GT aktarıldı · <span class="dot ready"></span>hazır (≥5 atanmış sayfa) ·
+    <span class="dot partial"></span>kısmi · <span class="dot"></span>başlanmadı.</li>
+</ul>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li><b>+ New site</b> (admin): enter the URL, name and country. The homepage is downloaded and the site is added to <span class="mono">sites.json</span> under the selected country.</li>
+  <li><b>✏️</b> (admin): correct the site's name, country and note. The domain cannot be changed — the page folder and the GT files depend on it.</li>
+  <li><b>Open</b>: opens the site in the annotation screen. When a page is selected, the right panel offers the <b>Add new page</b> and
+    <b>Re-download page</b> tools (admin).</li>
+  <li><b>⚡ Bulk add</b> (admin): links are extracted from a listing page with a CSS selector and the pages found are downloaded one by one.</li>
+</ol>
+<h3>Country</h3>
+<ul>
+  <li>The country is selected from the list; if it is not listed, use <b>+ New country…</b> and enter its English name, ISO 3166 code (TR, FR…), continent and language.</li>
+  <li>For sites with missing info, a country is suggested from the domain extension (<span class="mono">.fr → France</span>); check it before saving.
+    No suggestion is made for generic extensions such as <span class="mono">.com</span>.</li>
+  <li><b>Missing info</b> in the country filter shows the sites that have no record in <span class="mono">sites.json</span>.</li>
+</ul>
+<h3>General information</h3>
+<ul>
+  <li>Pages are downloaded with <span class="mono">requests</span> first, then with Playwright if that fails, and saved as
+    <span class="mono">dataset/raw/&lt;domain&gt;/{article|listing}_NNN.html</span>.</li>
+  <li>When a page is re-downloaded its content changes, so the page's layout assignment is removed from the GT.</li>
+  <li>Add, edit and delete operations are written to <span class="mono">dataset/deletion_audit.log</span>.</li>
+  <li>Status dots: <span class="dot gt"></span>GT exported · <span class="dot ready"></span>ready (≥5 assigned pages) ·
+    <span class="dot partial"></span>partial · <span class="dot"></span>not started.</li>
+</ul>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const NEW_COUNTRY = '__new__';
+// Ülke kodundan farklı olan ülke uzantıları
+const TLD_TO_CODE = {uk: 'GB'};
+// Ülkeye işaret etmeyen iki harfli uzantılar
+const GENERIC_TLDS = new Set(['io', 'tv', 'me', 'co', 'ai', 'fm', 'am', 'ly', 'to', 'cc', 'ws', 'eu']);
+
+let _all = [], _countries = [], _form = null;   // _form: {mode:'add'|'edit', domain}
+
+function missing(s) { return !s.has_meta; }
+
+function renderCountryFilter() {
+  const sel = document.getElementById('fCountry');
+  const cur = sel.value;
+  const nMissing = _all.filter(missing).length;
+  const used = [...new Set(_all.map(s => s.country).filter(Boolean))].sort();
+  sel.innerHTML = `<option value="">${T('All countries')}</option>
+    <option value="__missing__">⚠ ${T('Missing info ({n})', {n: nMissing})}</option>
+    ${used.map(c => `<option value="${Hub.esc(c)}">${Hub.esc(c)} (${_all.filter(s => s.country === c).length})</option>`).join('')}`;
+  sel.value = [...sel.options].some(o => o.value === cur) ? cur : '';
+}
+
+function render() {
+  const q  = document.getElementById('q').value.toLowerCase();
+  const fc = document.getElementById('fCountry').value;
+  const list = _all.filter(s =>
+    (!q || [s.domain, s.name, s.country].some(v => (v || '').toLowerCase().includes(q))) &&
+    (!fc || (fc === '__missing__' ? missing(s) : s.country === fc)));
+  document.getElementById('count').textContent = T('{n} / {total} sites', {n: list.length, total: _all.length});
+  const tb = document.getElementById('rows');
+  tb.innerHTML = list.length ? list.map(s => `
+    <tr>
+      <td><span class="dot ${Hub.siteStatus(s)}"></span><span class="mono">${Hub.esc(s.domain)}</span></td>
+      <td>${missing(s) ? '<span class="muted">—</span>' : Hub.esc(s.name)}</td>
+      <td>${s.country && s.country !== 'Other' ? Hub.esc(s.country)
+            : s.country === 'Other' ? '<span class="muted">Other</span>' : `<span class="pill req">${T('missing')}</span>`}</td>
+      <td class="num">${s.total_pages}</td>
+      <td class="num">${s.gt_pages}</td>
+      <td class="num">${s.layouts}</td>
+      <td>
+        <button type="button" class="btn sm" data-admin onclick="openSiteForm('${Hub.esc(s.domain)}')" title="${T('Edit site details')}">✏️</button>
+        <a class="btn sm" href="${Hub.annotateUrl({site: s.domain, mode: 'data'})}">${T('Open')}</a>
+        <a class="btn sm" data-admin href="${Hub.annotateUrl({site: s.domain, open: 'bulkadd', mode: 'data'})}">⚡ ${T('Bulk add')}</a>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="7" class="empty">${T('No matching sites')}</td></tr>`;
+  Hub.applyRoleGates(tb);
+}
+
+// ── Site formu (ekle / düzenle) ─────────────────────────
+function domainOf(url) {
+  try { return new URL(/^https?:\/\//.test(url) ? url : 'https://' + url).hostname.replace(/^www\./, ''); }
+  catch (e) { return ''; }
+}
+
+// Uzantıdan ülke önerisi: {country} (listede var) | {code} (listede yok) | null
+function suggestFromTld(domain) {
+  const tld = (domain.split('.').pop() || '').toLowerCase();
+  if (tld.length !== 2 || GENERIC_TLDS.has(tld)) return null;
+  const code = TLD_TO_CODE[tld] || tld.toUpperCase();
+  const c = _countries.find(x => (x.code || '').toUpperCase() === code);
+  return c ? {country: c.country, tld} : {code, tld};
+}
+
+function fillCountrySelect(value) {
+  const sel = document.getElementById('sfCountry');
+  sel.innerHTML = `<option value="">— ${T('select')} —</option>
+    ${_countries.map(c => `<option value="${Hub.esc(c.country)}">${Hub.esc(c.country)}${c.code ? ' (' + Hub.esc(c.code) + ')' : ''}</option>`).join('')}
+    <option value="Other">Other</option>
+    <option value="${NEW_COUNTRY}">+ ${T('New country…')}</option>`;
+  sel.value = value || '';
+  toggleNewCountry();
+}
+
+function toggleNewCountry() {
+  const isNew = document.getElementById('sfCountry').value === NEW_COUNTRY;
+  document.getElementById('sfNewCountry').style.display = isNew ? '' : 'none';
+}
+
+function applySuggestion(domain, onlyIfEmpty) {
+  const hint = document.getElementById('sfHint');
+  const sel  = document.getElementById('sfCountry');
+  hint.textContent = '';
+  const sg = domain && suggestFromTld(domain);
+  if (!sg || (onlyIfEmpty && sel.value)) return;
+  if (sg.country) {
+    sel.value = sg.country;
+    hint.textContent = '💡 ' + T('Suggested from the domain extension: .{tld} → {country}. Change it if this is wrong.', {tld: sg.tld, country: sg.country});
+  } else {
+    sel.value = NEW_COUNTRY;
+    document.getElementById('ncCode').value = sg.code;
+    hint.textContent = '💡 ' + T('No country with the .{tld} extension is in the list — it can be added as a new country (ISO code {code} suggested). Change it if this is wrong.', {tld: sg.tld, code: sg.code});
+  }
+  toggleNewCountry();
+}
+
+function openSiteForm(domain = null) {
+  const s = domain ? _all.find(x => x.domain === domain) : null;
+  if (domain && !s) { Hub.toast(T('Site not found'), 'err'); return; }
+  _form = {mode: s ? 'edit' : 'add', domain};
+  document.getElementById('siteFormTitle').textContent = s ? `✏️ ${s.domain}` : T('+ New site');
+  document.getElementById('sfUrlRow').style.display    = s ? 'none' : '';
+  document.getElementById('sfDomainRow').style.display = s ? '' : 'none';
+  document.getElementById('sfUrl').value    = '';
+  document.getElementById('sfDomain').value = s ? s.domain : '';
+  document.getElementById('sfName').value   = s && !missing(s) ? s.name : '';
+  document.getElementById('sfNotes').value  = s ? (s.notes || '') : '';
+  ['ncName', 'ncCode', 'ncContinent', 'ncLang'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('sfErr').textContent = '';
+  document.getElementById('sfSubmit').disabled = false;
+  document.getElementById('sfSubmit').textContent = s ? T('Save') : T('+ Add site');
+  fillCountrySelect(s ? s.country : '');
+  document.getElementById('sfHint').textContent = '';
+  if (s && !s.country) applySuggestion(s.domain, false);
+  document.getElementById('siteModal').classList.add('open');
+  setTimeout(() => document.getElementById(s ? 'sfName' : 'sfUrl').focus(), 50);
+}
+
+function closeSiteForm() {
+  document.getElementById('siteModal').classList.remove('open');
+  _form = null;
+  // ?new=1 / ?edit= deep link'i temizle
+  if (location.search) history.replaceState(null, '', location.pathname);
+}
+
+async function submitSiteForm() {
+  const err = document.getElementById('sfErr');
+  const btn = document.getElementById('sfSubmit');
+  const name = document.getElementById('sfName').value.trim();
+  let country = document.getElementById('sfCountry').value;
+  let newCountry = null;
+  err.textContent = '';
+  if (_form.mode === 'add' && !document.getElementById('sfUrl').value.trim()) { err.textContent = T('URL cannot be empty'); return; }
+  if (!name)    { err.textContent = T('Site name cannot be empty'); return; }
+  if (!country) { err.textContent = T('Select a country'); return; }
+  if (country === NEW_COUNTRY) {
+    country = document.getElementById('ncName').value.trim();
+    const code = document.getElementById('ncCode').value.trim().toUpperCase();
+    if (!country) { err.textContent = T('Enter the name of the new country'); return; }
+    if (!/^[A-Z]{2}$/.test(code)) { err.textContent = T('The ISO code must be two letters (e.g. BG)'); return; }
+    if (_countries.some(c => c.country.toLowerCase() === country.toLowerCase())) {
+      err.textContent = T('"{country}" is already in the list — select it from the list', {country}); return;
+    }
+    newCountry = {code, continent: document.getElementById('ncContinent').value.trim(),
+                  language: document.getElementById('ncLang').value.trim()};
+  }
+  const body = {name, country, new_country: newCountry, notes: document.getElementById('sfNotes').value.trim()};
+  if (_form.mode === 'add') body.url = document.getElementById('sfUrl').value.trim();
+  else body.domain = _form.domain;
+
+  btn.disabled = true;
+  btn.textContent = _form.mode === 'add' ? '⏳ ' + T('Adding...') : '⏳ ' + T('Saving...');
+  const res = await fetch(_form.mode === 'add' ? '/api/site/add' : '/api/site/update', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body),
+  });
+  const d = await res.json();
+  if (!d.success) {
+    err.textContent = d.error || T('An error occurred');
+    btn.disabled = false;
+    btn.textContent = _form.mode === 'add' ? T('+ Add site') : T('Save');
+    return;
+  }
+  const mode = _form.mode, domain = d.domain || _form.domain;
+  closeSiteForm();
+  await reload();
+  if (mode === 'add') {
+    Hub.toast('✓ ' + (d.homepage_ok ? T('{domain} added — homepage downloaded', {domain}) : T('{domain} added', {domain})));
+    document.getElementById('q').value = domain;
+    render();
+  } else {
+    Hub.toast('✓ ' + T('{domain} updated', {domain}));
+  }
+}
+
+async function reload() {
+  Hub._sites = null;
+  const [sites, countries] = await Promise.all([Hub.sites(), fetch('/api/countries').then(r => r.json())]);
+  _all = sites;
+  _countries = countries.countries || [];
+  document.getElementById('continentList').innerHTML =
+    [...new Set(_countries.map(c => c.continent).filter(Boolean))].sort().map(c => `<option value="${Hub.esc(c)}">`).join('');
+  renderCountryFilter();
+  render();
+}
+
+document.getElementById('sfCountry').addEventListener('change', () => {
+  toggleNewCountry();
+  document.getElementById('sfHint').textContent = '';
+});
+document.getElementById('sfUrl').addEventListener('change', e => applySuggestion(domainOf(e.target.value.trim()), true));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && _form) closeSiteForm(); });
+
+Hub.ready().then(async () => {
+  await reload();
+  document.getElementById('q').addEventListener('input', render);
+  document.getElementById('fCountry').addEventListener('change', render);
+  const q = new URLSearchParams(location.search);
+  if (Hub.isAdmin() && q.get('new')) openSiteForm();
+  else if (Hub.isAdmin() && q.get('edit')) openSiteForm(q.get('edit'));
+});
+</script>
+{% endblock %}

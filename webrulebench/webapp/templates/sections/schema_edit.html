@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/schema">← {{ T("Templates & Prompts") }}</a>
+  <h1><span id="title">{{ T("Template:") }} <span class="mono">{{ tid }}</span></span>{% include "_help_btn.html" %}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="editor"><div class="empty">{{ T("Loading...") }}</div></div>
+{% endblock %}
+
+{% block help_title %}🗂 {{ T("Template editing") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Kullanım</h3>
+<ol>
+  <li>Ad, açıklama ve sayfa tipini düzenleyin; açıklama otomatik prompt'ta sayfa tanımı olarak kullanılır.</li>
+  <li><b>+ Alan ekle</b> ile alan ekleyin; ↑ ↓ ile sıralayın, ✕ ile silin.</li>
+  <li><b>💾 Kaydet</b> ya da <b>Kaydet ve listeye dön</b>. Kaydetmeden sayfadan çıkarsanız uyarı alırsınız.</li>
+</ol>
+<h3>Alan sütunları</h3>
+<ul>
+  <li><b>Açıklama</b> — otomatik prompt'un ana girdisi: ne kadar net olursa üretilen prompt o kadar iyi olur.</li>
+  <li><b>Tip</b> — text, date, price, url, image, list.</li>
+  <li><b>Metrik</b> — değerlendirmede kullanılır: rouge (ROUGE-1 F1), jaccard (küme benzerliği), exact_match, f1.</li>
+  <li><b>Zorunlu</b> — alan sayfada mutlaka bulunmalı.</li>
+  <li><b>Merge</b> — CSS'te virgülle ayrılmış alternatiflerin hepsi uygulanıp birleştirilir; kapalıysa ilk eşleşen kullanılır.</li>
+</ul>
+<h3>Dikkat</h3>
+<p>Alan silmek veya adını değiştirmek bu şablonu kullanan layout'ların mevcut kurallarını etkileyebilir.</p>
+{% else %}
+<h3>Usage</h3>
+<ol>
+  <li>Edit the name, description and page type; the description is used as the page definition in the automatic prompt.</li>
+  <li>Add fields with <b>+ Add field</b>; reorder them with ↑ ↓ and delete them with ✕.</li>
+  <li><b>💾 Save</b> or <b>Save and return to list</b>. If you leave the page without saving, you will get a warning.</li>
+</ol>
+<h3>Field columns</h3>
+<ul>
+  <li><b>Description</b> — the main input of the automatic prompt: the clearer it is, the better the generated prompt.</li>
+  <li><b>Type</b> — text, date, price, url, image, list.</li>
+  <li><b>Metric</b> — used in evaluation: rouge (ROUGE-1 F1), jaccard (set similarity), exact_match, f1.</li>
+  <li><b>Required</b> — the field must be present on the page.</li>
+  <li><b>Merge</b> — in CSS, all comma-separated alternatives are applied and merged; if off, the first match is used.</li>
+</ul>
+<h3>Caution</h3>
+<p>Deleting or renaming a field may affect the existing rules of layouts that use this template.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TID = {{ tid|tojson }};
+const TYPES   = ['text', 'date', 'price', 'url', 'image', 'list'];
+const METRICS = ['rouge', 'exact_match', 'jaccard', 'f1'];
+const PAGE_TYPES = ['article', 'listing'];
+let TPL = null;          // düzenlenen şablon (yerel kopya)
+let dirty = false;
+
+function setDirty(v = true) {
+  dirty = v;
+  document.getElementById('dirty').textContent = v ? '● ' + T('unsaved changes') : '';
+}
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+function render() {
+  const ro = !Hub.isAdmin();
+  const dis = ro ? 'disabled' : '';
+  const fields = Object.entries(TPL.fields || {});
+  const pts = [...new Set([...PAGE_TYPES, TPL.page_type || 'article'])];
+  document.getElementById('editor').innerHTML = `
+    ${ro ? `<p class="muted" style="margin-bottom:14px">🔒 ${T('Only an admin can edit templates — you are in view mode.')}</p>` : ''}
+    <div class="form-row">
+      <label style="width:70px">${T('Icon')}<input type="text" id="fIcon" value="${Hub.esc(TPL.icon || '📄')}" style="text-align:center;font-size:16px" ${dis}></label>
+      <label class="grow">${T('Name')}<input type="text" id="fName" value="${Hub.esc(TPL.name || '')}" ${dis}></label>
+      <label style="width:150px">${T('Page type')}<select id="fPageType" ${dis}>
+        ${pts.map(p => `<option ${p === (TPL.page_type || 'article') ? 'selected' : ''}>${Hub.esc(p)}</option>`).join('')}</select></label>
+    </div>
+    <div class="form-row">
+      <label class="grow">${T('Description (used as the page definition in the prompt)')}
+        <input type="text" id="fDesc" value="${Hub.esc(TPL.description || '')}" ${dis}></label>
+    </div>
+
+    <h2>${T('Template fields')}</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th></th><th>${T('Field')}</th><th>${T('Label')}</th><th>${T('Description (prompt hint)')}</th><th>${T('Type')}</th><th>${T('Metric')}</th>
+        <th title="${T('The field must be present on the page')}">${T('Required')}</th><th title="${T('CSS: all comma-separated alternatives are applied and merged')}">${T('Merge')}</th><th></th></tr></thead>
+      <tbody>${fields.length ? fields.map(([k, f], i) => `
+        <tr>
+          <td>${ro ? '' : `
+            <button class="icon-btn" title="${T('Up')}" onclick="move(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button><button class="icon-btn" title="${T('Down')}" onclick="move(${i},1)" ${i === fields.length - 1 ? 'disabled' : ''}>↓</button>`}</td>
+          <td class="mono">${Hub.esc(k)}</td>
+          <td><input type="text" value="${Hub.esc(f.label || '')}" data-f="${Hub.esc(k)}" data-k="label" ${dis}></td>
+          <td><input type="text" class="wide" value="${Hub.esc(f.description || '')}" data-f="${Hub.esc(k)}" data-k="description" ${dis}></td>
+          <td><select data-f="${Hub.esc(k)}" data-k="type" ${dis}>${TYPES.map(x => `<option ${f.type === x ? 'selected' : ''}>${x}</option>`).join('')}</select></td>
+          <td><select data-f="${Hub.esc(k)}" data-k="metric" ${dis}>${METRICS.map(x => `<option ${f.metric === x ? 'selected' : ''}>${x}</option>`).join('')}</select></td>
+          <td class="center"><input type="checkbox" ${f.required ? 'checked' : ''} data-f="${Hub.esc(k)}" data-k="required" ${dis}></td>
+          <td class="center"><input type="checkbox" ${f.merge ? 'checked' : ''} data-f="${Hub.esc(k)}" data-k="merge" ${dis}></td>
+          <td>${ro ? '' : `<button class="icon-btn danger" title="${T('Delete field')}" onclick="delField('${Hub.esc(k)}')">✕</button>`}</td>
+        </tr>`).join('') : `<tr><td colspan="9" class="empty">${T('No fields yet')}</td></tr>`}
+      </tbody>
+    </table></div>
+    ${ro ? '' : `
+    <div class="toolbar" style="margin-top:10px">
+      <input type="text" id="newField" placeholder="${T('new_field_name')}" style="width:200px">
+      <button class="btn" onclick="addField()">${T('+ Add field')}</button>
+    </div>`}
+
+    <div class="sticky-actions">
+      ${ro ? '' : `<button class="btn primary" onclick="save(false)">💾 ${T('Save')}</button><button class="btn" onclick="save(true)">💾 ${T('Save and return to list')}</button>`}
+      <a class="btn" href="/schema/${encodeURIComponent(TID)}/prompts">💬 ${T('Prompts')}</a>
+      <a class="btn" href="/schema">← ${T('Back to list')}</a>
+      <span class="dirty-dot" id="dirty"></span>
+      ${ro ? '' : `<button class="btn danger" style="margin-left:auto" onclick="delTemplate()">🗑 ${T('Delete template')}</button>`}
+    </div>`;
+
+  const ed = document.getElementById('editor');
+  ed.querySelectorAll('[data-f]').forEach(el => el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+    const f = TPL.fields[el.dataset.f];
+    f[el.dataset.k] = el.type === 'checkbox' ? el.checked : el.value;
+    setDirty();
+  }));
+  ['fIcon', 'fName', 'fDesc', 'fPageType'].forEach(id => document.getElementById(id)?.addEventListener('input', () => setDirty()));
+  setDirty(dirty);
+}
+
+function readMeta() {
+  TPL.icon        = document.getElementById('fIcon').value.trim() || '📄';
+  TPL.name        = document.getElementById('fName').value.trim();
+  TPL.description = document.getElementById('fDesc').value.trim();
+  TPL.page_type   = document.getElementById('fPageType').value;
+}
+
+function move(i, d) {
+  readMeta();
+  const e = Object.entries(TPL.fields);
+  [e[i], e[i + d]] = [e[i + d], e[i]];
+  TPL.fields = Object.fromEntries(e);
+  setDirty(); render();
+}
+
+function addField() {
+  readMeta();
+  const name = document.getElementById('newField').value.trim().toLowerCase().replace(/\s+/g, '_');
+  if (!/^[a-z][a-z0-9_]*$/.test(name)) { Hub.toast(T('The field name must start with a letter; letters/digits/underscores'), 'err'); return; }
+  if (TPL.fields[name]) { Hub.toast(T('This field already exists'), 'err'); return; }
+  TPL.fields[name] = {label: name, description: '', type: 'text', metric: 'rouge', required: false};
+  setDirty(); render();
+}
+
+function delField(k) {
+  if (!confirm(T('Delete the field "{k}"? (Not permanent until you click Save)', {k}))) return;
+  readMeta();
+  delete TPL.fields[k];
+  setDirty(); render();
+}
+
+async function save(back) {
+  readMeta();
+  if (!TPL.name) { Hub.toast(T('Template name cannot be empty'), 'err'); return; }
+  const res = await fetch(`/api/templates/${encodeURIComponent(TID)}`, {
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name: TPL.name, description: TPL.description, icon: TPL.icon, page_type: TPL.page_type, fields: TPL.fields}),
+  });
+  const d = await res.json();
+  if (!d.success) { Hub.toast(d.error || T('Save error'), 'err'); return; }
+  setDirty(false);
+  if (back) location.href = '/schema';
+  else Hub.toast(T('Template saved') + ' ✓');
+}
+
+async function delTemplate() {
+  if (!confirm(T('Delete the template "{name}"? Layouts that use this template may be affected.', {name: TPL.name}))) return;
+  const d = await (await fetch(`/api/templates/${encodeURIComponent(TID)}`, {method: 'DELETE'})).json();
+  if (d.success) { dirty = false; location.href = '/schema'; }
+  else Hub.toast(d.error || T('Delete error'), 'err');
+}
+
+Hub.ready().then(async () => {
+  const res = await fetch(`/api/templates/${encodeURIComponent(TID)}`);
+  if (!res.ok) { document.getElementById('editor').innerHTML = `<div class="empty">${T('Template not found.')} <a class="btn sm" href="/schema">← ${T('Back to list')}</a></div>`; return; }
+  TPL = await res.json();
+  TPL.fields = TPL.fields || {};
+  document.getElementById('title').innerHTML = `${Hub.esc(TPL.icon || '📄')} ${Hub.esc(TPL.name)} <span class="pill mono">${Hub.esc(TID)}</span>`;
+  render();
+});
+</script>
+{% endblock %}

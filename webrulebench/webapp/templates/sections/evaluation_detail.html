@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block section_head %}
+<div class="section-head">
+  <a class="back-link" href="/evaluation">← {{ T("LLM Evaluation") }}</a>
+  <h1><span id="title">{{ T("Experiment") }} <span class="mono">{{ exp_id }}</span></span>{% include "_help_btn.html" %}</h1>
+  <div class="toolbar" id="head" style="margin:6px 0 0"></div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="body"><div class="empty">{{ T("Loading...") }}</div></div>
+{% endblock %}
+
+{% block help_title %}{{ T("Experiment details") }} — {{ T("Help") }}{% endblock %}
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Skorlar</h3>
+<ul>
+  <li><b>Ortalama</b>: tüm sayfa × alan skorlarının ortalaması. GT'de değeri olmayan alanlar (<span class="mono">NO_GT</span>) hesaba katılmaz.</li>
+  <li><b>Örnek sayfa</b>: LLM'e gönderilen sayfadaki skor. <b>Genelleme</b>: diğer sayfalardaki skor — kuralın LLM'in görmediği sayfalarda çalışması.</li>
+  <li>Alan skoru şablondaki metrikle hesaplanır: ROUGE-1 F1 (metin), Jaccard (liste, resim, link), exact match.</li>
+</ul>
+<h3>Etiketler</h3>
+<ul>
+  <li><span class="mono">MATCH</span> skor ≥ 0.9 · <span class="mono">PARTIAL</span> 0 &lt; skor &lt; 0.9 · <span class="mono">WRONG</span> kural bir şey çıkardı ama skor 0 ·
+    <span class="mono">MISS</span> kural yok ya da hiçbir şey çıkarmadı · <span class="mono">NO_GT</span> GT bu sayfada değer içermiyor.</li>
+</ul>
+<h3>Layout satırı</h3>
+<p>Satıra tıklayınca üretilen kurallar, alan bazında skorlar, LLM çağrısının token/süre bilgisi ve ham yanıt görünür. GT'yi incelemek için
+  <b>GT'ye git</b> derleme sayfasını açar.</p>
+<h3>Durdurma ve sürdürme</h3>
+<p>Durdurulan ya da sunucu yeniden başladığı için yarıda kalan deney <b>▶ Sürdür</b> ile kaldığı yerden devam eder; tamamlanan layout'lar yeniden çalıştırılmaz.</p>
+{% else %}
+<h3>Scores</h3>
+<ul>
+  <li><b>Mean</b>: mean of all page × field scores. Fields without a value in the GT (<span class="mono">NO_GT</span>) are not counted.</li>
+  <li><b>Sample page</b>: the score on the page sent to the LLM. <b>Generalisation</b>: the score on the other pages — how well the rule works on pages the LLM has not seen.</li>
+  <li>The field score is computed with the template's metric: ROUGE-1 F1 (text), Jaccard (list, image, link), exact match.</li>
+</ul>
+<h3>Labels</h3>
+<ul>
+  <li><span class="mono">MATCH</span> score ≥ 0.9 · <span class="mono">PARTIAL</span> 0 &lt; score &lt; 0.9 · <span class="mono">WRONG</span> the rule extracted something but the score is 0 ·
+    <span class="mono">MISS</span> no rule, or the rule extracted nothing · <span class="mono">NO_GT</span> the GT has no value on this page.</li>
+</ul>
+<h3>Layout row</h3>
+<p>Click a row to see the generated rules, per-field scores, the token/time information of the LLM call and the raw response. To inspect the GT,
+  <b>Go to GT</b> opens the compilation page.</p>
+<h3>Stopping and resuming</h3>
+<p>An experiment that was stopped, or interrupted because the server restarted, continues where it stopped with <b>▶ Resume</b>; completed layouts are not run again.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EXP_ID = {{ exp_id|tojson }};
+let E = null, _open = new Set(), _timer = null;
+const fmtDate = iso => iso ? new Date(iso).toLocaleString(LOCALE) : '—';
+const sc = v => v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--red)';
+const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${sc(v)}">${(v * 100).toFixed(1)}</span>`;
+const bar = v => v === null || v === undefined ? '<span class="muted">—</span>'
+  : `<div class="scorebar"><div style="width:${v * 100}%;background:${sc(v)}"></div></div> ${pct(v)}`;
+// [css sınıfı, ikon, İngilizce etiket] — etiket görüntülenirken T() ile çevrilir
+const STATUS = {queued: ['', '⏳', 'queued'], running: ['auto', '▶', 'running'], done: ['auto', '✓', 'done'],
+  cancelled: ['', '■', 'stopped'], interrupted: ['req', '⚠', 'interrupted'], error: ['req', '✗', 'error']};
+const statusOf = s => { const x = STATUS[s]; return x ? [x[0], `${x[1]} ${T(x[2])}`] : ['', s]; };
+
+function canEdit() { return Hub.isAdmin() || E.created_by === Hub.me?.username; }
+
+function renderHead() {
+  const c = E.config, pr = E.progress || {};
+  const [cls, label] = statusOf(E.status);
+  document.getElementById('title').innerHTML = `${Hub.esc(E.name)} <span class="pill mono">${Hub.esc(E.id)}</span>`;
+  const chips = [
+    `${c.backend} · ${c.model || T('default model')}`,
+    c.backend_snapshot?.model_info ? `${c.backend_snapshot.model_info.parameter_size || ''} ${c.backend_snapshot.model_info.quantization || ''} · digest ${(c.backend_snapshot.model_info.digest || '').slice(0, 12)}` : null,
+    c.rule_source === 'llm_css_regexn' ? 'CSS → REGEXN' : c.rule_type.toUpperCase(),
+    `${T('cleaning:')} ${c.strategy}`,
+    c.sample.mode === 'random' ? T('sample: random (seed {seed})', {seed: c.sample.seed}) : T('sample: first GT page'),
+    c.max_pages ? T('at most {n} pages', {n: c.max_pages}) : null,
+    `${E.created_by} · ${fmtDate(E.created_at)}`,
+  ].filter(Boolean);
+  const running = E.status === 'running' || E.status === 'queued';
+  const resumable = !running && pr.done < pr.total;
+  document.getElementById('head').innerHTML = `
+    <span class="pill ${cls}">${label}</span>
+    ${running || E.status === 'interrupted' ? `<div class="progress" style="width:160px"><div style="width:${pr.total ? 100 * pr.done / pr.total : 0}%"></div></div>` : ''}
+    <span class="muted mono">${T('{done} / {total} layouts', {done: pr.done, total: pr.total})}</span>
+    ${chips.map(x => `<span class="pill">${Hub.esc(x)}</span>`).join('')}
+    <span style="margin-left:auto"></span>
+    ${E.group ? `<a class="btn sm" href="/evaluation/group/${encodeURIComponent(E.group.id)}">⚖ ${T('Group:')} ${Hub.esc(E.group.name)}</a>` : ''}
+    ${Object.keys(E.prompts_used || {}).length ? `<button class="btn sm" onclick="showPrompts()">👁 ${T('Prompts')}</button>` : ''}
+    ${running && canEdit() ? `<button class="btn sm" onclick="act('cancel')">■ ${T('Stop')}</button>` : ''}
+    ${resumable && canEdit() ? `<button class="btn sm primary" onclick="act('resume')">▶ ${T('Resume')}</button>` : ''}
+    ${!running && canEdit() ? `<button class="btn sm danger" onclick="del()">🗑 ${T('Delete')}</button>` : ''}`;
+}
+
+function statCard(v, label, title = '') {
+  return `<div class="stat-card" title="${Hub.esc(title)}"><div class="stat-val">${v}</div><div class="stat-label">${label}</div></div>`;
+}
+
+function renderBody() {
+  const s = E.summary || {};
+  const tmplName = t => Hub.esc(t);
+  const layouts = E.layouts || [];
+  const labels = s.labels || {};
+  const labelOrder = ['MATCH', 'PARTIAL', 'WRONG', 'MISS', 'NO_GT'];
+  const totalLabels = labelOrder.reduce((a, k) => a + (labels[k] || 0), 0);
+
+  document.getElementById('body').innerHTML = `
+    ${E.error ? `<p class="readonly-note" style="margin-bottom:14px">✗ ${Hub.esc(E.error)}</p>` : ''}
+    <div class="stats">
+      ${statCard(pct(s.mean), T('Mean'))}
+      ${statCard(pct(s.sample_mean), T('Sample page'), T('Score on the page sent to the LLM'))}
+      ${statCard(pct(s.others_mean), T('Generalisation'), T('Score on pages other than the sample page'))}
+      ${statCard(`${s.layouts ?? 0}${s.failed ? ` <span style="color:var(--red);font-size:14px">+${s.failed}✗</span>` : ''}`, T('Layouts'))}
+      ${statCard(`${((s.prompt_tokens || 0) + (s.gen_tokens || 0)).toLocaleString(LOCALE)}`, T('Tokens'), T('input {i} · output {o}', {i: s.prompt_tokens || 0, o: s.gen_tokens || 0}))}
+      ${statCard(T('{s} s', {s: ((s.llm_ms || 0) / 1000).toFixed(0)}), T('LLM time'), T('{n} calls', {n: s.llm_calls || 0}))}
+    </div>
+
+    <div class="cards" style="margin-bottom:10px">
+      <div class="card"><div class="card-title">${T('Per field')}</div>
+        <table class="mini"><tbody>${Object.entries(s.per_field || {}).map(([f, v]) =>
+          `<tr><td class="mono">${Hub.esc(f)}</td><td>${bar(v)}</td></tr>`).join('') || '<tr><td class="muted">—</td></tr>'}</tbody></table></div>
+      <div class="card"><div class="card-title">${T('Per template')}</div>
+        <table class="mini"><tbody>${Object.entries(s.per_template || {}).map(([t, v]) =>
+          `<tr><td>${tmplName(t)}</td><td>${bar(v)}</td></tr>`).join('') || '<tr><td class="muted">—</td></tr>'}</tbody></table>
+        <div class="card-title" style="margin-top:12px">${T('Labels')} <span class="muted" style="font-weight:400">(${T('page × field')})</span></div>
+        <div class="labelbar">${labelOrder.filter(k => labels[k]).map(k =>
+          `<div class="lb-${k}" style="flex:${labels[k]}" title="${k}: ${labels[k]}"></div>`).join('')}</div>
+        <div class="muted mono" style="font-size:10px;margin-top:4px">${labelOrder.filter(k => labels[k]).map(k =>
+          `${k} ${labels[k]} (%${(100 * labels[k] / totalLabels).toFixed(0)})`).join(' · ')}</div></div>
+    </div>
+
+    <h2>${T('Layouts')}</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>${T('Site')}</th><th>${T('Layout')}</th><th>${T('Template')}</th><th>${T('Sample page')}</th><th>${T('Pages')}</th><th>${T('Mean')}</th><th>${T('Sample')}</th><th>${T('Generalisation')}</th><th>LLM</th></tr></thead>
+      <tbody>${layouts.map((l, i) => layoutRow(l, i)).join('') || `<tr><td colspan="9" class="empty">${T('No results yet')}</td></tr>`}</tbody>
+    </table></div>
+
+    <h2>${T('Prompts used')}</h2>
+    ${Object.entries(E.prompts_used || {}).map(([k, p]) => `
+      <details class="panel" style="margin-bottom:8px"><summary><b>${Hub.esc(p.name)}</b> <span class="muted mono">${Hub.esc(k)} · ${Hub.esc(p.source)}</span></summary>
+        <div class="lbl">${T('System prompt')}</div><pre class="cli">${Hub.esc(p.system)}</pre>
+        <div class="lbl">${T('User prompt')}</div><pre class="cli">${Hub.esc(p.user)}</pre></details>`).join('') || '<p class="muted">—</p>'}`;
+}
+
+function layoutRow(l, i) {
+  const k = `${l.domain}|${l.layout_id}`;
+  if (l.error) return `<tr><td class="mono">${Hub.esc(l.domain)}</td><td>${Hub.esc(l.layout_id)}</td>
+    <td colspan="7"><span class="pill req">✗</span> <span class="mono" style="font-size:11px">${Hub.esc(l.error)}</span></td></tr>`;
+  const s = l.summary, llm = l.llm || {};
+  const open = _open.has(k);
+  const main = `<tr class="clickable" onclick="toggleRow('${Hub.esc(k)}')">
+    <td class="mono">${open ? '▾' : '▸'} ${Hub.esc(l.domain)}</td><td>${Hub.esc(l.name || l.layout_id)} <span class="muted mono">${Hub.esc(l.layout_id)}</span></td>
+    <td>${Hub.esc(l.template_id)}</td><td class="mono" style="font-size:11px">${Hub.esc(l.sample_page)}</td><td class="num">${l.n_pages}</td>
+    <td class="num">${pct(s.mean)}</td><td class="num">${pct(s.sample_mean)}</td><td class="num">${pct(s.others_mean)}</td>
+    <td>${llm.success ? '' : '<span class="pill req" title="' + Hub.esc(llm.error || '') + '">' + T('response error') + '</span> '}<span class="muted mono" style="font-size:10px">${(llm.elapsed_ms / 1000).toFixed(1)}s · ${llm.prompt_tokens}+${llm.gen_tokens}</span></td></tr>`;
+  if (!open) return main;
+  const fields = Object.keys(s.per_field);
+  const labelsOf = f => { const c = {}; Object.values(l.pages).forEach(r => { const x = r[f]?.label; if (x) c[x] = (c[x] || 0) + 1; }); return c; };
+  return main + `<tr class="detail-row"><td colspan="9">
+    <table class="mini" style="width:100%"><thead><tr><th>${T('Field')}</th><th>${T('Generated rule')}</th><th>${T('Score')}</th><th>${T('Labels (pages)')}</th></tr></thead><tbody>
+    ${fields.map(f => `<tr><td class="mono">${Hub.esc(f)}</td>
+      <td class="mono rule-cell" title="${Hub.esc(l.rules[f] || '')}">${l.rules[f] ? Hub.esc(l.rules[f]) : `<span class="muted">— ${T('no rule')}</span>`}
+        ${l.regexn?.[f] ? `<div class="muted">← CSS: ${Hub.esc(l.regexn[f].css)} · REGEXN ${Hub.esc(l.regexn[f].strategy || T('could not be generated'))}
+          ${l.regexn[f].verified === false ? ` · <span style="color:var(--yellow)" title="${T('No candidate giving the same result as CSS was found on the sample page; the closest candidate was used')}">⚠ ${T('not verified on the sample page')}</span>`
+            : l.regexn[f].verified ? ' · ✓ ' + T('verified on the sample page') : ''}</div>` : ''}</td>
+      <td>${bar(s.per_field[f])}</td>
+      <td class="mono" style="font-size:10px">${Object.entries(labelsOf(f)).map(([x, n]) => `${x} ${n}`).join(' · ')}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="toolbar" style="margin:8px 0 0">
+      <a class="btn sm" href="/ground-truth/${encodeURIComponent(l.domain)}/${encodeURIComponent(l.layout_id)}">${T('Go to GT')} →</a>
+      <span class="muted">${T('Skeleton {chars} characters · {i} input + {o} output tokens · {s} s', {chars: llm.skeleton_chars?.toLocaleString(LOCALE), i: llm.prompt_tokens, o: llm.gen_tokens, s: (llm.elapsed_ms / 1000).toFixed(1)})}</span>
+    </div>
+    <details><summary class="muted">${T('Raw LLM response')}</summary><pre class="cli">${Hub.esc(llm.raw_response || '')}</pre></details>
+  </td></tr>`;
+}
+
+function showPrompts() {
+  const parts = Object.entries(E.prompts_used || {}).flatMap(([k, p]) => [
+    {label: `${p.name} · ${k} — ${T('system prompt')}`, text: p.system},
+    {label: `${p.name} · ${k} — ${T('user prompt')}`, text: p.user}]);
+  Hub.showText(`${T('Prompts used')} · ${E.name}`, parts);
+}
+
+function toggleRow(k) { _open.has(k) ? _open.delete(k) : _open.add(k); renderBody(); }
+
+async function act(a) {
+  const d = await (await fetch(`/api/experiments/${encodeURIComponent(EXP_ID)}/${a}`, {method: 'POST'})).json();
+  if (!d.success && d.error) Hub.toast(d.error, 'err');
+  setTimeout(load, 500);
+}
+async function del() {
+  if (!confirm(T('Delete experiment "{name}"? The result file is deleted permanently.', {name: E.name}))) return;
+  const d = await (await fetch(`/api/experiments/${encodeURIComponent(EXP_ID)}`, {method: 'DELETE'})).json();
+  if (d.success) location.href = '/evaluation'; else Hub.toast(d.error || T('Could not delete'), 'err');
+}
+
+async function load() {
+  const res = await fetch(`/api/experiments/${encodeURIComponent(EXP_ID)}`);
+  if (!res.ok) { document.getElementById('body').innerHTML = `<div class="empty">${T('Experiment not found.')} <a class="btn sm" href="/evaluation">← ${T('List')}</a></div>`; return; }
+  E = await res.json();
+  renderHead(); renderBody();
+  clearTimeout(_timer);
+  if (E.status === 'running' || E.status === 'queued') _timer = setTimeout(load, 3000);
+}
+Hub.ready().then(load);
+</script>
+{% endblock %}

@@ -1,0 +1,11 @@
+field,metric,layouts,rule_kappa,rule_po,rule_exact_share,content_alpha,content_units,content_similarity
+title,rouge,10,0.022,0.2,0.2,0.975,423,0.975
+body,rouge,10,0.261,0.3,0.3,0.904,423,0.907
+author,rouge,6,0.315,0.389,0.438,0.904,243,0.906
+date,rouge,10,0.443,0.5,0.5,0.988,423,0.989
+category,rouge,8,0.118,0.167,0.167,0.649,338,0.661
+images,jaccard,10,0.227,0.267,0.267,0.945,423,0.945
+images_caption,rouge,5,0.053,0.133,0.133,0.961,203,0.962
+related_links,jaccard,7,0.034,0.095,0.118,0.564,291,0.639
+summary,rouge,0,,,,,0,
+tags,jaccard,3,-0.2,0.0,0.0,0.659,121,0.669

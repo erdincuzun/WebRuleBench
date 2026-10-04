@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% if section %}{{ T(section.title) }} · {% endif %}WebRuleBench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='hub.css') }}">
+</head>
+<body>
+<header class="hub-header">
+  <a class="logo" href="/">◈ Web<span>RuleBench</span></a>
+  <nav class="hub-nav">
+    {% for s in sections %}
+    <a href="{{ s.path }}" class="{{ 'active' if active == s.key else '' }}" title="{{ T(s.desc) }}">
+      <span class="nav-num">{{ loop.index }}</span>{{ T(s.title) }}
+    </a>
+    {% endfor %}
+  </nav>
+  <div class="hub-user" id="hubUser"></div>
+  {% include "_lang_switch.html" %}
+</header>
+
+<main class="hub-main {% block main_class %}{% endblock %}">
+  {% block section_head %}
+  {% if section %}
+  <div class="section-head">
+    <div class="section-crumb"><a href="/">{{ T("Home") }}</a> / {{ T("Section {n}", n=sections.index(section) + 1) }}</div>
+    <h1>{{ section.icon }} {{ T(section.title) }}{% include "_help_btn.html" %}</h1>
+    <p>{{ T(section.desc) }}</p>
+  </div>
+  {% endif %}
+  {% endblock %}
+  {% block content %}{% endblock %}
+</main>
+
+<div class="login-overlay" id="hubLogin">
+  <div class="login-box">
+    <div class="login-logo">◈</div>
+    <div class="login-title">WebRuleBench</div>
+    <input id="hubLoginUser" type="text" placeholder="{{ T('Username...') }}"
+      onkeydown="if(event.key==='Enter') document.getElementById('hubLoginToken').focus()">
+    <input id="hubLoginToken" type="password" placeholder="Token..."
+      onkeydown="if(event.key==='Enter') Hub.login()">
+    <button type="button" class="btn primary" onclick="Hub.login()">{{ T("Log in") }}</button>
+    <div class="login-lang">{% include "_lang_switch.html" %}</div>
+    <div class="login-err" id="hubLoginErr"></div>
+  </div>
+</div>
+<div class="toast" id="hubToast"></div>
+
+{# Her sayfa {% block help %} ile kendi yardım içeriğini verir; "?" butonu bunu açar.
+   Yardım metni iki dillidir: {% if lang == 'tr' %} Türkçe {% else %} İngilizce {% endif %} #}
+{% if self.help() | trim %}
+<div class="modal-overlay" id="helpModal" onclick="if(event.target===this) Hub.closeHelp()">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-head">
+      <div class="panel-title" id="helpTitle">{% block help_title %}{{ (section.icon ~ ' ' ~ T(section.title)) if section else 'WebRuleBench' }} — {{ T("Help") }}{% endblock %}</div>
+      <button type="button" class="icon-btn" onclick="Hub.closeHelp()" aria-label="{{ T('Close') }}">✕</button>
+    </div>
+    <div class="modal-content help-content">{% block help %}{% endblock %}</div>
+  </div>
+</div>
+{% endif %}
+
+<script src="/i18n/{{ lang }}.js?v={{ i18n_version }}"></script>
+<script src="{{ url_for('static', filename='i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='hub.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

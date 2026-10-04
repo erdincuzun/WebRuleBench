@@ -1,0 +1,7 @@
+{# Dil seçici: çerez + yeniden yükleme (static/i18n.js setLang) #}
+<div class="lang-switch" role="group" aria-label="{{ T('Language') }}" title="{{ T('Interface language') }}">
+  {%- for l in langs %}
+  <button type="button" class="{{ 'active' if l == lang else '' }}" onclick="setLang('{{ l }}')"
+    {{ 'aria-pressed=true' if l == lang else '' }}>{{ l | upper }}</button>
+  {%- endfor %}
+</div>

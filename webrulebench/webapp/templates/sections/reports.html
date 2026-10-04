@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="tabs" id="tabs"></div>
+<div id="body"><div class="empty">{{ T("Loading...") }}</div></div>
+{% endblock %}
+
+{% block help %}
+{% if lang == 'tr' %}
+<h3>Sekmeler</h3>
+<ul>
+  <li><b>📦 Veri seti</b> — ülke / dil / kıta bazında site, sayfa ve layout dağılımı; şablonlar, alan kapsamı (GT kuralı olan layout oranı), layout başına sayfa dağılımı.</li>
+  <li><b>✍ Annotation &amp; GT</b> — kullanıcı ilerlemesi; kural dili başına GT durumu (onaylı / güncelleme var / yok); alan bazında Fleiss κ ve düşük uyumlu layout'lar.</li>
+  <li><b>🤖 LLM sonuçları</b> — bütün deneylerden tek sıralama tablosu; skor–maliyet grafiği; alan, ülke, dil, kıta, şablon ya da site kırılımı; cross-check grupları.</li>
+  <li><b>⬇ Dışa aktarma</b> — GT veri seti (JSONL / CSV / HuggingFace), dataset card (README.md), tekrarlanabilirlik manifesti.</li>
+  <li><b>🧾 Denetim kaydı</b> (admin) — ekleme, silme, derleme, deney ve kullanıcı işlemleri.</li>
+</ul>
+<h3>Makale için çıktı</h3>
+<ul>
+  <li>Her tablonun başında <b>CSV</b>, <b>LaTeX</b> (booktabs; sütundaki en iyi değer kalın) ve <b>MD</b> butonları vardır. Tablo başlığına tıklayınca sıralanır; çıktı aynı sırayla alınır.</li>
+  <li>Her grafiğin başında <b>PNG</b> (beyaz zemin, 2× çözünürlük, renk körlüğüne dayanıklı palet) ve <b>CSV</b> (grafiğin verisi — matplotlib vb. ile yeniden çizmek için) vardır.</li>
+</ul>
+<h3>LLM sonuçlarının tanımı</h3>
+<ul>
+  <li><b>Ortalama</b>: layout ortalamalarının ortalaması (makro). Layout ortalaması: o layout'un bütün GT sayfaları × alanlarının skoru (ROUGE / Jaccard / EM, şablondaki alan metriği).</li>
+  <li><b>Örnek</b>: LLM'in gördüğü sayfadaki skor; <b>Diğer</b>: geri kalan GT sayfaları (genelleme); <b>Fark</b> = Örnek − Diğer (küçük olması iyi).</li>
+  <li><b>MATCH</b>: skoru ≥ 0.9 olan (sayfa, alan) hücrelerinin oranı.</li>
+  <li><b>Ortak layout kümesi</b> açıkken yalnızca seçili deneylerin hepsinde başarıyla çalışmış layout'lar hesaba katılır — farklı kapsamdaki deneyler adil karşılaştırılır.</li>
+</ul>
+{% else %}
+<h3>Tabs</h3>
+<ul>
+  <li><b>📦 Dataset</b> — distribution of sites, pages and layouts by country / language / continent; templates, field coverage (share of layouts with a GT rule), distribution of pages per layout.</li>
+  <li><b>✍ Annotation &amp; GT</b> — user progress; GT status per rule language (approved / has updates / none); Fleiss κ per field and low-agreement layouts.</li>
+  <li><b>🤖 LLM results</b> — a single leaderboard across all experiments; score–cost chart; breakdown by field, country, language, continent, template or site; cross-check groups.</li>
+  <li><b>⬇ Export</b> — GT dataset (JSONL / CSV / HuggingFace), dataset card (README.md), reproducibility manifest.</li>
+  <li><b>🧾 Audit log</b> (admin) — add, delete, compile, experiment and user actions.</li>
+</ul>
+<h3>Output for papers</h3>
+<ul>
+  <li>Every table has <b>CSV</b>, <b>LaTeX</b> (booktabs; the best value in each column in bold) and <b>MD</b> buttons at the top. Click a column header to sort; the export uses the same order.</li>
+  <li>Every chart has <b>PNG</b> (white background, 2× resolution, colour-blind-safe palette) and <b>CSV</b> (the chart's data — for redrawing with matplotlib etc.) at the top.</li>
+</ul>
+<h3>Definition of the LLM results</h3>
+<ul>
+  <li><b>Mean</b>: the mean of the layout means (macro). Layout mean: the score over all GT pages × fields of that layout (ROUGE / Jaccard / EM, the field metric in the template).</li>
+  <li><b>Sample</b>: the score on the page the LLM saw; <b>Others</b>: the remaining GT pages (generalisation); <b>Gap</b> = Sample − Others (smaller is better).</li>
+  <li><b>MATCH</b>: the share of (page, field) cells with a score ≥ 0.9.</li>
+  <li>With <b>Common layout set</b> on, only layouts that ran successfully in all selected experiments are counted — experiments with different scopes are compared fairly.</li>
+</ul>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='report.js') }}"></script>
+<script>
+{% raw %}
+// Etiketler İngilizce kaynak metindir; T() ile çizim anında çevrilir
+const TABS = [['dataset', '📦', 'Dataset'], ['quality', '✍', 'Annotation & GT'], ['llm', '🤖', 'LLM results'],
+              ['export', '⬇', 'Export'], ['audit', '🧾', 'Audit log']];
+let _tab = TABS.some(([k]) => k === location.hash.slice(1)) ? location.hash.slice(1) : 'llm';
+const _cache = {};
+const esc = s => Hub.esc(s ?? '');
+const pct = RT.pct;
+const RLANG = {css: 'CSS', xpath: 'XPath', regex: 'Regex'};
+const DIMS = {country: 'Country', language: 'Language', continent: 'Continent'};
+const tmap = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, T(v)]));
+const fmtDate = iso => iso ? new Date(iso).toLocaleString(LOCALE, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : '—';
+
+async function data(key, url) {
+  if (!_cache[key]) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+    _cache[key] = await r.json();
+  }
+  return _cache[key];
+}
+
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = TABS.filter(([k]) => k !== 'audit' || Hub.isAdmin()).map(([k, ic, l]) =>
+    `<button type="button" class="tab ${k === _tab ? 'active' : ''}" onclick="setTab('${k}')">${ic} ${esc(T(l))}</button>`).join('');
+}
+function setTab(t) { _tab = t; history.replaceState(null, '', `#${t}`); renderTabs(); render(); }
+async function render() {
+  const el = document.getElementById('body');
+  try {
+    if (_tab === 'dataset') await datasetTab(el);
+    else if (_tab === 'quality') await qualityTab(el);
+    else if (_tab === 'llm') await llmTab(el);
+    else if (_tab === 'export') exportTab(el);
+    else if (_tab === 'audit') await auditTab(el);
+  } catch (e) {
+    el.innerHTML = `<div class="empty">⚠ ${esc(e.message)}</div>`;
+  }
+}
+const stats = items => `<div class="stats">${items.map(([v, l]) =>
+  `<div class="stat-card"><div class="stat-val">${v}</div><div class="stat-label">${l}</div></div>`).join('')}</div>`;
+const sel = (id, opts, cur, on) => `<select id="${id}" onchange="${on}">${Object.entries(opts).map(([k, l]) =>
+  `<option value="${k}" ${k === cur ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+
+// ═══════════════════════════════════════════════════════
+// 📦 VERİ SETİ
+// ═══════════════════════════════════════════════════════
+const D = {dim: 'country', tmpl: null, all: false};
+const missingLabel = () => '⚠ ' + T('missing info');
+
+async function datasetTab(el) {
+  const d = await data('dataset', '/api/reports/dataset');
+  const gs = d.sites.filter(s => s.layouts);
+  const langsOf = s => (s.language || '').split('/').map(x => x.trim()).filter(Boolean);
+  const base = D.all ? d.sites : gs;
+  const MISSING = missingLabel();
+
+  // ülke / dil / kıta kırılımı
+  const groups = {};
+  for (const s of base) {
+    const keys = D.dim === 'language' ? (langsOf(s).length ? langsOf(s) : [MISSING]) : [s[D.dim] || MISSING];
+    for (const k of keys) {
+      const g = groups[k] = groups[k] || {group: k, sites: 0, gt_sites: 0, pages: 0, gt_pages: 0, layouts: 0, article: 0, listing: 0};
+      g.sites++; if (s.layouts) g.gt_sites++;
+      g.pages += s.pages; g.gt_pages += s.gt_pages; g.layouts += s.layouts; g.article += s.article; g.listing += s.listing;
+    }
+  }
+  const grows = Object.values(groups).sort((a, b) => b.gt_pages - a.gt_pages || b.sites - a.sites);
+
+  // layout başına sayfa dağılımı
+  const bins = [['1', 1, 1], ['2–4', 2, 4], ['5–9', 5, 9], ['10–19', 10, 19], ['20–49', 20, 49], ['50+', 50, 1e9]];
+  const lp = d.layout_pages.filter(l => l.pages > 0);
+  const hist = bins.map(([l, a, b]) => lp.filter(x => x.pages >= a && x.pages <= b).length);
+
+  const tmpls = d.templates.filter(t => t.id !== '—');
+  if (!D.tmpl || !tmpls.some(t => t.id === D.tmpl)) D.tmpl = tmpls[0]?.id;
+  const TPL = tmpls.find(t => t.id === D.tmpl);
+  const cov = TPL ? TPL.fields.map(f => ({field: f, layouts: TPL.coverage[f] || 0, share: TPL.layouts ? (TPL.coverage[f] || 0) / TPL.layouts : null})) : [];
+
+  const nCountries = new Set(gs.map(s => s.country).filter(Boolean)).size;
+  const nLangs = new Set(gs.flatMap(langsOf)).size;
+  const dimLabel = T(DIMS[D.dim]);
+  const missing = base.filter(s => !s.country).length;
+
+  el.innerHTML = stats([
+    [d.sites.length, T('Sites (total)')], [gs.length, T('Sites with GT')], [nCountries, T('Countries (GT)')], [nLangs, T('Languages (GT)')],
+    [RT.num(d.sites.reduce((a, s) => a + s.pages, 0)), T('Pages (raw)')], [RT.num(gs.reduce((a, s) => a + s.gt_pages, 0)), T('GT pages')],
+    [gs.reduce((a, s) => a + s.layouts, 0), T('Layouts')], [tmpls.length, T('Templates')]]) +
+  `<div class="toolbar">${T('Breakdown:')} ${sel('dDim', tmap(DIMS), D.dim, 'D.dim=this.value;render()')}
+     <label class="muted rt-check"><input type="checkbox" ${D.all ? 'checked' : ''} onchange="D.all=this.checked;render()"> ${T('Also count sites without GT')}</label>
+     ${missing ? `<span class="pill req">⚠ ${T('{n} sites are missing country / language info', {n: missing})}</span> <a class="btn sm" href="/data">${T('Complete in Data Collection')} →</a>` : ''}</div>
+  <div class="rt-grid">
+    ${RT.table({id: `dataset_by_${D.dim}`, title: T('Dataset by {dim}', {dim: dimLabel}), caption: `Dataset statistics by ${D.dim}.`,
+      sort: {k: 'gt_pages', dir: 'desc'}, rows: grows, columns: [
+        {k: 'group', label: dimLabel}, {k: 'sites', label: T('Sites'), num: true}, {k: 'gt_sites', label: T('Sites with GT'), num: true},
+        {k: 'layouts', label: T('Layouts'), num: true}, {k: 'gt_pages', label: T('GT pages'), num: true},
+        {k: 'article', label: T('Article'), num: true}, {k: 'listing', label: T('Listing'), num: true}, {k: 'pages', label: T('Pages'), num: true}]})}
+    ${RT.chart(`chart_dataset_${D.dim}`, T('GT pages and layouts by {dim}', {dim: dimLabel}), () => ({
+      type: 'bar', data: {labels: grows.map(g => g.group), datasets: [
+        {label: T('GT pages'), data: grows.map(g => g.gt_pages), backgroundColor: RT.color(0), yAxisID: 'y'},
+        {label: T('Layouts'), data: grows.map(g => g.layouts), backgroundColor: RT.color(1), yAxisID: 'y2'}]},
+      options: {scales: {x: {}, y: {beginAtZero: true, title: {display: true, text: T('GT pages')}},
+        y2: {beginAtZero: true, position: 'right', grid: {drawOnChartArea: false}, title: {display: true, text: T('Layouts')}}}}}),
+      {height: 320})}
+  </div>
+  <div class="rt-grid">
+    ${RT.table({id: 'dataset_templates', title: T('Page templates'), caption: 'Page templates.', rows: tmpls, sort: {k: 'layouts', dir: 'desc'}, columns: [
+      {k: 'id', label: T('Template')}, {k: 'name', label: T('Name')}, {k: 'layouts', label: T('Layouts'), num: true}, {k: 'sites', label: T('Sites'), num: true},
+      {k: 'gt_pages', label: T('GT pages'), num: true}, {k: 'fields', label: T('Fields'), num: true, fmt: v => v.length}]})}
+    ${RT.chart('chart_layout_pages', T('Distribution of GT pages per layout'), () => ({
+      type: 'bar', data: {labels: bins.map(b => b[0]), datasets: [{label: T('Number of layouts'), data: hist, backgroundColor: RT.color(2)}]},
+      options: {plugins: {legend: {display: false}}, scales: {x: {title: {display: true, text: T('GT pages / layout')}},
+        y: {beginAtZero: true, ticks: {precision: 0}, title: {display: true, text: T('Layouts')}}}}}),
+      {height: 260, note: T('Median: {m} pages / layout · layouts without pages: {n}', {m: median(lp.map(x => x.pages)) ?? '—', n: d.layout_pages.length - lp.length})})}
+  </div>
+  <div class="toolbar" style="margin-top:6px">${T('Field coverage — template:')} ${sel('dTmpl', Object.fromEntries(tmpls.map(t => [t.id, `${t.name} (${t.id})`])), D.tmpl, 'D.tmpl=this.value;render()')}</div>
+  <div class="rt-grid">
+    ${RT.table({id: `coverage_${D.tmpl}`, title: `${T('Field coverage')} — ${TPL?.name || ''}`, caption: `Fields with a ground-truth rule (${D.tmpl} layouts).`,
+      note: T('Number of layouts with a GT rule (CSS) for the field / the template\'s {n} layouts. If there is no rule, the field is not evaluated in that layout.', {n: TPL?.layouts || 0}),
+      rows: cov, columns: [{k: 'field', label: T('Field'), html: v => `<span class="mono">${esc(v)}</span>`},
+        {k: 'layouts', label: T('Layouts'), num: true}, {k: 'share', label: T('Coverage %'), heat: true, fmt: pct}]})}
+    ${RT.chart(`chart_coverage_${D.tmpl}`, `${T('Field coverage')} — ${TPL?.name || ''}`, () => ({
+      type: 'bar', data: {labels: cov.map(c => c.field), datasets: [{label: T('Coverage %'), data: cov.map(c => c.share === null ? null : +(c.share * 100).toFixed(1)), backgroundColor: RT.color(4)}]},
+      options: {indexAxis: 'y', plugins: {legend: {display: false}}, scales: {x: {min: 0, max: 100, title: {display: true, text: '% layout'}}, y: {}}}}),
+      {height: Math.max(220, cov.length * 26)})}
+  </div>
+  <details class="rt-details"><summary>${T('All sites ({n})', {n: base.length})}</summary>
+    ${RT.table({id: 'dataset_sites', title: T('Site list'), rows: base, sort: {k: 'gt_pages', dir: 'desc'}, columns: [
+      {k: 'domain', label: T('Site'), html: v => `<a class="mono" href="/ground-truth/${encodeURIComponent(v)}">${esc(v)}</a>`},
+      {k: 'country', label: T('Country')}, {k: 'language', label: T('Language')}, {k: 'continent', label: T('Continent')},
+      {k: 'pages', label: T('Pages'), num: true}, {k: 'gt_pages', label: T('GT pages'), num: true}, {k: 'layouts', label: T('Layouts'), num: true}]})}
+  </details>`;
+  RT.mount();
+}
+function median(xs) {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b), m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+// ═══════════════════════════════════════════════════════
+// ✍ ANNOTATION & GT
+// ═══════════════════════════════════════════════════════
+const Q = {lang: 'css', user: '', low: 0.5};
+
+async function qualityTab(el) {
+  const d = await data('quality', '/api/reports/quality');
+  const prog = d.progress, lays = d.layouts;
+  const byUser = {};
+  for (const p of prog) {
+    const u = byUser[p.user] = byUser[p.user] || {user: p.user, sites: 0, assigned: 0, layouts: 0, css: 0, xpath: 0, regex: 0, last: null};
+    u.sites++; u.assigned += p.assigned; u.layouts += p.layouts;
+    for (const l of Object.keys(RLANG)) u[l] += p.rules[l] || 0;
+    if (p.last && (!u.last || p.last > u.last)) u.last = p.last;
+  }
+  const users = Object.values(byUser);
+  const role = Object.fromEntries(d.users.map(u => [u.username, u]));
+
+  // kural dili × GT durumu
+  const st = Object.keys(RLANG).map(l => {
+    const ls = lays.map(x => x.langs[l]);
+    const ks = ls.map(x => x.kappa).filter(k => k !== null);
+    return {lang: RLANG[l], approved: ls.filter(x => x.status === 'approved').length, stale: ls.filter(x => x.status === 'stale').length,
+            none: ls.filter(x => x.status === 'none').length, annotated: ls.filter(x => x.annotators > 0).length,
+            multi: ls.filter(x => x.annotators >= 2).length, kappa: RT.mean(ks), kn: ks.length};
+  });
+
+  // alan bazında κ (seçili dil)
+  // alan bazında Fleiss κ: layout'lar konu, annotatörler puanlayıcı, normalize kurallar kategori (sunucuda)
+  const kf = {};
+  for (const x of lays) for (const [f, k] of Object.entries(x.langs[Q.lang].kappa_fields || {})) (kf[f] = kf[f] || []).push(k);
+  const pooled = (d.kappa || {})[Q.lang] || {};
+  const krows = Object.entries(pooled).map(([f, r]) => ({field: f, n: r.n_subjects, kappa: r.kappa, po: r.po, pe: r.pe,
+    full: kf[f] ? kf[f].filter(k => k >= 0.999).length / kf[f].length : null})).sort((a, b) => (a.kappa ?? 0) - (b.kappa ?? 0));
+  const low = [];
+  for (const x of lays) for (const [f, k] of Object.entries(x.langs[Q.lang].kappa_fields || {}))
+    if (k < Q.low) low.push({domain: x.domain, layout_id: x.layout_id, name: x.name, field: f, kappa: k, annotators: x.langs[Q.lang].annotators});
+
+  const progRows = Q.user ? prog.filter(p => p.user === Q.user) : prog;
+  const annotatedSites = new Set(prog.map(p => p.domain)).size;
+
+  el.innerHTML = stats([
+    [users.length, T('Annotators')], [annotatedSites, T('Annotated sites')], [lays.length, T('Layouts (sites with GT)')],
+    [lays.filter(x => x.annotators.length >= 2).length, T('Layouts with ≥2 annotators')],
+    ...st.map(s => [`${s.approved}`, T('{lang} approved', {lang: s.lang})])]) +
+  `<div class="rt-grid">
+    ${RT.table({id: 'annotators', title: T('Annotator progress'), caption: 'Annotation effort per annotator.', rows: users, sort: {k: 'assigned', dir: 'desc'}, columns: [
+      {k: 'user', label: T('User'), html: (v) => `<b class="mono">${esc(v)}</b>${role[v]?.role === 'admin' ? ` <span class="pill">${T('admin')}</span>` : ''}${role[v] && !role[v].active ? ` <span class="pill">${T('inactive')}</span>` : ''}`},
+      {k: 'sites', label: T('Sites'), num: true}, {k: 'assigned', label: T('Assigned pages'), num: true}, {k: 'layouts', label: T('Layouts'), num: true},
+      {k: 'css', label: T('{lang} rules', {lang: 'CSS'}), num: true}, {k: 'xpath', label: 'XPath', num: true}, {k: 'regex', label: 'Regex', num: true},
+      {k: 'last', label: T('Last annotation'), fmt: fmtDate}]})}
+    ${RT.chart('chart_annotators', T('Assigned pages and rules per annotator'), () => ({
+      type: 'bar', data: {labels: users.map(u => u.user), datasets: [
+        {label: T('Assigned pages'), data: users.map(u => u.assigned), backgroundColor: RT.color(0)},
+        ...Object.keys(RLANG).map((l, i) => ({label: T('{lang} rules', {lang: RLANG[l]}), data: users.map(u => u[l]), backgroundColor: RT.color(i + 1)}))]},
+      options: {scales: {x: {}, y: {beginAtZero: true}}}}), {height: 280})}
+  </div>
+  <div class="rt-grid">
+    ${RT.table({id: 'gt_status', title: T('GT status per rule language'), caption: 'Ground-truth status per rule language.', rows: st,
+      note: T('Approved: compiled and unchanged since. Has updates: annotations changed after compilation. Rule agreement: share of annotator pairs that wrote the same (normalized) rule, averaged over fields where ≥2 annotators entered rules.'),
+      columns: [{k: 'lang', label: T('Language')}, {k: 'approved', label: T('Approved'), num: true}, {k: 'stale', label: T('Has updates'), num: true},
+        {k: 'none', label: T('No GT'), num: true}, {k: 'annotated', label: T('Annotated'), num: true}, {k: 'multi', label: T('≥2 annotators'), num: true},
+        {k: 'kappa', label: T('Mean rule agreement'), num: true, fmt: v => v === null ? '—' : v.toFixed(3)}, {k: 'kn', label: T('Layouts with ≥2 annotators'), num: true}]})}
+    ${RT.chart('chart_gt_status', T('GT status (layouts)'), () => ({
+      type: 'bar', data: {labels: st.map(s => s.lang), datasets: [
+        {label: T('Approved'), data: st.map(s => s.approved), backgroundColor: RT.color(2)},
+        {label: T('Has updates'), data: st.map(s => s.stale), backgroundColor: RT.color(1)},
+        {label: T('No GT'), data: st.map(s => s.none), backgroundColor: RT.color(7)}]},
+      options: {indexAxis: 'y', scales: {x: {stacked: true, beginAtZero: true}, y: {stacked: true}}}}), {height: 200})}
+  </div>
+  <div class="toolbar" style="margin-top:6px">${T('Inter-annotator agreement — rule language:')} ${sel('qLang', RLANG, Q.lang, 'Q.lang=this.value;render()')}
+    <span class="muted">${T('low-agreement threshold')}</span> ${sel('qLow', {'0.3': '< 0.3', '0.5': '< 0.5', '0.7': '< 0.7', '1': '< 1'}, String(Q.low), 'Q.low=+this.value;render()')}</div>
+  <div class="rt-grid">
+    ${RT.table({id: `kappa_fields_${Q.lang}`, title: `${T('κ per field')} — ${RLANG[Q.lang]}`, caption: `Inter-annotator agreement (Fleiss' kappa) per field, ${RLANG[Q.lang]} rules.`,
+      rows: krows, empty: T('No fields for which κ can be computed (requires layouts where ≥2 annotators entered rules)'),
+      note: T('Fleiss κ over layouts (subjects) × annotators (raters); categories are the normalized rules. P̄o: mean observed agreement, Pe: chance agreement. Rules that differ only in writing (spaces, class order, quotes) count as the same; rules that are written differently but extract the same content count as different — see the content scores (K2) on the GT approval page.'),
+      columns: [{k: 'field', label: T('Field'), html: v => `<span class="mono">${esc(v)}</span>`}, {k: 'n', label: T('Layouts'), num: true},
+        {k: 'kappa', label: 'Fleiss κ', heat: true, fmt: v => v === null ? '—' : v.toFixed(3)},
+        {k: 'po', label: 'P̄o', num: true, fmt: v => v.toFixed(3)}, {k: 'pe', label: 'Pe', num: true, fmt: v => v.toFixed(3)},
+        {k: 'full', label: T('Layouts with full agreement'), num: true, fmt: pct}]})}
+    ${!krows.length ? '' : RT.chart(`chart_kappa_${Q.lang}`, `${T('Fleiss κ per field')} — ${RLANG[Q.lang]}`, () => ({
+      type: 'bar', data: {labels: krows.map(r => r.field), datasets: [{label: 'Fleiss κ', data: krows.map(r => r.kappa === null ? null : +r.kappa.toFixed(3)), backgroundColor: RT.color(0)}]},
+      options: {indexAxis: 'y', plugins: {legend: {display: false}}, scales: {x: {min: Math.min(0, ...krows.map(r => r.kappa ?? 0)), max: 1}, y: {}}}}),
+      {height: Math.max(200, krows.length * 26)})}
+  </div>
+  ${RT.table({id: `kappa_low_${Q.lang}`, title: `${T('Low-agreement fields')} — ${RLANG[Q.lang]} (${T('rule agreement')} < ${Q.low})`, rows: low, sort: {k: 'kappa', dir: 'asc'},
+    empty: T('No fields below this threshold'), columns: [
+      {k: 'domain', label: T('Site'), html: v => `<span class="mono">${esc(v)}</span>`},
+      {k: 'name', label: T('Layout'), html: (v, r) => `<a href="/ground-truth/${encodeURIComponent(r.domain)}/${encodeURIComponent(r.layout_id)}">${esc(v)}</a> <span class="muted mono">${esc(r.layout_id)}</span>`},
+      {k: 'field', label: T('Field'), html: v => `<span class="mono">${esc(v)}</span>`}, {k: 'kappa', label: T('Rule agreement'), heat: true, fmt: v => v.toFixed(3)},
+      {k: 'annotators', label: T('Annotators'), num: true}]})}
+  <details class="rt-details" ${Q.user ? 'open' : ''}><summary>${T('User × site progress')} (${progRows.length})</summary>
+  <div class="toolbar" style="margin-top:10px">${T('User:')}
+    ${sel('qUser', {'': T('all'), ...Object.fromEntries(users.map(u => [u.user, u.user]))}, Q.user, 'Q.user=this.value;render()')}</div>
+  ${RT.table({id: 'progress_sites', title: T('User × site progress'), rows: progRows, sort: {k: 'last', dir: 'desc'}, columns: [
+    {k: 'user', label: T('User'), html: v => `<span class="mono">${esc(v)}</span>`},
+    {k: 'domain', label: T('Site'), html: v => `<a class="mono" href="/ground-truth/${encodeURIComponent(v)}">${esc(v)}</a>`},
+    {k: 'country', label: T('Country')}, {k: 'assigned', label: T('Assigned'), num: true}, {k: 'skipped', label: T('Skipped'), num: true},
+    {k: 'layouts', label: T('Layouts'), num: true}, {k: 'rules_txt', label: T('Rules (CSS/XPath/Regex)'), fmt: (v, r) => `${r.rules.css}/${r.rules.xpath}/${r.rules.regex}`, sortable: false},
+    {k: 'last', label: T('Last'), fmt: fmtDate}]})}</details>`;
+  RT.mount();
+}
+
+// ═══════════════════════════════════════════════════════
+// 🤖 LLM SONUÇLARI
+// ═══════════════════════════════════════════════════════
+const L = {sel: null, common: true, quick: false, q: '', dim: 'field', metric: 'mean', x: 'ms'};
+const ruleOf = e => e.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : (e.rule_type || '').toUpperCase();
+const sizeB = s => { const m = /([\d.]+)\s*([BM])/i.exec(s || ''); return m ? +m[1] / (m[2].toUpperCase() === 'M' ? 1000 : 1) : null; };
+const BDIMS = {field: 'Field', country: 'Country', language: 'Language', continent: 'Continent', template: 'Template', site: 'Site'};
+
+function llmVisible(d) {
+  const q = L.q.trim().toLowerCase();
+  return d.experiments.filter(e => (L.quick || e.kind !== 'quick') &&
+    (!q || `${e.name} ${e.model} ${e.backend} ${ruleOf(e)} ${e.group?.name || ''}`.toLowerCase().includes(q)));
+}
+function labels(es) {
+  const base = e => `${e.model || e.backend} · ${ruleOf(e)}`;
+  const cnt = {};
+  es.forEach(e => { cnt[base(e)] = (cnt[base(e)] || 0) + 1; });
+  const out = {};
+  for (const e of es) {
+    let l = base(e);
+    if (cnt[l] > 1) {
+      const extra = [e.strategy !== 'whitelist' ? e.strategy : '', Object.values(e.prompts).find(p => p !== 'Otomatik prompt' && p !== 'Automatic prompt') || ''].filter(Boolean).join(' · ');
+      l += extra ? ` · ${extra}` : '';
+    }
+    out[e.id] = l;
+  }
+  const seen = {};
+  for (const e of es) { if (seen[out[e.id]]) out[e.id] += ` #${e.id.slice(-4)}`; seen[out[e.id]] = 1; }
+  return out;
+}
+function aggregate(e, keys, meta) {
+  const ls = e.layouts.filter(l => !l.err && (!keys || keys.has(`${l.d}|${l.l}`)));
+  const n = ls.length;
+  const sm = RT.mean(ls.map(l => l.sm)), om = RT.mean(ls.map(l => l.om));
+  return {
+    id: e.id, e, n, pages: ls.reduce((a, l) => a + (l.n || 0), 0),
+    strategy: e.strategy || null, prompt: [...new Set(Object.values(e.prompts || {}))].join(', ') || null,
+    mean: RT.mean(ls.map(l => l.mean)), sm, om, gap: sm !== null && om !== null ? sm - om : null,
+    match: RT.mean(ls.map(l => l.match)),
+    tok: n ? ls.reduce((a, l) => a + l.pt + l.gt, 0) / n : null, sec: n ? ls.reduce((a, l) => a + l.ms, 0) / n / 1000 : null,
+    fail: ls.filter(l => !l.ok).length, errs: e.layouts.filter(l => l.err).length,
+    size: sizeB(e.model_info?.parameter_size), ls,
+  };
+}
+function breakdown(rows, meta) {
+  // grup → deney başına değer; alan için layout'ların alan skoru, diğerleri için layout ortalaması
+  const key = (l, f) => L.dim === 'field' ? f : L.dim === 'template' ? (l.t || '—') : L.dim === 'site' ? l.d : ((meta[l.d] || {})[L.dim] || '—');
+  const groups = {};
+  for (const r of rows) for (const l of r.ls) {
+    if (L.dim === 'field') {
+      for (const [f, v] of Object.entries(L.metric === 'match' ? l.pfm : l.pf)) {
+        if (v === null) continue;
+        const g = groups[f] = groups[f] || {n: new Set(), v: {}};
+        g.n.add(`${l.d}|${l.l}`); (g.v[r.id] = g.v[r.id] || []).push(v);
+      }
+    } else {
+      const k = key(l), v = L.metric === 'match' ? l.match : l.mean;
+      if (v === null) continue;
+      const g = groups[k] = groups[k] || {n: new Set(), v: {}};
+      g.n.add(`${l.d}|${l.l}`); (g.v[r.id] = g.v[r.id] || []).push(v);
+    }
+  }
+  return Object.entries(groups).map(([k, g]) => ({group: k, n: g.n.size, v: Object.fromEntries(Object.entries(g.v).map(([id, xs]) => [id, RT.mean(xs)]))}))
+    .sort((a, b) => b.n - a.n || a.group.localeCompare(b.group));
+}
+
+async function llmTab(el) {
+  const d = await data('llm', '/api/reports/llm');
+  if (!d.experiments.length) {
+    el.innerHTML = `<div class="empty">${T('No finished experiments yet. Start an experiment in the {link} section.', {link: `<a href="/evaluation" style="color:var(--accent)">${T('LLM Evaluation')}</a>`})}</div>`;
+    return;
+  }
+  const vis = llmVisible(d);
+  if (!L.sel) L.sel = new Set(d.experiments.filter(e => e.kind !== 'quick' && e.status === 'done').map(e => e.id));
+  const chosen = vis.filter(e => L.sel.has(e.id));
+  const lab = labels(chosen);
+  const sets = chosen.map(e => new Set(e.layouts.filter(l => !l.err).map(l => `${l.d}|${l.l}`)));
+  const common = sets.length ? new Set([...sets[0]].filter(k => sets.every(s => s.has(k)))) : new Set();
+  const differ = sets.some(s => s.size !== common.size);
+  const keys = L.common && chosen.length > 1 ? common : null;
+  const rows = chosen.map(e => ({...aggregate(e, keys, d.sites), label: lab[e.id]}));
+  const ranked = [...rows].sort((a, b) => (b.mean ?? -1) - (a.mean ?? -1));
+  ranked.forEach((r, i) => { r.rank = r.mean === null ? null : i + 1; });
+  const bd = breakdown(rows, d.sites).slice(0, 40);
+  const bdDim = T(BDIMS[L.dim]);
+  const bdTitle = L.metric === 'match' ? T('MATCH rate by {dim}', {dim: bdDim}) : T('Score by {dim}', {dim: bdDim});
+
+  const pick = vis.map(e => `<tr>
+      <td><input type="checkbox" ${L.sel.has(e.id) ? 'checked' : ''} onchange="llmPick('${e.id}', this.checked)"></td>
+      <td><a href="/evaluation/${encodeURIComponent(e.id)}">${esc(e.name)}</a>${e.kind === 'quick' ? ` <span class="pill">${T('quick test')}</span>` : ''}
+        ${e.group ? `<a class="pill" href="/evaluation/group/${encodeURIComponent(e.group.id)}" title="${T('Comparative experiment')}">⚖ ${esc(e.group.name)}</a>` : ''}</td>
+      <td class="mono">${esc(e.model)}</td><td><span class="pill">${ruleOf(e)}</span></td>
+      <td class="num">${e.layouts.length}/${e.scope}</td>
+      <td>${e.status === 'done' ? `<span class="pill auto">${T('done')}</span>` : `<span class="pill req">${esc(T(e.status))}</span>`}</td>
+      <td class="mono muted" style="font-size:11px">${fmtDate(e.created_at)}</td></tr>`).join('');
+
+  const XS = {ms: ['sec', T('Mean LLM time / layout (s)')], tok: ['tok', T('Mean tokens / layout')], size: ['size', T('Parameters (billion)')]};
+  const [xk, xl] = XS[L.x];
+  const scatterRows = ranked.filter(r => r.mean !== null && r[xk] !== null);
+
+  el.innerHTML = `
+  <details class="rt-details" ${chosen.length ? '' : 'open'}><summary>${T('Experiment selection — {n} / {total} selected', {n: chosen.length, total: vis.length})}</summary>
+    <div class="toolbar" style="margin-top:10px">
+      <input type="text" placeholder="${T('search: model, name, group...')}" value="${esc(L.q)}" onchange="L.q=this.value;render()" style="width:220px">
+      <button type="button" class="btn sm" onclick="llmAll(true)">${T('Select all')}</button>
+      <button type="button" class="btn sm" onclick="llmAll(false)">${T('Select none')}</button>
+      <label class="muted rt-check"><input type="checkbox" ${L.quick ? 'checked' : ''} onchange="L.quick=this.checked;render()"> ${T('Show saved quick tests')}</label>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th></th><th>${T('Experiment')}</th><th>${T('Model')}</th><th>${T('Rule')}</th><th>${T('Layout')}</th><th>${T('Status')}</th><th>${T('Date')}</th></tr></thead>
+      <tbody>${pick || `<tr><td colspan="7" class="empty">${T('No matching experiments')}</td></tr>`}</tbody></table></div>
+  </details>
+  ${chosen.length ? `
+  <div class="toolbar">
+    <label class="rt-check"><input type="checkbox" ${L.common ? 'checked' : ''} onchange="L.common=this.checked;render()"> ${T('Common layout set')}</label>
+    <span class="muted">${chosen.length > 1 ? `${T('common: {n} layouts', {n: `<b>${common.size}</b>`})}${differ ? (L.common ? ' · ' + T('the experiments have different scopes; only common layouts are counted') : ` · <span style="color:var(--yellow)">⚠ ${T('the experiments have different scopes — the comparison is not fair')}</span>`) : ' · ' + T('same scopes')}` : T('single experiment')}</span>
+    ${L.common && chosen.length > 1 && !common.size ? `<span class="pill req">${T('no common layouts — narrow the selection or untick the box')}</span>` : ''}
+  </div>
+  ${RT.table({id: 'llm_leaderboard', title: '🏆 ' + T('Leaderboard'), caption: 'LLM-generated extraction rules: macro-averaged score over layouts (Sample: page shown to the LLM, Others: remaining ground-truth pages).',
+    rows: ranked, sort: {k: 'mean', dir: 'desc'},
+    note: T('Scores in percent. Mean: mean of the layout means. Gap = Sample − Others. MATCH: share of cells with a score ≥ {m}. Errors: layouts whose LLM call failed.', {m: d.match_at}),
+    columns: [
+      {k: 'rank', label: '#', num: true}, {k: 'label', label: T('Model · rule'), html: (v, r) => `<a class="mono" href="/evaluation/${encodeURIComponent(r.id)}">${esc(v)}</a>`},
+      {k: 'size', label: T('Size'), num: true, fmt: (v, r) => r.e.model_info?.parameter_size ? `${r.e.model_info.parameter_size}${r.e.model_info.quantization ? ' ' + r.e.model_info.quantization : ''}` : '—'},
+      {k: 'strategy', label: T('Strategy')}, {k: 'prompt', label: T('Prompt')},
+      {k: 'n', label: T('Layouts'), num: true},
+      {k: 'mean', label: T('Mean'), num: true, fmt: pct, best: 'max'}, {k: 'sm', label: T('Sample'), num: true, fmt: pct, best: 'max'},
+      {k: 'om', label: T('Others'), num: true, fmt: pct, best: 'max'}, {k: 'gap', label: T('Gap'), num: true, fmt: pct, best: 'absmin'},
+      {k: 'match', label: 'MATCH', num: true, fmt: pct, best: 'max'},
+      {k: 'tok', label: T('Tokens/layout'), num: true, fmt: v => v === null ? '—' : String(Math.round(v)), best: 'min'},
+      {k: 'sec', label: T('s/layout'), num: true, fmt: v => v === null ? '—' : v.toFixed(1), best: 'min'},
+      {k: 'fail', label: T('Errors'), num: true}]})}
+  <div class="rt-grid">
+    ${RT.chart('chart_llm_scores', T('Sample page and generalisation'), () => ({
+      type: 'bar', data: {labels: ranked.map(r => r.label), datasets: [
+        {label: T('Mean'), data: ranked.map(r => r.mean === null ? null : +(r.mean * 100).toFixed(1)), backgroundColor: RT.color(0)},
+        {label: T('Sample page'), data: ranked.map(r => r.sm === null ? null : +(r.sm * 100).toFixed(1)), backgroundColor: RT.color(1)},
+        {label: T('Other pages'), data: ranked.map(r => r.om === null ? null : +(r.om * 100).toFixed(1)), backgroundColor: RT.color(2)}]},
+      options: {scales: {x: {ticks: {autoSkip: false, maxRotation: 45}}, y: {min: 0, max: 100, title: {display: true, text: T('Score (%)')}}}}}),
+      {height: 320})}
+    <div>
+      <div class="toolbar" style="margin-bottom:6px">${T('x axis:')} ${sel('lX', {ms: T('time'), tok: T('tokens'), size: T('model size')}, L.x, 'L.x=this.value;render()')}</div>
+      ${RT.chart(`chart_llm_cost_${L.x}`, T('Score – {x}', {x: xl.toLowerCase()}), () => ({
+        type: 'scatter', data: {datasets: scatterRows.map((r, i) => ({label: r.label, data: [{x: +r[xk].toFixed(3), y: +(r.mean * 100).toFixed(1), label: r.label}],
+          backgroundColor: RT.color(i), pointRadius: 7, pointHoverRadius: 9}))},
+        options: {scales: {x: {beginAtZero: true, title: {display: true, text: xl}}, y: {min: 0, max: 100, title: {display: true, text: T('Mean score (%)')}}},
+          plugins: {legend: {position: 'bottom'}}}}),
+        {height: 290, note: scatterRows.length < ranked.length ? T('{n} experiments lack this information (e.g. model size for API models).', {n: ranked.length - scatterRows.length}) : ''})}
+    </div>
+  </div>
+  <div class="toolbar" style="margin-top:6px">${T('Breakdown:')} ${sel('lDim', tmap(BDIMS), L.dim, 'L.dim=this.value;render()')}
+    ${T('metric:')} ${sel('lMetric', {mean: T('mean score'), match: T('MATCH rate')}, L.metric, 'L.metric=this.value;render()')}
+    <span class="muted">${T('{n} groups', {n: bd.length})}${bd.length === 40 ? ` (${T('largest 40')})` : ''}</span></div>
+  ${RT.table({id: `llm_by_${L.dim}_${L.metric}`, title: bdTitle,
+    caption: `${L.metric === 'match' ? 'Exact-match rate' : 'Mean score'} per ${L.dim} (%).`,
+    note: T('Row: experiment, column: group (number of layouts in parentheses). The best value in each column is in bold.'),
+    rows: ranked.map(r => ({label: r.label, id: r.id, ...Object.fromEntries(bd.map((g, i) => [`g${i}`, g.v[r.id] ?? null]))})),
+    columns: [{k: 'label', label: T('Model · rule'), html: v => `<span class="mono">${esc(v)}</span>`},
+      ...bd.map((g, i) => ({k: `g${i}`, label: `${g.group} (${g.n})`, heat: true, fmt: pct, best: 'max'}))]})}
+  ${RT.chart(`chart_llm_by_${L.dim}_${L.metric}`, bdTitle, () => ({
+    type: 'bar', data: {labels: bd.map(g => g.group), datasets: ranked.map((r, i) => ({label: r.label,
+      data: bd.map(g => g.v[r.id] === undefined || g.v[r.id] === null ? null : +(g.v[r.id] * 100).toFixed(1)), backgroundColor: RT.color(i)}))},
+    options: {scales: {x: {ticks: {autoSkip: false, maxRotation: 60}}, y: {min: 0, max: 100, title: {display: true, text: '%'}}}}}),
+    {height: 340})}
+  ${crossBlock(d)}` : `<div class="empty">${T('Select at least one experiment above to report on.')}</div>`}`;
+  RT.mount();
+}
+function crossBlock(d) {
+  if (!d.groups.length) return '';
+  return `<div class="rt-block"><div class="rt-head"><span class="rt-title">🔀 ${T('Cross-check groups')}</span></div>
+    <div class="table-wrap"><table><thead><tr><th>${T('Comparative experiment')}</th><th>${T('Members')}</th><th></th></tr></thead><tbody>
+    ${d.groups.map(g => `<tr><td>${esc(g.name)} <span class="muted mono">${esc(g.id)}</span></td><td class="num">${g.members}</td>
+      <td style="white-space:nowrap"><button type="button" class="btn sm" onclick="llmGroup('${g.id}')">${T('Select only this group')}</button>
+        <a class="btn sm" href="/evaluation/group/${encodeURIComponent(g.id)}#cross">${T('Cross check')} →</a></td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="muted rt-note">${T('Cross check measures how well the models agree with each other (independently of the GT); cells where the models agree but do not match the GT are flagged so the GT can be checked.')}</p></div>`;
+}
+function llmPick(id, on) { on ? L.sel.add(id) : L.sel.delete(id); render(); }
+function llmAll(on) { const d = _cache.llm; llmVisible(d).forEach(e => on ? L.sel.add(e.id) : L.sel.delete(e.id)); render(); }
+function llmGroup(gid) { L.sel = new Set(_cache.llm.experiments.filter(e => e.group?.id === gid).map(e => e.id)); render(); window.scrollTo({top: 0, behavior: 'smooth'}); }
+
+// ═══════════════════════════════════════════════════════
+// ⬇ DIŞA AKTARMA
+// ═══════════════════════════════════════════════════════
+function exportTab(el) {
+  const ids = L.sel && _cache.llm ? llmVisible(_cache.llm).filter(e => L.sel.has(e.id)).map(e => e.id) : [];
+  el.innerHTML = `<div class="cards">
+    <div class="card">
+      <div class="card-title">🏛 ${T('Ground truth dataset')}</div>
+      <div class="card-desc">${T('Approved GT only ({path}).', {path: '<span class="mono">ground_truth/approved/</span>'})}</div>
+      <ul><li>JSONL — ${T('one line per layout (all rules)')}</li><li>CSV — ${T('one row per field')}</li>
+        <li>HuggingFace — ${T('GT value per (site, page, field)')}</li><li>README.md — ${T('dataset card')}</li></ul>
+      <div class="card-actions">
+        <a class="btn" href="/api/export/jsonl" download>JSONL</a><a class="btn" href="/api/export/csv" download>CSV</a>
+        <a class="btn" href="/api/export/hf" download>HuggingFace</a><a class="btn primary" href="/api/export/dataset-card" download>Dataset card</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔁 ${T('Reproducibility manifest')}</div>
+      <div class="card-desc">${T('Paper appendix: experiment configurations, the full text of the prompts used, model digests and parameters, the generated rules, GT compilation times, the scoring definition and hashes of the code files (SHA-256).')}</div>
+      <div class="card-actions">
+        <a class="btn" href="/api/reports/manifest" download>${T('All completed experiments')}</a>
+        ${ids.length ? `<a class="btn primary" href="/api/reports/manifest?ids=${encodeURIComponent(ids.join(','))}" download>${T('{n} experiments selected in the LLM tab', {n: ids.length})}</a>`
+          : `<span class="muted">${T('For selected experiments, first make a selection in the 🤖 LLM results tab.')}</span>`}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📐 ${T('Tables and charts')}</div>
+      <div class="card-desc">${T('Every table in the reports can be exported as {t}, every chart as {c}.', {t: '<b>CSV / LaTeX / MD</b>', c: '<b>PNG / CSV</b>'})}
+        ${T('LaTeX tables use {pkg}; the best value in each column is in bold. PNGs have a white background and 2× resolution.', {pkg: '<span class="mono">booktabs</span>'})}</div>
+      <div class="card-actions"><button type="button" class="btn" onclick="setTab('llm')">🤖 ${T('Go to LLM results')}</button></div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// 🧾 DENETİM KAYDI (admin)
+// ═══════════════════════════════════════════════════════
+const A = {action: '', user: '', q: '', limit: 100};
+
+async function auditTab(el) {
+  if (!Hub.isAdmin()) { el.innerHTML = `<div class="empty">🔒 ${T('The audit log is for admins only.')}</div>`; return; }
+  const d = await data('audit', '/api/reports/audit');
+  const acts = [...new Set(d.entries.map(x => x.action))].sort();
+  const users = [...new Set(d.entries.map(x => x.user).filter(Boolean))].sort();
+  const q = A.q.trim().toLowerCase();
+  const rows = d.entries.filter(x => (!A.action || x.action === A.action) && (!A.user || x.user === A.user) &&
+    (!q || `${x.domain} ${x.details}`.toLowerCase().includes(q)));
+  // son 12 hafta: haftalık olay sayısı (eylem türüne göre yığılmış)
+  const pad = n => String(n).padStart(2, '0');
+  const wkOf = t => { t = new Date(t); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7));      // haftanın pazartesisi (yerel)
+                      return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`; };
+  const wk = s => wkOf(s.replace(' ', 'T'));
+  const weeks = [];
+  for (let i = 11; i >= 0; i--) { const t = new Date(); t.setDate(t.getDate() - 7 * i); weeks.push(wkOf(t)); }
+  const top = Object.entries(rows.reduce((m, x) => (m[x.action] = (m[x.action] || 0) + 1, m), {})).sort((a, b) => b[1] - a[1]).slice(0, 8).map(x => x[0]);
+  el.innerHTML = `<div class="toolbar">
+      ${sel('aAct', {'': T('all actions'), ...Object.fromEntries(acts.map(a => [a, a]))}, A.action, 'A.action=this.value;A.limit=100;render()')}
+      ${sel('aUser', {'': T('all users'), ...Object.fromEntries(users.map(u => [u, u]))}, A.user, 'A.user=this.value;A.limit=100;render()')}
+      <input type="text" placeholder="${T('search site / details...')}" value="${esc(A.q)}" onchange="A.q=this.value;A.limit=100;render()" style="width:220px">
+      <span class="muted">${T('{n} entries', {n: rows.length.toLocaleString(LOCALE)})}</span></div>
+    ${RT.chart('chart_audit_weekly', T('Last 12 weeks — weekly event count'), () => ({
+      type: 'bar', data: {labels: weeks, datasets: top.map((a, i) => ({label: a, backgroundColor: RT.color(i),
+        data: weeks.map(w => rows.filter(x => x.action === a && wk(x.at) === w).length)}))},
+      options: {scales: {x: {stacked: true}, y: {stacked: true, beginAtZero: true, ticks: {precision: 0}}}}}), {height: 240})}
+    ${RT.table({id: 'audit_log', title: T('Audit log'), rows: rows.slice(0, A.limit), sort: {k: 'at', dir: 'desc'}, columns: [
+      {k: 'at', label: T('Time'), html: v => `<span class="mono" style="font-size:11px">${esc(v)}</span>`},
+      {k: 'action', label: T('Action'), html: v => `<span class="pill">${esc(v)}</span>`},
+      {k: 'user', label: T('User'), html: v => `<span class="mono">${esc(v)}</span>`},
+      {k: 'domain', label: T('Site'), html: v => `<span class="mono">${esc(v)}</span>`},
+      {k: 'details', label: T('Details'), html: v => `<span class="mono muted" style="font-size:10px;word-break:break-all">${esc(v)}</span>`, sortable: false}]})}
+    ${rows.length > A.limit ? `<div class="toolbar"><button type="button" class="btn" onclick="A.limit+=500;render()">${T('Show more ({n} left)', {n: (rows.length - A.limit).toLocaleString(LOCALE)})}</button>
+      <span class="muted">${T('The CSV contains only the rows shown.')}</span></div>` : ''}`;
+  RT.mount();
+}
+
+Hub.ready().then(() => { renderTabs(); render(); });
+window.addEventListener('hashchange', () => {
+  const t = location.hash.slice(1);
+  if (t !== _tab && TABS.some(([k]) => k === t)) { _tab = t; renderTabs(); render(); }
+});
+{% endraw %}
+</script>
+{% endblock %}

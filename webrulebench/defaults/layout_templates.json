@@ -1,0 +1,240 @@
+{
+  "templates": {
+    "article": {
+      "id": "article",
+      "name": "News Article",
+      "description": "Standard news/blog article page",
+      "page_type": "article",
+      "icon": "📰",
+      "fields": {
+        "title": {
+          "description": "Main headline of the article",
+          "label": "Title",
+          "metric": "rouge",
+          "required": true,
+          "type": "text"
+        },
+        "body": {
+          "description": "Full article text content",
+          "label": "Body",
+          "metric": "rouge",
+          "required": true,
+          "type": "text"
+        },
+        "author": {
+          "description": "Author name(s)",
+          "label": "Author",
+          "metric": "rouge",
+          "required": false,
+          "type": "text"
+        },
+        "date": {
+          "description": "Publication date",
+          "label": "Date",
+          "metric": "rouge",
+          "required": false,
+          "type": "date"
+        },
+        "category": {
+          "description": "Article category or section",
+          "label": "Category",
+          "metric": "rouge",
+          "required": false,
+          "type": "text"
+        },
+        "images": {
+          "description": "Main article image(s)",
+          "label": "Images",
+          "metric": "jaccard",
+          "required": false,
+          "type": "image",
+          "merge": true
+        },
+        "images_caption": {
+          "label": "images_caption",
+          "type": "text",
+          "metric": "rouge",
+          "required": false,
+          "merge": true,
+          "description": "Caption images"
+        },
+        "related_links": {
+          "description": "Related article links",
+          "label": "Related Links",
+          "metric": "jaccard",
+          "required": false,
+          "type": "url"
+        },
+        "summary": {
+          "description": "Lead paragraph or summary",
+          "label": "Summary",
+          "metric": "rouge",
+          "required": false,
+          "type": "text"
+        },
+        "tags": {
+          "description": "Article tags or keywords",
+          "label": "Tags",
+          "metric": "jaccard",
+          "required": false,
+          "type": "list"
+        }
+      }
+    },
+    "listing": {
+      "id": "listing",
+      "name": "Article Listing",
+      "description": "Page listing multiple articles (homepage, category page, search results)",
+      "page_type": "listing",
+      "icon": "📋",
+      "fields": {
+        "links": {
+          "description": "Links to individual articles",
+          "label": "Article Links",
+          "metric": "jaccard",
+          "required": true,
+          "type": "url"
+        },
+        "titles": {
+          "description": "Titles of listed articles",
+          "label": "Article Titles",
+          "metric": "rouge",
+          "required": false,
+          "type": "list"
+        },
+        "dates": {
+          "description": "Publication dates of listed articles",
+          "label": "Article Dates",
+          "metric": "exact_match",
+          "required": false,
+          "type": "list"
+        },
+        "images": {
+          "description": "Thumbnail images for listed articles",
+          "label": "Thumbnail Images",
+          "metric": "jaccard",
+          "required": false,
+          "type": "image"
+        }
+      }
+    },
+    "product": {
+      "id": "product",
+      "name": "Product Page",
+      "description": "E-commerce product detail page",
+      "page_type": "article",
+      "icon": "🛍️",
+      "fields": {
+        "title": {
+          "label": "Product Name",
+          "type": "text",
+          "metric": "rouge",
+          "required": true,
+          "description": "Product title/name"
+        },
+        "price": {
+          "label": "Price",
+          "type": "price",
+          "metric": "exact_match",
+          "required": true,
+          "description": "Current price"
+        },
+        "description": {
+          "label": "Description",
+          "type": "text",
+          "metric": "rouge",
+          "required": false,
+          "description": "Product description"
+        },
+        "images": {
+          "label": "Product Images",
+          "type": "image",
+          "metric": "jaccard",
+          "required": false,
+          "description": "Product images"
+        },
+        "category": {
+          "label": "Category",
+          "type": "text",
+          "metric": "exact_match",
+          "required": false,
+          "description": "Product category"
+        },
+        "rating": {
+          "label": "Rating",
+          "type": "text",
+          "metric": "exact_match",
+          "required": false,
+          "description": "Product rating"
+        },
+        "availability": {
+          "label": "Availability",
+          "type": "text",
+          "metric": "exact_match",
+          "required": false,
+          "description": "Stock availability"
+        }
+      }
+    }
+  },
+  "metrics": {
+    "rouge": {
+      "label": "ROUGE-1 F1",
+      "description": "Word overlap between predicted and ground truth text",
+      "applies_to": [
+        "text"
+      ]
+    },
+    "exact_match": {
+      "label": "Exact Match",
+      "description": "Exact string equality after normalization",
+      "applies_to": [
+        "text",
+        "date",
+        "price"
+      ]
+    },
+    "jaccard": {
+      "label": "Jaccard Similarity",
+      "description": "Set overlap for lists and URLs",
+      "applies_to": [
+        "list",
+        "url",
+        "image"
+      ]
+    },
+    "f1": {
+      "label": "Token F1",
+      "description": "Token-level F1 score",
+      "applies_to": [
+        "text"
+      ]
+    }
+  },
+  "field_types": {
+    "text": {
+      "label": "Text",
+      "icon": "T"
+    },
+    "date": {
+      "label": "Date",
+      "icon": "📅"
+    },
+    "price": {
+      "label": "Price",
+      "icon": "💲"
+    },
+    "url": {
+      "label": "URL",
+      "icon": "🔗"
+    },
+    "image": {
+      "label": "Image",
+      "icon": "🖼️"
+    },
+    "list": {
+      "label": "List",
+      "icon": "☰"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+data/
+demo/data/
+.env
+__pycache__/
+.pytest_cache/
+.claude/
+paper/
+*.docx
+.ruff_cache/
+*.egg-info/
