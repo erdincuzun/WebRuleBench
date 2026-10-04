@@ -10,8 +10,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
+  {name = "Burak Sevinç", email = "bsevinc@nku.edu.tr"},
   {name = "Erdinç Uzun", email = "erdincuzun@nku.edu.tr"},
-  {name = "Burak Sevinç"},
 ]
 keywords = ["web data extraction", "large language models", "css selector", "xpath", "benchmark", "inter-annotator agreement"]
 classifiers = [

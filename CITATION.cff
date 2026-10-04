@@ -5,13 +5,13 @@ type: software
 version: "1.0.0"
 date-released: "2026-10-04"
 authors:
-  - family-names: Uzun
-    given-names: Erdinç
-    email: erdincuzun@nku.edu.tr
-    affiliation: "Tekirdağ Namık Kemal University"
   - family-names: Sevinç
     given-names: Burak
     email: bsevinc@nku.edu.tr
+    affiliation: "Tekirdağ Namık Kemal University"
+  - family-names: Uzun
+    given-names: Erdinç
+    email: erdincuzun@nku.edu.tr
     affiliation: "Tekirdağ Namık Kemal University"
 license: MIT
 doi: "10.5281/zenodo.23142233"
