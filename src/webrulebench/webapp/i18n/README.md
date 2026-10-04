@@ -7,7 +7,7 @@ EN / TR switch in the header (cookie `lang`, remembered for a year).
 
 - **Source strings are English.** Every user-visible string in templates, JavaScript
   and server messages is written in English in the code.
-- **Translations** live in `webrulebench/webapp/i18n/<lang>/*.json` as `{"English text": "translation"}`.
+- **Translations** live in `src/webrulebench/webapp/i18n/<lang>/*.json` as `{"English text": "translation"}`.
   Files are split by page group and merged when loaded (`i18n.py`); a missing entry
   simply shows the English text.
 - **Placeholders** use `{name}` on both sides: `T("{n} pages", {n: 3})` ↔ `"{n} sayfa"`.
@@ -16,7 +16,7 @@ EN / TR switch in the header (cookie `lang`, remembered for a year).
 |---|---|
 | Jinja templates | `{{ T("Save") }}`, `{{ T("{n} sites", n=count) }}`, attributes: `title="{{ T('Close') }}"` |
 | JavaScript (any page) | `T('Save')`, `T('{n} sites', {n: count})` — `static/i18n.js`, dictionary from `/i18n/<lang>.js` |
-| Python (webrulebench/webapp/core.py, webrulebench/webapp/routes/) | `_t("Site not found")`, `_t("{name} already exists", name=n)` |
+| Python (src/webrulebench/webapp/core.py, webrulebench/webapp/routes/) | `_t("Site not found")`, `_t("{name} already exists", name=n)` |
 | Dates / numbers in JS | `toLocaleString(LOCALE)` (`en-GB` or `tr-TR`) instead of a fixed `'tr-TR'` |
 | Long help texts (`{% block help %}`) | two blocks: `{% if lang == 'tr' %} …Turkish… {% else %} …English… {% endif %}` |
 
@@ -40,5 +40,5 @@ EN / TR switch in the header (cookie `lang`, remembered for a year).
 
 ## Adding a language
 
-Create `webrulebench/webapp/i18n/<code>/` with the same JSON files, add the code to `LANGS` and
-`LOCALES` in `webrulebench/webapp/i18n.py` and to `LOCALE` in `static/i18n.js`.
+Create `src/webrulebench/webapp/i18n/<code>/` with the same JSON files, add the code to `LANGS` and
+`LOCALES` in `src/webrulebench/webapp/i18n.py` and to `LOCALE` in `static/i18n.js`.

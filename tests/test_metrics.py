@@ -7,7 +7,7 @@ metrics.py içindeki temel benzerlik/skorlama fonksiyonları için birim testler
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from webrulebench.evaluation.metrics import word_f1_similarity, jaccard, dates_match, score_text, score_images
 

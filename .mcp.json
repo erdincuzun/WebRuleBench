@@ -2,7 +2,8 @@
   "mcpServers": {
     "webrulebench": {
       "command": "python3",
-      "args": ["-m", "webrulebench.mcp_server"]
+      "args": ["-m", "webrulebench.mcp_server"],
+      "env": {"PYTHONPATH": "src"}
     }
   }
 }

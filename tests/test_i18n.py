@@ -13,11 +13,11 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 
 from webrulebench.webapp import i18n  # noqa: E402
 
-FILES = sorted((ROOT / "webrulebench" / "webapp" / "i18n").glob("*/*.json"))
+FILES = sorted((ROOT / "src" / "webrulebench" / "webapp" / "i18n").glob("*/*.json"))
 PH = re.compile(r"(?<!\{)\{(\w+)\}(?!\})")
 
 

@@ -17,7 +17,7 @@ RULES = {"harborherald.example": HARBOR_A, "pulsedaily.example": PULSE_A, "notic
 
 
 def main():
-    out = HERE.parents[1] / "tests" / "fixtures"
+    out = HERE.parents[2] / "tests" / "fixtures"
     with tempfile.TemporaryDirectory() as tmp:
         generate(Path(tmp))
         if out.exists():

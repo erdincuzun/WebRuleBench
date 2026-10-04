@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from bs4 import BeautifulSoup
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from webrulebench.evaluation.metrics import score_selector
 

@@ -19,7 +19,7 @@ from pathlib import Path
 
 from webrulebench import __version__
 
-_PROJECT_DIR = Path(__file__).resolve().parents[1]
+_PROJECT_DIR = Path(__file__).resolve().parents[2]   # src/webrulebench/cli.py → depo kökü
 
 
 def _demo_dir() -> Path:

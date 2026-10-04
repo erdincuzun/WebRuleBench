@@ -31,7 +31,7 @@ def env(name: str, default: str | None = None) -> str | None:
 
 
 CODE_DIR     = Path(__file__).resolve().parent              # webrulebench/ paketi
-PROJECT_DIR  = CODE_DIR.parent                              # depo kökü (klondan çalışırken)
+PROJECT_DIR  = CODE_DIR.parents[1]                          # depo kökü (klondan çalışırken: src/webrulebench → kök)
 IN_CHECKOUT  = (PROJECT_DIR / "pyproject.toml").exists()
 DEFAULTS_DIR = CODE_DIR / "defaults"
 

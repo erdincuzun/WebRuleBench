@@ -706,7 +706,7 @@ class Skeleton:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # doğrudan çalıştırma: depo kökü
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # doğrudan çalıştırma: src/
     from webrulebench.pipeline.html_cleaner import HTMLCleaner, CleanerConfig, STRATEGIES
 
     parser = argparse.ArgumentParser(description="Skeleton Extractor — K3")

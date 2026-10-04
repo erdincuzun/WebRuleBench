@@ -43,6 +43,7 @@ webrulebench = "webrulebench.cli:main"
 Repository = "https://github.com/erdincuzun/WebRuleBench"
 
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["webrulebench*"]
 
 [tool.setuptools.package-data]
@@ -55,6 +56,7 @@ version = {attr = "webrulebench.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 
 [tool.ruff]
 target-version = "py310"
@@ -65,5 +67,5 @@ extend-exclude = ["data", "demo/data", "paper/experiments/results", "build", "di
 select = ["E9", "F"]                   # syntax errors and pyflakes (undefined names, unused imports, ...)
 
 [tool.ruff.lint.per-file-ignores]
-"webrulebench/webapp/routes/*.py" = ["F403", "F405"]    # blueprints share webapp.core via `from webapp.core import *`
-"webrulebench/webapp/core.py" = ["F401"]                # imports are re-exported to the blueprints (see __all__)
+"src/webrulebench/webapp/routes/*.py" = ["F403", "F405"]    # blueprints share webapp.core via `from webapp.core import *`
+"src/webrulebench/webapp/core.py" = ["F401"]                # imports are re-exported to the blueprints (see __all__)

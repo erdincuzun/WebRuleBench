@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 
 from webrulebench.rules.rule_agreement import normalize_rule, observed_agreement, fleiss_kappa, krippendorff_alpha  # noqa: E402
 
@@ -76,7 +76,7 @@ def test_krippendorff_alpha_nominal():
 
 @pytest.mark.skipif(not shutil.which("node"), reason="node yok")
 def test_browser_copy_normalizes_identically():
-    src = (ROOT / "webrulebench" / "webapp" / "static" / "compile.js").read_text(encoding="utf-8")
+    src = (ROOT / "src" / "webrulebench" / "webapp" / "static" / "compile.js").read_text(encoding="utf-8")
     code = src[src.index("function _splitTop"):src.index("function _observedAgreement")]
     js = code + f"\nconsole.log(JSON.stringify({json.dumps(list(CASES))}.map(c => _normalizeRule(c))));"
     out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout

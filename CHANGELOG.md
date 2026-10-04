@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1 — 2026-10
+
+- Source code moved to `src/webrulebench/` (src layout); `pip install`, the `webrulebench` command and
+  `./run.sh` / `./run_demo.sh` work as before.
+- Fix: exporting a ground truth with a legacy list-valued rule no longer fails.
+- Annotation study outputs label the annotators A1–A3; its data are archived on Zenodo
+  (doi:10.5281/zenodo.23143117, HTML pages on request: doi:10.5281/zenodo.23143325).
+- Documentation: Zenodo DOI, `demo/README.md`, corrected module paths.
+
 ## 1.0.0 — 2026-10
 
 First public release (SoftwareX submission).

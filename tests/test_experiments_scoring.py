@@ -7,7 +7,7 @@ experiments.score_field: deneylerde (sayfa, alan) hücresinin skoru ve etiketi.
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from webrulebench.evaluation.experiments import score_field, MATCH_AT  # noqa: E402
 

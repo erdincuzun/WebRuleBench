@@ -19,7 +19,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # doğrudan çalıştırma: depo kökü
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # doğrudan çalıştırma: src/
 from webrulebench import users_store as U  # noqa: E402
 
 from webrulebench.paths import DATA_DIR  # noqa: E402

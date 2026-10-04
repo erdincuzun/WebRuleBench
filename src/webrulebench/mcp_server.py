@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 # Proje kök dizinini path'e ekle
-_ROOT = Path(__file__).resolve().parents[1]   # depo kökü (python webrulebench/mcp_server.py ile çalıştırma)
+_ROOT = Path(__file__).resolve().parents[1]   # src/ (python src/webrulebench/mcp_server.py ile çalıştırma)
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 

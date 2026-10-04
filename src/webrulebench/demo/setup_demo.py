@@ -30,7 +30,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 CODE = Path(__file__).resolve().parents[1]              # webrulebench/ paketi (defaults/ burada)
-PROJECT = CODE.parent
+PROJECT = CODE.parents[1]                               # depo kökü (src/webrulebench → kök)
 DEFAULT_DIR = PROJECT / "demo" / "data" if (PROJECT / "pyproject.toml").exists() else Path.cwd() / "webrulebench-demo"
 
 # ── annotatör kuralları (CSS) ───────────────────────────────────────
