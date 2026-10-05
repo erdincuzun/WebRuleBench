@@ -9,7 +9,7 @@ a template) against human-curated ground truth. Rules can be **CSS selectors**,
 **XPath expressions** or **regular expressions**: the LLM sees a cleaned
 structural skeleton of *one* sample page per layout, writes one rule per field,
 and the rules are then run — without the LLM — on every ground-truth page of
-that layout, so both accuracy and generalisation are measured.
+that layout, so both accuracy and generalization are measured.
 
 ```
 Raw HTML (data/dataset/raw/)
@@ -70,7 +70,7 @@ The demo (`src/webrulebench/demo/setup_demo.py`) creates a separate data folder 
 
 Suggested tour: **Ground Truth Approval → harborherald.example → Article** (K1 vs K2) ·
 **LLM Evaluation → the demo group → Cross check** · **Reports → LLM results / Annotation & GT** ·
-**LLM Evaluation → Quick test** with `demo-weak`.
+**LLM Evaluation → Quick test** with `demo-weak` · **Reports → Annotation & GT → ▶ Compute** (Krippendorff's α).
 
 ## Data folder
 
@@ -120,8 +120,9 @@ Further users are created from **👥 Users** in the app (or with
 ### 2. Configure an LLM backend
 
 Open **⚙ LLM Models**: five backends are preconfigured (`ollama`, `claude`,
-`gemini`, `groq`, `nvidia`); API types are Ollama, Anthropic, Gemini and any
-OpenAI-compatible endpoint. API keys can be entered on that page (written to
+`gemini`, `groq`, `nvidia`); API types are Ollama, Anthropic, Gemini, any
+OpenAI-compatible endpoint, and `replay`, which serves recorded responses (the demo uses it; rules from
+external generators can be imported the same way and scored under the same protocol). API keys can be entered on that page (written to
 `data/.env`, never to `llm_models.json`) or exported as environment variables
 (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `NVIDIA_API_KEY`).
 Use **⚡ Test** to check the connection.
@@ -135,27 +136,29 @@ python -m webrulebench.pipeline.llm_extractor data/dataset/raw/<domain>/article_
 python -m webrulebench.pipeline.llm_extractor data/dataset/raw/<domain>/article_001.html --backend ollama --rule-type regex
 ```
 
-### 4. Score a rule on a page (Python)
+### 4. Score rules on a page (Python)
+
+The experiments compare rules by the values they extract, so the rule language does not affect the score.
+On a page of the reviewer demo (built by `webrulebench demo`):
 
 ```python
-from webrulebench.evaluation.metrics import score_selector
 from bs4 import BeautifulSoup
+from webrulebench.evaluation.experiments import rule_values, score_field
 
-html = open("data/dataset/raw/<domain>/article_001.html", encoding="utf-8").read()
+html = open("demo/data/dataset/raw/harborherald.example/article_001.html", encoding="utf-8").read()
 soup = BeautifulSoup(html, "html.parser")
+def values(rule, lang):            # values a rule extracts
+    return rule_values(html, soup, rule, lang, kind="text", merge=False)
 
-# CSS ground truth vs. CSS rule (default)
-score, label = score_selector(soup, gt_selector="h1.title", llm_selector="h1", field="title")
-
-# CSS ground truth vs. an XPath rule — rule_type / gt_rule_type are independent
-score, label = score_selector(
-    soup, gt_selector="h1.title", llm_selector="//h1[@class='title']",
-    field="title", rule_type="xpath", gt_rule_type="css", raw_html=html,
-)
+gt = values("h1.entry-title", "css")                   # approved rule
+for rule, lang in [("//h1[contains(@class, 'entry-title')]", "xpath"),
+                   (r'<h1 class="entry-title">(.*?)</h1>', "regex")]:
+    print(lang, score_field(gt, values(rule, lang), "rouge"))
+# xpath (1.0, 'MATCH')   regex (1.0, 'MATCH')
 ```
 
 Full experiments (layout-based, comparative, cross-check) are run from the
-**LLM Evaluation** section of the web application and summarised in **Reports & Export**.
+**LLM Evaluation** section of the web application and summarized in **Reports & Export**.
 The interface is in English by default; the **EN / TR** switch in the header changes it to
 Turkish (translations in `src/webrulebench/webapp/i18n/`, see `src/webrulebench/webapp/i18n/README.md`).
 
@@ -174,7 +177,8 @@ src/webrulebench/          all Python code (one installable package, src layout)
                            · llm_models (backend registry) · prompt_builder (prompt from a template)
   rules/                   rule_utils (CSS / XPath / regex runner) · regex_generator (CSS → regex, extended REGEXN)
                            · rule_agreement (normalization, observed agreement, Fleiss κ, Krippendorff α)
-  evaluation/              metrics · experiments (layout-based, groups, cross-check) · reports (+ manifest)
+  evaluation/              metrics · experiments (layout-based, groups, cross-check) · agreement (two-level
+                           agreement study) · reports (+ manifest)
   webapp/                  Flask app: core.py, routes/ (one blueprint per section), templates/, static/, i18n/,
                            manage_users.py
   defaults/                shipped templates, prompt variants, LLM registry (copied into data/ on first start)

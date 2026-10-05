@@ -9,6 +9,8 @@
 - Interface and manifest use American spelling ("generalization"), as the documentation does.
 - `paper/annotation_study`: records of the LLM experiments reported in the paper (configurations, prompts,
   generated rules, per-page scores), their manifest, and `analyze_rules.py`, which reproduces the rule analysis.
+- README: the Python example scores rules with the functions the experiments use and runs on the demo data;
+  the replay backend and the agreement module are documented.
 
 ## 1.0.2 — 2026-10
 
