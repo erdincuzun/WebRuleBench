@@ -126,5 +126,4 @@ def test_score_selector_defaults_to_css_backward_compat():
     """rule_type verilmezse eski davranış (css/css) korunmalı."""
     soup = BeautifulSoup(HTML, "html.parser")
     score, label = score_selector(soup, "h1.title", "h1.title", field="title")
-    assert label != "WRONG"
-    assert score > 0.9
+    assert (score, label) == (1.0, "MATCH")          # tam eşleşme, deneylerle aynı etiket

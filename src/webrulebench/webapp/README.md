@@ -73,7 +73,7 @@ h2 a, h3 a                 → alternatifler (virgülle)
 
 ### 4. Ground Truth Onayı
 Site → layout → derleme sayfası. Her annotatörün kuralları yan yana; kural dilleri ayrı sekmelerde.
-- **Katman 1 (κ)**: alan bazında Fleiss κ ve en sık yazılan kural önerisi (✓ ≥ 0.6, ~ 0.4–0.6, ! < 0.4).
+- **Katman 1 (kural uyumu)**: alan bazında aynı (normalize) kuralı yazan annotatör çiftlerinin oranı ve en sık yazılan kural önerisi (✓ ≥ 0.6, ~ 0.4–0.6, ! < 0.4). Fleiss κ ve Krippendorff α: **Rapor → Annotation & GT**.
 - **Katman 2 (K2)**: örnek sayfada her kuralın çıkardığı metnin EM / Jaccard / ROUGE skorları; en yüksek ROUGE-L önerisi.
 - 🔒 Admin hangi kural dillerinin GT'ye dahil olacağını seçer, önerileri uygular ya da elle değiştirir ve **💾 GT Kaydet** ile `ground_truth/approved/<site>.json`'a yazar. Diğer kullanıcılar sayfayı salt-okunur görür.
 - Liste sayfalarında durum: **onaylı**, **güncelleme var** (onaydan sonra annotation değişmiş), **GT yok**.

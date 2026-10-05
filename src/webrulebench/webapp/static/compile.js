@@ -484,7 +484,7 @@ function _compileRenderTable() {
       <th>${T('Field')}</th>
       ${users.map(u => `<th class="user-col">${u}</th>`).join('')}
       <th style="color:var(--green)">${T('Current GT')}</th>
-      <th class="metric-col">κ (sel)</th>
+      <th class="metric-col" title="${_escAttr(T('Rule agreement (share of annotator pairs that wrote the same normalized rule) = {v}', {v: '0–1'}))}">${T('Rule agreement')}</th>
       <th title="${_escAttr(T('{lang} rule to be written to the GT — filled by selecting a cell; the admin can edit it by hand', {lang: COMPILE_LANGS[_compileLang]}))}">${T('To save')}</th>
     </tr>`;
   } else {

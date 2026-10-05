@@ -253,5 +253,8 @@ def score_selector(soup, gt_selector, llm_selector,
                     ((gt_count == 1 and llm_count > 1) or (llm_count == 1 and gt_count > 1)))
 
     if sim > 0:
+        from webrulebench.evaluation.experiments import MATCH_AT   # deneylerle aynı eşik
+        if sim >= MATCH_AT:
+            return sim, "MATCH"
         return sim, "CONTAINER" if is_container else "PARTIAL"
     return 0.0, "CONTAINER" if is_container else "WRONG"
