@@ -25,3 +25,6 @@ paper/experiments/results/
 # Paper drafts and internal documents stay local; only the annotation study is published
 paper/*
 !paper/annotation_study/
+
+# local notes
+txt.txt
