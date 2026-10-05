@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2 — 2026-10
+
+- Reports → Annotation & GT: content-level inter-annotator agreement on request — Krippendorff's α per field on the
+  values each annotator's rule extracts from all ground-truth pages, next to rule-level Fleiss' κ and the share of
+  identical rules; per annotator pair and per layout; per rule language; exportable as CSV / LaTeX / Markdown / PNG.
+- The computation lives in `webrulebench.evaluation.agreement`; `paper/annotation_study/analyze.py` uses the same
+  function (results unchanged).
+
 ## 1.0.1 — 2026-10
 
 - Source code moved to `src/webrulebench/` (src layout); `pip install`, the `webrulebench` command and

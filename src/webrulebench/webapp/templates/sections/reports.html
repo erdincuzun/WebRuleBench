@@ -9,7 +9,7 @@
 <h3>Sekmeler</h3>
 <ul>
   <li><b>📦 Veri seti</b> — ülke / dil / kıta bazında site, sayfa ve layout dağılımı; şablonlar, alan kapsamı (GT kuralı olan layout oranı), layout başına sayfa dağılımı.</li>
-  <li><b>✍ Annotation &amp; GT</b> — kullanıcı ilerlemesi; kural dili başına GT durumu (onaylı / güncelleme var / yok); alan bazında Fleiss κ ve düşük uyumlu layout'lar.</li>
+  <li><b>✍ Annotation &amp; GT</b> — kullanıcı ilerlemesi; kural dili başına GT durumu (onaylı / güncelleme var / yok); alan bazında Fleiss κ ve düşük uyumlu layout'lar; istek üzerine içerik düzeyinde uyum (Krippendorff α: kuralların bütün GT sayfalarında çıkardığı değerler), annotatör çiftleri ve layout bazında uyum.</li>
   <li><b>🤖 LLM sonuçları</b> — bütün deneylerden tek sıralama tablosu; skor–maliyet grafiği; alan, ülke, dil, kıta, şablon ya da site kırılımı; cross-check grupları.</li>
   <li><b>⬇ Dışa aktarma</b> — GT veri seti (JSONL / CSV / HuggingFace), dataset card (README.md), tekrarlanabilirlik manifesti.</li>
   <li><b>🧾 Denetim kaydı</b> (admin) — ekleme, silme, derleme, deney ve kullanıcı işlemleri.</li>
@@ -30,7 +30,7 @@
 <h3>Tabs</h3>
 <ul>
   <li><b>📦 Dataset</b> — distribution of sites, pages and layouts by country / language / continent; templates, field coverage (share of layouts with a GT rule), distribution of pages per layout.</li>
-  <li><b>✍ Annotation &amp; GT</b> — user progress; GT status per rule language (approved / has updates / none); Fleiss κ per field and low-agreement layouts.</li>
+  <li><b>✍ Annotation &amp; GT</b> — user progress; GT status per rule language (approved / has updates / none); Fleiss κ per field and low-agreement layouts; on request, content-level agreement (Krippendorff α on the values the rules extract from all GT pages), annotator pairs and agreement per layout.</li>
   <li><b>🤖 LLM results</b> — a single leaderboard across all experiments; score–cost chart; breakdown by field, country, language, continent, template or site; cross-check groups.</li>
   <li><b>⬇ Export</b> — GT dataset (JSONL / CSV / HuggingFace), dataset card (README.md), reproducibility manifest.</li>
   <li><b>🧾 Audit log</b> (admin) — add, delete, compile, experiment and user actions.</li>
@@ -201,6 +201,7 @@ const Q = {lang: 'css', user: '', low: 0.5};
 
 async function qualityTab(el) {
   const d = await data('quality', '/api/reports/quality');
+  await agreementCached();
   const prog = d.progress, lays = d.layouts;
   const byUser = {};
   for (const p of prog) {
@@ -279,6 +280,7 @@ async function qualityTab(el) {
       options: {indexAxis: 'y', plugins: {legend: {display: false}}, scales: {x: {min: Math.min(0, ...krows.map(r => r.kappa ?? 0)), max: 1}, y: {}}}}),
       {height: Math.max(200, krows.length * 26)})}
   </div>
+  ${agreementSection()}
   ${RT.table({id: `kappa_low_${Q.lang}`, title: `${T('Low-agreement fields')} — ${RLANG[Q.lang]} (${T('rule agreement')} < ${Q.low})`, rows: low, sort: {k: 'kappa', dir: 'asc'},
     empty: T('No fields below this threshold'), columns: [
       {k: 'domain', label: T('Site'), html: v => `<span class="mono">${esc(v)}</span>`},
@@ -295,6 +297,75 @@ async function qualityTab(el) {
     {k: 'layouts', label: T('Layouts'), num: true}, {k: 'rules_txt', label: T('Rules (CSS/XPath/Regex)'), fmt: (v, r) => `${r.rules.css}/${r.rules.xpath}/${r.rules.regex}`, sortable: false},
     {k: 'last', label: T('Last'), fmt: fmtDate}]})}</details>`;
   RT.mount();
+}
+
+
+// ── içerik düzeyinde uyum (Krippendorff α): istek üzerine hesaplanır, sunucuda dosyalar değişene kadar saklanır ──
+const AG = {busy: false};
+const agKey = () => `agreement_${Q.lang}`;
+
+async function agreementCached() {
+  if (agKey() in _cache) return;
+  try {
+    const r = await fetch(`/api/reports/agreement?lang=${Q.lang}&cached=1`);
+    const j = await r.json();
+    if (r.ok && !j.pending) _cache[agKey()] = j;
+  } catch (e) { /* hazır sonuç yoksa "Hesapla" düğmesi gösterilir */ }
+}
+
+async function computeAgreement() {
+  AG.busy = true; render();
+  try {
+    const r = await fetch(`/api/reports/agreement?lang=${Q.lang}&refresh=1`);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || r.statusText);
+    _cache[agKey()] = j;
+  } catch (e) { Hub.toast(e.message, 'err'); }
+  AG.busy = false; render();
+}
+
+function agreementSection() {
+  const a = _cache[agKey()];
+  const btn = AG.busy ? `<button type="button" class="btn" disabled>⏳ ${T('Computing…')}</button>`
+    : `<button type="button" class="btn" onclick="computeAgreement()">${a ? '↻ ' + T('Recompute') : '▶ ' + T('Compute')}</button>`;
+  const info = a ? T('Computed {when} in {s} s', {when: fmtDate(a.computed_at), s: a.seconds})
+    : T("Runs each annotator's rules on all ground-truth pages of the layouts with ≥2 annotators; this may take a minute.");
+  const head = `<div class="toolbar" style="margin-top:14px"><b>${T('Content-level agreement (Krippendorff α)')} — ${RLANG[Q.lang]}</b>
+    ${btn} <span class="muted">${esc(info)}</span></div>`;
+  if (!a) return head;
+  const f3 = v => v === null || v === undefined ? '—' : v.toFixed(3);
+  const rows = [...a.per_field].sort((x, y) => (x.content_alpha ?? -9) - (y.content_alpha ?? -9));
+  const lo = Math.min(0, ...rows.map(r => Math.min(r.rule_kappa ?? 0, r.content_alpha ?? 0)));
+  return head + `
+    ${RT.table({id: `agreement_fields_${Q.lang}`, title: `${T('Agreement per field — rule and content level')} — ${RLANG[Q.lang]}`,
+      caption: `Inter-annotator agreement per field (${RLANG[Q.lang]} rules): rule level (Fleiss' kappa, share of identical normalized rules) and content level (Krippendorff's alpha on the extracted values).`,
+      rows, empty: T('No layouts with ≥2 annotators for this rule language'),
+      note: T("Rule level: Fleiss κ over the layouts and the share of annotator pairs that wrote the same normalized rule. Content level: Krippendorff α on the values each annotator's rule extracts from every ground-truth page (distance = 1 − the field's metric); 1 is perfect agreement, 0 is chance level. Annotators who write different rules for the same content agree on the content but not on the rules."),
+      columns: [{k: 'field', label: T('Field'), html: v => `<span class="mono">${esc(v)}</span>`}, {k: 'metric', label: T('Metric')},
+        {k: 'layouts', label: T('Layouts'), num: true}, {k: 'rule_kappa', label: T('Rule κ'), heat: true, fmt: f3},
+        {k: 'rule_exact_share', label: `${T('Identical rules')} (%)`, num: true, fmt: v => v === null ? '—' : pct(v)},
+        {k: 'content_alpha', label: T('Content α'), heat: true, fmt: f3},
+        {k: 'content_similarity', label: T('Content similarity'), num: true, fmt: f3},
+        {k: 'content_units', label: T('Units'), num: true}]})}
+  <div class="rt-grid">
+    ${!rows.length ? '' : RT.chart(`chart_agreement_${Q.lang}`, `${T('Rule κ and content α per field')} — ${RLANG[Q.lang]}`, () => ({
+      type: 'bar', data: {labels: rows.map(r => r.field), datasets: [
+        {label: T('Rule κ'), data: rows.map(r => r.rule_kappa), backgroundColor: RT.color(1)},
+        {label: T('Content α'), data: rows.map(r => r.content_alpha), backgroundColor: RT.color(0)}]},
+      options: {indexAxis: 'y', scales: {x: {min: lo, max: 1}, y: {}}}}), {height: Math.max(220, rows.length * 34)})}
+    ${RT.table({id: `agreement_pairs_${Q.lang}`, title: `${T('Annotator pairs — content similarity')} — ${RLANG[Q.lang]}`,
+      caption: `Mean content similarity per annotator pair (${RLANG[Q.lang]} rules).`,
+      rows: a.per_pair.map(p => ({...p, pair: `${p.a} – ${p.b}`})), columns: [
+        {k: 'pair', label: T('Pair'), html: v => `<span class="mono">${esc(v)}</span>`}, {k: 'cells', label: T('Cells'), num: true},
+        {k: 'content_similarity', label: T('Content similarity'), heat: true, fmt: f3}]})}
+  </div>
+  ${RT.table({id: `agreement_layouts_${Q.lang}`, title: `${T('Agreement per layout')} — ${RLANG[Q.lang]}`,
+      caption: `Rule and content agreement per layout (${RLANG[Q.lang]} rules).`, rows: a.per_layout, sort: {k: 'content_agreement', dir: 'asc'},
+      columns: [{k: 'domain', label: T('Site'), html: v => `<span class="mono">${esc(v)}</span>`},
+        {k: 'name', label: T('Layout'), html: (v, r) => `<a href="/ground-truth/${encodeURIComponent(r.domain)}/${encodeURIComponent(r.layout_id)}">${esc(v)}</a> <span class="muted mono">${esc(r.layout_id)}</span>`},
+        {k: 'pages', label: T('Pages'), num: true}, {k: 'annotators', label: T('Annotators'), num: true},
+        {k: 'rule_agreement', label: T('Rule agreement'), heat: true, fmt: f3},
+        {k: 'content_agreement', label: T('Content agreement'), heat: true, fmt: f3}]})}`;
 }
 
 // ═══════════════════════════════════════════════════════

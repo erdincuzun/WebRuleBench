@@ -36,8 +36,8 @@ The **web application** (`webapp/`) covers the whole workflow in six
 sections — data collection, templates & prompts, annotation, ground-truth
 approval, LLM evaluation, reports & export — plus settings pages for LLM
 backends and users. Several annotators write rules independently; an admin
-compiles them into the approved ground truth using inter-annotator agreement
-(Fleiss' κ) and content-level scores.
+compiles them into the approved ground truth using inter-annotator agreement at two levels:
+rules (Fleiss' κ) and the content they extract (content scores; Krippendorff's α in **Reports**).
 
 A user guide for the web application (Turkish) is in
 [src/webrulebench/webapp/README.md](src/webrulebench/webapp/README.md); every section also has an in-app
@@ -198,7 +198,7 @@ experiments, users, settings, API keys) lives in `data/`, which is not part of t
 
 ```bash
 pip install -e ".[dev]"
-pytest -q          # 111 tests, incl. an end-to-end build of the reviewer demo
+pytest -q          # 112 tests, incl. an end-to-end build of the reviewer demo
 ruff check .       # lint (configured in pyproject.toml)
 ```
 

@@ -54,6 +54,41 @@ def api_reports_quality():
                               for u, i in sorted(users.items())]})
 
 
+_agreement_cache: dict = {}   # kural dili → (dosya imzası, sonuç)
+
+
+def _agreement_signature() -> tuple:
+    """Annotation ve onaylı GT dosyalarının sayısı ve son değişiklik zamanı; değişince uyum yeniden hesaplanır."""
+    files = list(ANNOTATIONS_DIR.glob("*/*.json")) + list(APPROVED_DIR.glob("*.json"))
+    return len(files), max((f.stat().st_mtime for f in files), default=0)
+
+
+@bp.route("/api/reports/agreement")
+def api_reports_agreement():
+    """Annotatör uyumu iki düzeyde: kural (Fleiss κ) ve içerik (Krippendorff α), ≥2 annotatörlü onaylı layout'lar,
+    seçili kural dili. Kurallar bütün GT sayfalarında çalıştırıldığından hesap uzun sürebilir; sonuç annotation ya da
+    GT dosyaları değişene kadar saklanır. ?cached=1 → yalnızca hazır sonucu döndür (yoksa {"pending": true})."""
+    _, err = require_login()
+    if err: return err
+    lang = request.args.get("lang", "css")
+    if lang not in RULE_LANGS:
+        return jsonify({"error": _t("Unknown rule_type: {rule_type}", rule_type=lang)}), 400
+    sig = _agreement_signature()
+    hit = _agreement_cache.get(lang)
+    if hit and hit[0] == sig and not request.args.get("refresh"):
+        return jsonify(hit[1])
+    if request.args.get("cached"):
+        return jsonify({"pending": True})
+    from webrulebench.evaluation import agreement as AG
+    t0 = datetime.now()
+    res = AG.agreement_study(lang=lang)
+    for r in res["per_layout"]:
+        r["name"] = ((load_ground_truth(r["domain"]).get("layouts") or {}).get(r["layout_id"]) or {}).get("name", r["layout_id"])
+    res.update(computed_at=t0.isoformat(timespec="seconds"), seconds=round((datetime.now() - t0).total_seconds(), 1))
+    _agreement_cache[lang] = (sig, res)
+    return jsonify(res)
+
+
 @bp.route("/api/reports/llm")
 def api_reports_llm():
     _, err = require_login()

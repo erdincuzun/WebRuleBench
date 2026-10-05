@@ -86,6 +86,7 @@ Site → layout → derleme sayfası. Her annotatörün kuralları yan yana; kur
 
 ### 6. Rapor & Dışa Aktarma
 Sekmeler: 📦 Veri seti · ✍ Annotation & GT · 🤖 LLM sonuçları · ⬇ Dışa aktarma · 🧾 Denetim kaydı (🔒).
+- **Annotation & GT**: kullanıcı ilerlemesi, GT durumu, alan bazında Fleiss κ ve **▶ Hesapla** ile içerik düzeyinde uyum: her annotatörün kuralı ≥2 annotatörlü layout'ların bütün GT sayfalarında çalıştırılır; alan bazında Krippendorff α, annotatör çiftleri ve layout bazında uyum (sonuç dosyalar değişene kadar saklanır).
 - Her tablo **CSV / LaTeX / MD**, her grafik **PNG / CSV** olarak alınır.
 - Onaylı GT: JSONL, CSV, HuggingFace JSONL ve dataset card; deneyler için tekrarlanabilirlik manifesti.
 
