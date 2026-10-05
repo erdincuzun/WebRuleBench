@@ -12,7 +12,7 @@
 <div class="table-wrap">
   <table>
     <thead><tr><th></th><th>{{ T("Experiment") }}</th><th>{{ T("Model") }}</th><th>{{ T("Rule") }}</th><th>{{ T("Prompt") }}</th><th>{{ T("Layout") }}</th>
-      <th title="{{ T('Mean over all pages') }}">{{ T("Mean") }}</th><th title="{{ T('Mean over pages other than the sample page — how well the rule generalises') }}">{{ T("Generalisation") }}</th>
+      <th title="{{ T('Mean over all pages') }}">{{ T("Mean") }}</th><th title="{{ T('Mean over pages other than the sample page — how well the rule generalizes') }}">{{ T("Generalization") }}</th>
       <th>{{ T("Status") }}</th><th>{{ T("Date") }}</th></tr></thead>
     <tbody id="rows"><tr><td colspan="10" class="empty">{{ T("Loading...") }}</td></tr></tbody>
   </table>
@@ -61,7 +61,7 @@ python -m webrulebench.pipeline.llm_extractor data/dataset/raw/&lt;domain&gt;/ar
 <h3>Columns</h3>
 <ul>
   <li><b>Mean</b>: mean of all page × field scores (fields without GT are excluded).</li>
-  <li><b>Generalisation</b>: mean over pages other than the sample page — how well the rule works on pages the LLM has not seen.</li>
+  <li><b>Generalization</b>: mean over pages other than the sample page — how well the rule works on pages the LLM has not seen.</li>
   <li><b>Rule</b>: CSS / XPath / Regex; <span class="mono">CSS→REGEXN</span> is the condition where the LLM generates CSS that is converted to regex with REGEXN.</li>
 </ul>
 <h3>Two ways</h3>

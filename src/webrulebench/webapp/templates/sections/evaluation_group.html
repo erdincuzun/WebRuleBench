@@ -34,7 +34,7 @@
 {% else %}
 <h3>Tabs</h3>
 <ul>
-  <li><b>Ranking</b>: each model × rule language experiment; mean, generalisation (outside the sample page), MATCH rate, errors, tokens and time. Click a row to open the experiment's details.</li>
+  <li><b>Ranking</b>: each model × rule language experiment; mean, generalization (outside the sample page), MATCH rate, errors, tokens and time. Click a row to open the experiment's details.</li>
   <li><b>Heat map</b>: model × field mean — which model is good at which field.</li>
   <li><b>Per layout</b>: the models' mean on each layout; the best one is highlighted, win counts are at the bottom.</li>
   <li><b>Cross check</b>: agreement of the contents that the models extract on the same page and field <i>with each other</i> (mean pairwise ROUGE-1 F1 / Jaccard / exact match,
@@ -118,7 +118,7 @@ function renderBody() {
 function rankTab() {
   const ms = [...G.members].sort((a, b) => (b.summary?.mean ?? -1) - (a.summary?.mean ?? -1));
   return `<div class="table-wrap"><table>
-    <thead><tr><th></th><th>#</th><th>${T('Model · rule')}</th><th>${T('Mean')}</th><th>${T('Sample')}</th><th>${T('Generalisation')}</th><th>MATCH</th><th>${T('Errors')}</th><th>${T('Tokens')}</th><th>${T('LLM time')}</th><th>${T('Status')}</th></tr></thead>
+    <thead><tr><th></th><th>#</th><th>${T('Model · rule')}</th><th>${T('Mean')}</th><th>${T('Sample')}</th><th>${T('Generalization')}</th><th>MATCH</th><th>${T('Errors')}</th><th>${T('Tokens')}</th><th>${T('LLM time')}</th><th>${T('Status')}</th></tr></thead>
     <tbody>${ms.map((m, i) => {
       const s = m.summary || {}, lab = s.labels || {}, tot = Object.entries(lab).filter(([k]) => k !== 'NO_GT').reduce((a, [, v]) => a + v, 0);
       const [cls, label] = statusOf(m.status);
@@ -188,7 +188,7 @@ async function crossTab(el) {
   el.innerHTML = `
     <p class="muted" style="margin-bottom:12px">${T('{n} models · {c} common layouts.', {n: c.members, c: c.common_layouts})} <b>${T('Agreement')}</b> = ${T("pairwise similarity of the contents the models extract on the same page and field (independent of the GT)")};
       <b>GT</b> = ${T("mean of the models' GT scores")}.</p>
-    <div class="cards" style="margin-bottom:14px">
+    <div class="rt-grid" style="margin-bottom:14px">
       <div class="card"><div class="card-title">${T('Agreement per field')}</div>
         <table class="mini"><thead><tr><th>${T('Field')}</th><th>${T('Agreement')}</th><th>GT</th></tr></thead><tbody>${Object.entries(c.fields)
           .sort((a, b) => (a[1].agreement ?? 0) - (b[1].agreement ?? 0))

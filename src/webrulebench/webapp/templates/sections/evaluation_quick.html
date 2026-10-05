@@ -44,7 +44,7 @@
   5 GT pages of the layout. The prompt is the template's automatic prompt and cleaning is <span class="mono">whitelist</span>.</p>
 <h3>Result</h3>
 <ul>
-  <li><b>Mean / Sample page / Generalisation</b>: all pages, the page sent to the LLM and the other pages.</li>
+  <li><b>Mean / Sample page / Generalization</b>: all pages, the page sent to the LLM and the other pages.</li>
   <li>The field table shows the generated rule and the page labels (MATCH, PARTIAL, WRONG, MISS, NO_GT).</li>
   <li>The result can be saved for one hour; <b>💾 Save as experiment</b> adds it to the experiment list.</li>
 </ul>
@@ -101,7 +101,7 @@ function render() {
     <div class="stats">
       <div class="stat-card"><div class="stat-val">${pct(s.mean)}</div><div class="stat-label">${T('Mean')}</div></div>
       <div class="stat-card"><div class="stat-val">${pct(s.sample_mean)}</div><div class="stat-label">${T('Sample page')}</div></div>
-      <div class="stat-card"><div class="stat-val">${pct(s.others_mean)}</div><div class="stat-label">${T('Generalisation')}</div></div>
+      <div class="stat-card"><div class="stat-val">${pct(s.others_mean)}</div><div class="stat-label">${T('Generalization')}</div></div>
       <div class="stat-card"><div class="stat-val">${r.n_pages}</div><div class="stat-label">${T('Pages')}</div></div>
       <div class="stat-card"><div class="stat-val">${(llm.prompt_tokens + llm.gen_tokens).toLocaleString(LOCALE)}</div><div class="stat-label">${T('Tokens')}</div></div>
       <div class="stat-card"><div class="stat-val">${T('{s} s', {s: (llm.elapsed_ms / 1000).toFixed(1)})}</div><div class="stat-label">${T('LLM time')}</div></div>

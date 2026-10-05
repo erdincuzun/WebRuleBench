@@ -38,12 +38,12 @@
 <h3>Output for papers</h3>
 <ul>
   <li>Every table has <b>CSV</b>, <b>LaTeX</b> (booktabs; the best value in each column in bold) and <b>MD</b> buttons at the top. Click a column header to sort; the export uses the same order.</li>
-  <li>Every chart has <b>PNG</b> (white background, 2× resolution, colour-blind-safe palette) and <b>CSV</b> (the chart's data — for redrawing with matplotlib etc.) at the top.</li>
+  <li>Every chart has <b>PNG</b> (white background, 2× resolution, color-blind-safe palette) and <b>CSV</b> (the chart's data — for redrawing with matplotlib etc.) at the top.</li>
 </ul>
 <h3>Definition of the LLM results</h3>
 <ul>
   <li><b>Mean</b>: the mean of the layout means (macro). Layout mean: the score over all GT pages × fields of that layout (ROUGE / Jaccard / EM, the field metric in the template).</li>
-  <li><b>Sample</b>: the score on the page the LLM saw; <b>Others</b>: the remaining GT pages (generalisation); <b>Gap</b> = Sample − Others (smaller is better).</li>
+  <li><b>Sample</b>: the score on the page the LLM saw; <b>Others</b>: the remaining GT pages (generalization); <b>Gap</b> = Sample − Others (smaller is better).</li>
   <li><b>MATCH</b>: the share of (page, field) cells with a score ≥ 0.9.</li>
   <li>With <b>Common layout set</b> on, only layouts that ran successfully in all selected experiments are counted — experiments with different scopes are compared fairly.</li>
 </ul>
@@ -500,7 +500,7 @@ async function llmTab(el) {
       {k: 'sec', label: T('s/layout'), num: true, fmt: v => v === null ? '—' : v.toFixed(1), best: 'min'},
       {k: 'fail', label: T('Errors'), num: true}]})}
   <div class="rt-grid">
-    ${RT.chart('chart_llm_scores', T('Sample page and generalisation'), () => ({
+    ${RT.chart('chart_llm_scores', T('Sample page and generalization'), () => ({
       type: 'bar', data: {labels: ranked.map(r => r.label), datasets: [
         {label: T('Mean'), data: ranked.map(r => r.mean === null ? null : +(r.mean * 100).toFixed(1)), backgroundColor: RT.color(0)},
         {label: T('Sample page'), data: ranked.map(r => r.sm === null ? null : +(r.sm * 100).toFixed(1)), backgroundColor: RT.color(1)},

@@ -192,7 +192,7 @@ administrator; inter-annotator agreement is reported as Fleiss' κ per field.
 For each layout an LLM sees a cleaned structural skeleton of one sample page and returns one rule per field.
 The rules are applied to every ground-truth page of the layout and scored against the values extracted by the
 ground-truth CSS rule, with the field's metric (ROUGE / Jaccard / exact match). Scores are macro-averaged over
-layouts; the score on pages other than the sample page measures generalisation.
+layouts; the score on pages other than the sample page measures generalization.
 
 ## Citation
 

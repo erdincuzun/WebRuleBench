@@ -151,7 +151,7 @@ def manifest(ids: list | None, gt_compiled: dict, dataset: dict) -> dict:
         "scoring": {"aggregation": "macro: mean of the per-layout means",
                     "match_threshold": EX.MATCH_AT,
                     "content_reference": "the value the GT CSS rule extracts from the page",
-                    "generalisation": "others_mean = mean over the GT pages other than the sample page"},
+                    "generalization": "others_mean = mean over the GT pages other than the sample page"},
         "code": {f: _sha(ROOT / f) for f in CODE_FILES},
         "templates_sha": _sha(DATA_DIR / "layout_templates.json"),
         "dataset": dataset,

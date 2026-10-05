@@ -76,7 +76,7 @@ Hub.ready().then(async () => {
     ${common.length ? `
     <div class="table-wrap" style="margin-bottom:18px"><table>
       <thead><tr><th>${T('Measure')}</th><th>A</th><th>B</th><th>Δ</th></tr></thead><tbody>
-      ${[[T('Mean'), l => l.summary.mean], [T('Sample page'), l => l.summary.sample_mean], [T('Generalisation'), l => l.summary.others_mean]].map(([n, f]) =>
+      ${[[T('Mean'), l => l.summary.mean], [T('Sample page'), l => l.summary.sample_mean], [T('Generalization'), l => l.summary.others_mean]].map(([n, f]) =>
         `<tr><td><b>${n}</b></td><td class="num">${pct(m(la, f))}</td><td class="num">${pct(m(lb, f))}</td><td class="num">${delta(m(la, f), m(lb, f))}</td></tr>`).join('')}
       ${fields.map(f => { const fa = m(la, l => l.summary.per_field[f] ?? null), fb = m(lb, l => l.summary.per_field[f] ?? null);
         return `<tr><td class="mono">${Hub.esc(f)}</td><td class="num">${pct(fa)}</td><td class="num">${pct(fb)}</td><td class="num">${delta(fa, fb)}</td></tr>`; }).join('')}

@@ -5,6 +5,8 @@
 - Ground-truth approval page: the per-field column shows rule agreement (share of annotator pairs that wrote the
   same normalized rule) and is now labeled so; Fleiss' κ and Krippendorff's α are in Reports → Annotation & GT.
 - `metrics.score_selector` labels a score ≥ 0.9 as `MATCH`, as the experiments do (it returned `PARTIAL`).
+- Experiment group, cross check: the per-field and per-layout cards no longer cut off the GT column.
+- Interface and manifest use American spelling ("generalization"), as the documentation does.
 
 ## 1.0.2 — 2026-10
 
