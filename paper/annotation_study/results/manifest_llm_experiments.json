@@ -1,0 +1,1505 @@
+{
+ "generated_at": "2026-10-05T20:28:35.316927+00:00",
+ "tool": "WebRuleBench",
+ "version": "1.0.2",
+ "scoring": {
+  "aggregation": "macro: mean of the per-layout means",
+  "match_threshold": 0.9,
+  "content_reference": "the value the GT CSS rule extracts from the page",
+  "generalization": "others_mean = mean over the GT pages other than the sample page"
+ },
+ "code": {
+  "evaluation/experiments.py": "027ee268519acf80",
+  "evaluation/metrics.py": "40d0bdfb053ecdd9",
+  "pipeline/llm_extractor.py": "eb0b2210be456e22",
+  "pipeline/llm_models.py": "b8ff91c33b2ec381",
+  "pipeline/prompt_builder.py": "7d25bcfd8a11290f",
+  "pipeline/html_cleaner.py": "4910f0fdb41ae342",
+  "pipeline/skeleton.py": "807c2f31a1768bdb",
+  "rules/regex_generator.py": "38398c2c3e13c30d",
+  "rules/rule_utils.py": "03b5efa617ea1ef1"
+ },
+ "templates_sha": "76f08e455e64366a",
+ "dataset": {
+  "sites": 228,
+  "sites_with_gt": 75,
+  "pages": 10082,
+  "gt_pages": 1285,
+  "layouts": 106,
+  "templates": {
+   "article": 89,
+   "listing": 17
+  }
+ },
+ "ground_truth_compiled": {
+  "20minutos.es": {
+   "layout-2": {
+    "css": {
+     "at": "2026-05-03T21:52:33+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "24chasa.bg": {
+   "layout-1": {
+    "css": {
+     "at": "2026-05-03T21:52:28+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "525.az": {
+   "layout-1": {
+    "css": {
+     "at": "2026-05-03T21:52:22+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "abante.com.ph": {
+   "layout-1": {
+    "css": {
+     "at": "2026-05-03T21:52:16+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "abendzeitung.de": {
+   "layout-1": {
+    "css": {
+     "at": "2026-05-03T21:52:04+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "adevarul.ro": {
+   "layout-1": {
+    "css": {
+     "at": "2026-05-04T06:12:56+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "agenciabrasil.ebc.com.br": {
+   "layout-2": {
+    "css": {
+     "at": "2026-05-04T06:18:22+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "akipress.com": {
+   "layout-1": {
+    "css": {
+     "at": "2026-05-04T06:20:34+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "alayam.com": {
+   "layout-1": {
+    "css": {
+     "at": "2026-05-04T06:30:00+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  },
+  "aljazeera.com": {
+   "layout-2": {
+    "css": {
+     "at": "2026-05-04T06:53:53+00:00",
+     "by": null,
+     "source": "audit_log"
+    }
+   }
+  }
+ },
+ "experiments": [
+  {
+   "id": "20261002-003346-5c7c",
+   "name": "ollama · qwen2.5-coder:7b · css",
+   "kind": "experiment",
+   "group": {
+    "id": "g-20261002-003346-8720",
+    "name": "Annotation study · 10 layouts · qwen2.5-coder 14b vs 7b · CSS"
+   },
+   "created_at": "2026-10-01T21:33:46.756570+00:00",
+   "finished_at": "2026-10-01T21:41:46.074607+00:00",
+   "created_by": "A1",
+   "status": "done",
+   "config": {
+    "backend": "ollama",
+    "rule_type": "css",
+    "rule_source": "llm",
+    "strategy": "whitelist",
+    "sample": {
+     "mode": "first"
+    },
+    "model": "qwen2.5-coder:7b",
+    "delay_s": 0.0,
+    "max_pages": null,
+    "backend_snapshot": {
+     "api": "ollama",
+     "url": "http://localhost:11434/api/chat",
+     "params": {
+      "temperature": 0.0,
+      "max_tokens": 512,
+      "seed": 42,
+      "num_ctx": 16384
+     },
+     "model_overrides": {},
+     "model": "qwen2.5-coder:7b",
+     "model_info": {
+      "digest": "dae161e27b0e90dd1856c8bb3209201fd6736d8eb66298e75ed87571486f4364",
+      "parameter_size": "7.6B",
+      "quantization": "Q4_K_M",
+      "family": "qwen2",
+      "context_length": 32768,
+      "size": 4683087561
+     }
+    }
+   },
+   "scope": [
+    {
+     "domain": "20minutos.es",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "24chasa.bg",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "525.az",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abante.com.ph",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abendzeitung.de",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "adevarul.ro",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "agenciabrasil.ebc.com.br",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "akipress.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "alayam.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "aljazeera.com",
+     "layout_id": "layout-2"
+    }
+   ],
+   "prompts_used": {
+    "article|css": {
+     "source": "auto",
+     "name": "Automatic prompt",
+     "system": "You extract data from web pages. You are given an HTML skeleton of a web page of type \"News Article\" (Standard news/blog article page): tag names, classes and ids, with headings and short text snippets kept as content hints (long texts are shortened; links, image sources and styles are removed); write one CSS selector for each field below.\n\nFields (use null if a field is not on the page):\n- title: Main headline of the article (required)\n- body: Full article text content (required)\n- author: Author name(s)\n- date: Publication date\n- category: Article category or section\n- images: Main article image(s)\n- images_caption: Caption images\n- related_links: Related article links\n- summary: Lead paragraph or summary\n- tags: Article tags or keywords\n\nReturn ONLY a JSON object with exactly these keys, no other text:\n{\"title\": \"<css selector>\", \"body\": \"<css selector>\", \"author\": \"<css selector>\", \"date\": \"<css selector>\", \"category\": \"<css selector>\", \"images\": \"<css selector>\", \"images_caption\": \"<css selector>\", \"related_links\": \"<css selector>\", \"summary\": \"<css selector>\", \"tags\": \"<css selector>\"}",
+     "user": "Analyze this HTML skeleton from {domain} and return CSS selectors as JSON:\n\n{skeleton}\n\nReturn only the JSON object."
+    }
+   },
+   "summary": {
+    "layouts": 10,
+    "failed": 0,
+    "mean": 0.6183,
+    "sample_mean": 0.6254,
+    "others_mean": 0.6182,
+    "per_field": {
+     "title": 0.8643,
+     "body": 0.9295,
+     "author": 0.7456,
+     "date": 0.5669,
+     "category": 0.2392,
+     "images": 0.435,
+     "images_caption": 0.7985,
+     "related_links": 0.2522,
+     "summary": 1.0,
+     "tags": null
+    },
+    "per_template": {
+     "article": 0.6183
+    },
+    "labels": {
+     "MATCH": 1523,
+     "MISS": 748,
+     "NO_GT": 1541,
+     "PARTIAL": 317,
+     "WRONG": 101
+    },
+    "llm_calls": 10,
+    "prompt_tokens": 21645,
+    "gen_tokens": 1177,
+    "llm_ms": 139371.0
+   },
+   "generated_rules": {
+    "20minutos.es|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1.c-detail__title",
+      "body": "div.c-detail__body p.c-paragraph",
+      "author": "div.c-detail__info div.c-detail__author a",
+      "date": "div.c-detail__info span.c-detail__date",
+      "category": "div.c-detail__info div.c-detail__category a",
+      "images": "div.c-detail__media figure.c-detail__media img",
+      "images_caption": "div.c-detail__media figure.c-detail__media figcaption span",
+      "related_links": "div.c-related__content header span.c-related__title__link a",
+      "summary": "div.c-detail__epigraph p.c-detail__epigraph",
+      "tags": "div.c-detail__tags ul.c-detail__tags__list li.c-detail__tags__item a"
+     }
+    },
+    "24chasa.bg|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".article-title h1 title",
+      "body": ".article-content",
+      "author": ".article-author .content h2 title a",
+      "date": ".article-meta .meta-data .date",
+      "category": ".breadcrumbs li a",
+      "images": ".featured-image img",
+      "images_caption": ".featured-image figcaption",
+      "related_links": ".more-articles a",
+      "summary": ".article-content p:first-child",
+      "tags": ""
+     }
+    },
+    "525.az|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1",
+      "body": ".full-post-article p",
+      "author": "",
+      "date": "div span:contains('27.Mart 2026')",
+      "category": "",
+      "images": ".full-post-image img",
+      "images_caption": "",
+      "related_links": "",
+      "summary": ".full-post-article p:first-child",
+      "tags": ""
+     }
+    },
+    "abante.com.ph|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".elementor-widget-theme-post-title .elementor-heading-title",
+      "body": ".elementor-widget-theme-post-content p",
+      "author": "",
+      "date": ".elementor-post-info__item--type-date time",
+      "category": ".category-metro",
+      "images": "",
+      "images_caption": "",
+      "related_links": "",
+      "summary": ".elementor-widget-theme-post-title .elementor-heading-title",
+      "tags": ".tag-barangay-cuyab, .tag-melvin-matibag, .tag-shabu-tiangge"
+     }
+    },
+    "abendzeitung.de|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1",
+      "body": ".artdetail_text p",
+      "author": ".author",
+      "date": "time",
+      "category": ".breadcrumb li.tiefe1_aktiv a",
+      "images": ".artikelbild img",
+      "images_caption": ".bildtitel, .bildautor",
+      "related_links": "",
+      "summary": ".artdetail_short",
+      "tags": ".schlagwortliste li span"
+     }
+    },
+    "adevarul.ro|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1.titleAndHeadings",
+      "body": "main",
+      "author": "div.info .authors a",
+      "date": "div.info .date time",
+      "category": "div menu .items a.selected",
+      "images": "div.container-image img",
+      "images_caption": "div.container-image .caption",
+      "related_links": "div.related-wrap .related a",
+      "summary": "article header + p:first-child",
+      "tags": "div meta .tags-list a"
+     }
+    },
+    "agenciabrasil.ebc.com.br|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1.titulo-materia",
+      "body": ".conteudo-noticia p",
+      "author": ".autor-noticia",
+      "date": ".data",
+      "category": ".editoria",
+      "images": "figure img",
+      "images_caption": "figcaption",
+      "related_links": ".noticia-relacionada-interna",
+      "summary": ".conteudo-noticia p:first-child",
+      "tags": ".tag"
+     }
+    },
+    "akipress.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".maintxt .title",
+      "body": ".maintxt p:not(.title):not(.addinfo):not(.subsign)",
+      "author": "",
+      "date": "",
+      "category": ".addinfo a:nth-child(2)",
+      "images": ".img",
+      "images_caption": "",
+      "related_links": "",
+      "summary": ".maintxt p:first-child",
+      "tags": ".addinfo a:nth-child(1)"
+     }
+    },
+    "alayam.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".post-title",
+      "body": "#postcontent p",
+      "author": "",
+      "date": ".post-date span",
+      "category": "",
+      "images": ".post-img-container img",
+      "images_caption": "",
+      "related_links": "#divRelatedNews a",
+      "summary": "#summaryTitle",
+      "tags": "#divTagList"
+     }
+    },
+    "aljazeera.com|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1",
+      "body": ".wysiwyg.wysiwyg--all-content",
+      "author": ".contributors-list__by-prefix + a",
+      "date": ".date-simple span:last-child",
+      "category": ".post-label__link",
+      "images": ".article-featured-image .responsive-image",
+      "images_caption": ".article-featured-image figcaption",
+      "related_links": "",
+      "summary": ".article__subhead",
+      "tags": ""
+     }
+    }
+   }
+  },
+  {
+   "id": "20261002-003346-7947",
+   "name": "ollama · qwen2.5-coder:14b · css",
+   "kind": "experiment",
+   "group": {
+    "id": "g-20261002-003346-8720",
+    "name": "Annotation study · 10 layouts · qwen2.5-coder 14b vs 7b · CSS"
+   },
+   "created_at": "2026-10-01T21:33:46.745898+00:00",
+   "finished_at": "2026-10-01T21:39:05.548418+00:00",
+   "created_by": "A1",
+   "status": "done",
+   "config": {
+    "backend": "ollama",
+    "rule_type": "css",
+    "rule_source": "llm",
+    "strategy": "whitelist",
+    "sample": {
+     "mode": "first"
+    },
+    "model": "qwen2.5-coder:14b",
+    "delay_s": 0.0,
+    "max_pages": null,
+    "backend_snapshot": {
+     "api": "ollama",
+     "url": "http://localhost:11434/api/chat",
+     "params": {
+      "temperature": 0.0,
+      "max_tokens": 512,
+      "seed": 42,
+      "num_ctx": 16384
+     },
+     "model_overrides": {},
+     "model": "qwen2.5-coder:14b",
+     "model_info": {
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M",
+      "family": "qwen2",
+      "context_length": 32768,
+      "size": 8988124298
+     }
+    }
+   },
+   "scope": [
+    {
+     "domain": "20minutos.es",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "24chasa.bg",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "525.az",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abante.com.ph",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abendzeitung.de",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "adevarul.ro",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "agenciabrasil.ebc.com.br",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "akipress.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "alayam.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "aljazeera.com",
+     "layout_id": "layout-2"
+    }
+   ],
+   "prompts_used": {
+    "article|css": {
+     "source": "auto",
+     "name": "Automatic prompt",
+     "system": "You extract data from web pages. You are given an HTML skeleton of a web page of type \"News Article\" (Standard news/blog article page): tag names, classes and ids, with headings and short text snippets kept as content hints (long texts are shortened; links, image sources and styles are removed); write one CSS selector for each field below.\n\nFields (use null if a field is not on the page):\n- title: Main headline of the article (required)\n- body: Full article text content (required)\n- author: Author name(s)\n- date: Publication date\n- category: Article category or section\n- images: Main article image(s)\n- images_caption: Caption images\n- related_links: Related article links\n- summary: Lead paragraph or summary\n- tags: Article tags or keywords\n\nReturn ONLY a JSON object with exactly these keys, no other text:\n{\"title\": \"<css selector>\", \"body\": \"<css selector>\", \"author\": \"<css selector>\", \"date\": \"<css selector>\", \"category\": \"<css selector>\", \"images\": \"<css selector>\", \"images_caption\": \"<css selector>\", \"related_links\": \"<css selector>\", \"summary\": \"<css selector>\", \"tags\": \"<css selector>\"}",
+     "user": "Analyze this HTML skeleton from {domain} and return CSS selectors as JSON:\n\n{skeleton}\n\nReturn only the JSON object."
+    }
+   },
+   "summary": {
+    "layouts": 10,
+    "failed": 0,
+    "mean": 0.7094,
+    "sample_mean": 0.6941,
+    "others_mean": 0.7099,
+    "per_field": {
+     "title": 0.9643,
+     "body": 0.8812,
+     "author": 0.8752,
+     "date": 0.7884,
+     "category": 0.4309,
+     "images": 0.5117,
+     "images_caption": 0.7006,
+     "related_links": 0.3772,
+     "summary": 1.0,
+     "tags": null
+    },
+    "per_template": {
+     "article": 0.7094
+    },
+    "labels": {
+     "MATCH": 1769,
+     "PARTIAL": 328,
+     "WRONG": 124,
+     "NO_GT": 1541,
+     "MISS": 468
+    },
+    "llm_calls": 10,
+    "prompt_tokens": 21645,
+    "gen_tokens": 1092,
+    "llm_ms": 297563.7
+   },
+   "generated_rules": {
+    "20minutos.es|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".c-detail__title",
+      "body": ".c-detail__body",
+      "author": ".c-detail__author a",
+      "date": ".c-detail__date",
+      "category": ".c-detail__category a",
+      "images": ".c-detail__media img",
+      "images_caption": ".c-detail__media figcaption",
+      "related_links": ".c-related__title__link",
+      "summary": ".c-detail__epigraph p",
+      "tags": ".c-detail__tags__list .c-detail__tags__link"
+     }
+    },
+    "24chasa.bg|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".article-title .title",
+      "body": ".article-content p",
+      "author": ".article-author .content .title a",
+      "date": ".article-meta .meta-data .date",
+      "category": ".breadcrumbs-container .breadcrumbs li a",
+      "images": ".featured-image img",
+      "images_caption": ".featured-image figcaption",
+      "related_links": ".more-articles a",
+      "summary": ".article-content p:first-child",
+      "tags": ""
+     }
+    },
+    "525.az|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1",
+      "body": "#font_size",
+      "author": "p:last-child",
+      "date": "span:nth-child(2)",
+      "category": "",
+      "images": ".full-post-image img",
+      "images_caption": "",
+      "related_links": "",
+      "summary": "",
+      "tags": ""
+     }
+    },
+    "abante.com.ph|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1.elementor-heading-title",
+      "body": "div.elementor-widget-theme-post-content p",
+      "author": "",
+      "date": "time",
+      "category": "div.elementor-heading-title:first-of-type",
+      "images": "div.elementor-widget-theme-post-featured-image img",
+      "images_caption": "",
+      "related_links": "",
+      "summary": "",
+      "tags": "a.elementor-icon-list-text.elementor-post-info__item.elementor-post-info__item--type-date"
+     }
+    },
+    "abendzeitung.de|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1",
+      "body": "section.artdetail_text",
+      "author": "span.author",
+      "date": "time",
+      "category": "li.tiefe1_aktiv:nth-child(2) a",
+      "images": "img",
+      "images_caption": "figcaption span.bildtitel",
+      "related_links": "div.OUTBRAIN",
+      "summary": "section.artdetail_short",
+      "tags": "ul li span"
+     }
+    },
+    "adevarul.ro|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "article header h1.titleAndHeadings",
+      "body": "main",
+      "author": "article header div.info div.authors a",
+      "date": "article header div.date time",
+      "category": "div menu div.items a.selected",
+      "images": "article main div.container-image img",
+      "images_caption": "article main div.container-image div caption",
+      "related_links": "article div.related-wrap.related-footer a.related",
+      "summary": "article main p:first-child",
+      "tags": "article div meta div.tags div.tags-list a"
+     }
+    },
+    "agenciabrasil.ebc.com.br|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".header-noticia .titulo-materia",
+      "body": ".conteudo-noticia p",
+      "author": ".container-autoria .autor-noticia",
+      "date": ".container-data .data",
+      "category": ".header-noticia .editoria",
+      "images": ".rel-position figure img",
+      "images_caption": ".rel-position figcaption",
+      "related_links": ".noticias-relacionadas .noticia-relacionada-interna",
+      "summary": "",
+      "tags": ".row-tags .tag"
+     }
+    },
+    "akipress.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".maintxt .title",
+      "body": "",
+      "author": "",
+      "date": "",
+      "category": ".addinfo span a",
+      "images": ".maintxt .img",
+      "images_caption": "",
+      "related_links": "",
+      "summary": "",
+      "tags": ""
+     }
+    },
+    "alayam.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": ".post-title",
+      "body": "#postcontent",
+      "author": "",
+      "date": ".post-date span",
+      "category": "",
+      "images": ".post-img, .post-content-img",
+      "images_caption": "",
+      "related_links": "#divRelatedNews a",
+      "summary": ".summary-points",
+      "tags": "#divTagList"
+     }
+    },
+    "aljazeera.com|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "h1",
+      "body": ".wysiwyg--all-content",
+      "author": ".contributors-list__by-prefix + a",
+      "date": ".date-simple span",
+      "category": ".topics a",
+      "images": ".article-featured-image .responsive-image",
+      "images_caption": ".article-featured-image figcaption",
+      "related_links": "",
+      "summary": ".article__subhead",
+      "tags": ""
+     }
+    }
+   }
+  },
+  {
+   "id": "20261005-230536-4d6b",
+   "name": "ollama · qwen2.5-coder:14b · CSS→REGEXN",
+   "kind": "experiment",
+   "group": {
+    "id": "g-20261005-230535-da51",
+    "name": "Annotation study · 10 layouts · qwen2.5-coder 14b · XPath vs regex vs CSS→REGEXN"
+   },
+   "created_at": "2026-10-05T20:05:36.055121+00:00",
+   "finished_at": "2026-10-05T20:23:20.064662+00:00",
+   "created_by": "A1",
+   "status": "done",
+   "config": {
+    "backend": "ollama",
+    "model": "qwen2.5-coder:14b",
+    "strategy": "whitelist",
+    "sample": {
+     "mode": "first"
+    },
+    "delay_s": 0.0,
+    "max_pages": null,
+    "rule_type": "regex",
+    "rule_source": "llm_css_regexn",
+    "backend_snapshot": {
+     "api": "ollama",
+     "url": "http://localhost:11434/api/chat",
+     "params": {
+      "temperature": 0.0,
+      "max_tokens": 512,
+      "seed": 42,
+      "num_ctx": 16384
+     },
+     "model_overrides": {},
+     "model": "qwen2.5-coder:14b",
+     "model_info": {
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M",
+      "family": "qwen2",
+      "context_length": 32768,
+      "size": 8988124298
+     }
+    }
+   },
+   "scope": [
+    {
+     "domain": "20minutos.es",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "24chasa.bg",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "525.az",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abante.com.ph",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abendzeitung.de",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "adevarul.ro",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "agenciabrasil.ebc.com.br",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "akipress.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "alayam.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "aljazeera.com",
+     "layout_id": "layout-2"
+    }
+   ],
+   "prompts_used": {
+    "article|css": {
+     "source": "auto",
+     "name": "Automatic prompt",
+     "system": "You extract data from web pages. You are given an HTML skeleton of a web page of type \"News Article\" (Standard news/blog article page): tag names, classes and ids, with headings and short text snippets kept as content hints (long texts are shortened; links, image sources and styles are removed); write one CSS selector for each field below.\n\nFields (use null if a field is not on the page):\n- title: Main headline of the article (required)\n- body: Full article text content (required)\n- author: Author name(s)\n- date: Publication date\n- category: Article category or section\n- images: Main article image(s)\n- images_caption: Caption images\n- related_links: Related article links\n- summary: Lead paragraph or summary\n- tags: Article tags or keywords\n\nReturn ONLY a JSON object with exactly these keys, no other text:\n{\"title\": \"<css selector>\", \"body\": \"<css selector>\", \"author\": \"<css selector>\", \"date\": \"<css selector>\", \"category\": \"<css selector>\", \"images\": \"<css selector>\", \"images_caption\": \"<css selector>\", \"related_links\": \"<css selector>\", \"summary\": \"<css selector>\", \"tags\": \"<css selector>\"}",
+     "user": "Analyze this HTML skeleton from {domain} and return CSS selectors as JSON:\n\n{skeleton}\n\nReturn only the JSON object."
+    }
+   },
+   "summary": {
+    "layouts": 10,
+    "failed": 0,
+    "mean": 0.6788,
+    "sample_mean": 0.6815,
+    "others_mean": 0.6787,
+    "per_field": {
+     "title": 0.9643,
+     "body": 0.8377,
+     "author": 0.7778,
+     "date": 0.7829,
+     "category": 0.3906,
+     "images": 0.4582,
+     "images_caption": 0.6717,
+     "related_links": 0.2625,
+     "summary": 1.0,
+     "tags": null
+    },
+    "per_template": {
+     "article": 0.6788
+    },
+    "labels": {
+     "MATCH": 1712,
+     "PARTIAL": 239,
+     "WRONG": 181,
+     "NO_GT": 1541,
+     "MISS": 557
+    },
+    "llm_calls": 10,
+    "prompt_tokens": 21645,
+    "gen_tokens": 1092,
+    "llm_ms": 283524.4
+   },
+   "generated_rules": {
+    "20minutos.es|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__title(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__body(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>((?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>]))*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*)</div\\s*>",
+      "author": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__author(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>",
+      "date": "<span(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__date(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</span\\s*>",
+      "category": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__category(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>",
+      "images": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__media(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<img(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "images_caption": "<figcaption(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</figcaption\\s*>[^<]*?</figure\\s*>",
+      "related_links": "<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-related__title__link(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\shref\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "summary": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__epigraph(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<p(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</p\\s*>",
+      "tags": "<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?c\\-detail__tags__link(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>"
+     }
+    },
+    "24chasa.bg|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?article\\-title(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "body": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?article\\-content(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "author": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?article\\-author(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?content(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "date": "<time(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?date(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</time\\s*>",
+      "category": "<ul(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?breadcrumbs(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</ul\\s*>",
+      "images": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?featured\\-image(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<img(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "images_caption": "<figcaption(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</figcaption\\s*>",
+      "related_links": "<section(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?more\\-articles(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</section\\s*>).)*?<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\shref\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "summary": ""
+     }
+    },
+    "525.az|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sid\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?font_size(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "author": "",
+      "date": "",
+      "images": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?full\\-post\\-image(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<img(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+)"
+     }
+    },
+    "abante.com.ph|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?elementor\\-heading\\-title(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<p(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</p\\s*>",
+      "date": "<time(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</time\\s*>",
+      "category": "",
+      "images": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?elementor\\-widget\\-theme\\-post\\-featured\\-image(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<img(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "tags": "<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?elementor\\-icon\\-list\\-text(?=[\"'\\s/>]))(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?elementor\\-post\\-info__item(?=[\"'\\s/>]))(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?elementor\\-post\\-info__item\\-\\-type\\-date(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>"
+     }
+    },
+    "abendzeitung.de|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<section(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?artdetail_text(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</section\\s*>",
+      "author": "<span(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?author(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</span\\s*>",
+      "date": "<time(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</time\\s*>",
+      "category": "",
+      "images": "<img(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "images_caption": "<span(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?bildtitel(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</span\\s*>",
+      "related_links": "",
+      "summary": "<section(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?artdetail_short(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</section\\s*>",
+      "tags": "<li(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</li\\s*>).)*?<span(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</span\\s*>"
+     }
+    },
+    "adevarul.ro|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?titleAndHeadings(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<main(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>((?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>])|<main(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?main[\\s/>]))*</main\\s*>)*</main\\s*>)*</main\\s*>)*</main\\s*>)*</main\\s*>)*</main\\s*>)*</main\\s*>)*</main\\s*>)*</main\\s*>)*</main\\s*>)*)</main\\s*>",
+      "author": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?info(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?authors(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>",
+      "date": "<time(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</time\\s*>",
+      "category": "<menu(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</menu\\s*>).)*?<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?items(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?selected(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>",
+      "images": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?container\\-image(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<img(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "images_caption": "<caption(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</caption\\s*>",
+      "related_links": "<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?related(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\shref\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "summary": "",
+      "tags": "<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>[^<]*?<form(?=[\\s/>])[^>]*>"
+     }
+    },
+    "agenciabrasil.ebc.com.br|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?titulo\\-materia(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<p(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</p\\s*>",
+      "author": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?autor\\-noticia(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "date": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?data(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "category": "<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?editoria(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>[^<]*?<h1(?=[\\s/>])[^>]*>",
+      "images": "<figure(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</figure\\s*>).)*?<img(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "images_caption": "<figcaption(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</figcaption\\s*>",
+      "related_links": "<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?noticia\\-relacionada\\-interna(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\shref\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "tags": "<a(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?tag(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>"
+     }
+    },
+    "akipress.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?title(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "category": "<span(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</span\\s*>).)*?<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>",
+      "images": ""
+     }
+    },
+    "alayam.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?post\\-title(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sid\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?postcontent(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "date": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?post\\-date(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<span(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</span\\s*>",
+      "images": "(?:<img(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?post\\-img(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+))|(?:<img(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?post\\-content\\-img(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\ssrc\\s*=\\s*[\"']?([^\"'\\s>]+))",
+      "related_links": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sid\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?divRelatedNews(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\shref\\s*=\\s*[\"']?([^\"'\\s>]+)",
+      "summary": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?summary\\-points(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "tags": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sid\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?divTagList(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>"
+     }
+    },
+    "aljazeera.com|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</h1\\s*>",
+      "body": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?wysiwyg\\-\\-all\\-content(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>((?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>])|<div(?:[\\s/][^>]*)?>(?:[^<]|<(?!/?div[\\s/>]))*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*</div\\s*>)*)</div\\s*>",
+      "author": "",
+      "date": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?date\\-simple(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</div\\s*>",
+      "category": "<div(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?topics(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(?:(?!</div\\s*>).)*?<a(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</a\\s*>",
+      "images": "",
+      "images_caption": "<figcaption(?=[\\s/>])(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</figcaption\\s*>",
+      "summary": "<p(?=[\\s/>])(?=(?:[^>\"']|\"[^\"]*\"|'[^']*')*?\\sclass\\s*=\\s*[\"']?(?:[^\"'>]*?\\s)?article__subhead(?=[\"'\\s/>]))(?:[^>\"']|\"[^\"]*\"|'[^']*')*?>(.*?)</p\\s*>"
+     }
+    }
+   }
+  },
+  {
+   "id": "20261005-230536-753a",
+   "name": "ollama · qwen2.5-coder:14b · regex",
+   "kind": "experiment",
+   "group": {
+    "id": "g-20261005-230535-da51",
+    "name": "Annotation study · 10 layouts · qwen2.5-coder 14b · XPath vs regex vs CSS→REGEXN"
+   },
+   "created_at": "2026-10-05T20:05:36.047082+00:00",
+   "finished_at": "2026-10-05T20:18:07.715732+00:00",
+   "created_by": "A1",
+   "status": "done",
+   "config": {
+    "backend": "ollama",
+    "model": "qwen2.5-coder:14b",
+    "strategy": "whitelist",
+    "sample": {
+     "mode": "first"
+    },
+    "delay_s": 0.0,
+    "max_pages": null,
+    "rule_type": "regex",
+    "rule_source": "llm",
+    "backend_snapshot": {
+     "api": "ollama",
+     "url": "http://localhost:11434/api/chat",
+     "params": {
+      "temperature": 0.0,
+      "max_tokens": 512,
+      "seed": 42,
+      "num_ctx": 16384
+     },
+     "model_overrides": {},
+     "model": "qwen2.5-coder:14b",
+     "model_info": {
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M",
+      "family": "qwen2",
+      "context_length": 32768,
+      "size": 8988124298
+     }
+    }
+   },
+   "scope": [
+    {
+     "domain": "20minutos.es",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "24chasa.bg",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "525.az",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abante.com.ph",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abendzeitung.de",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "adevarul.ro",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "agenciabrasil.ebc.com.br",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "akipress.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "alayam.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "aljazeera.com",
+     "layout_id": "layout-2"
+    }
+   ],
+   "prompts_used": {
+    "article|regex": {
+     "source": "auto",
+     "name": "Automatic prompt",
+     "system": "You extract data from web pages. You are given an HTML skeleton of a web page of type \"News Article\" (Standard news/blog article page): tag names, classes and ids, with headings and short text snippets kept as content hints (long texts are shortened; links, image sources and styles are removed); write one Python regular expression for each field below. The regex is matched against the page's raw HTML text (the skeleton is only structural context) and must contain exactly one capturing group — the extracted value.\n\nFields (use null if a field is not on the page):\n- title: Main headline of the article (required)\n- body: Full article text content (required)\n- author: Author name(s)\n- date: Publication date\n- category: Article category or section\n- images: Main article image(s)\n- images_caption: Caption images\n- related_links: Related article links\n- summary: Lead paragraph or summary\n- tags: Article tags or keywords\n\nReturn ONLY a JSON object with exactly these keys, no other text:\n{\"title\": \"<regex>\", \"body\": \"<regex>\", \"author\": \"<regex>\", \"date\": \"<regex>\", \"category\": \"<regex>\", \"images\": \"<regex>\", \"images_caption\": \"<regex>\", \"related_links\": \"<regex>\", \"summary\": \"<regex>\", \"tags\": \"<regex>\"}",
+     "user": "Analyze this HTML skeleton from {domain} (structural context only — the regex you\nwrite will run against the page's raw HTML text, not this skeleton) and return regex patterns as JSON:\n\n{skeleton}\n\nReturn only the JSON object."
+    }
+   },
+   "summary": {
+    "layouts": 10,
+    "failed": 0,
+    "mean": 0.2186,
+    "sample_mean": 0.2163,
+    "others_mean": 0.2187,
+    "per_field": {
+     "title": 0.4779,
+     "body": 0.2087,
+     "author": 0.3333,
+     "date": 0.2369,
+     "category": 0.0003,
+     "images": 0.0032,
+     "images_caption": 0.5763,
+     "related_links": 0.0,
+     "summary": 1.0,
+     "tags": null
+    },
+    "per_template": {
+     "article": 0.2186
+    },
+    "labels": {
+     "MATCH": 517,
+     "PARTIAL": 259,
+     "MISS": 1848,
+     "NO_GT": 1541,
+     "WRONG": 65
+    },
+    "llm_calls": 10,
+    "prompt_tokens": 22105,
+    "gen_tokens": 1651,
+    "llm_ms": 339661.0
+   },
+   "generated_rules": {
+    "20minutos.es|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1 class=\"c-detail__title\">(.+?)</h1>",
+      "body": "<div class=\"c-detail__body\">(.*?)</div>",
+      "author": "<div class=\"c-detail__author\"><a>(.+?)</a></div>",
+      "date": "<span class=\"c-detail__date\">(.+?)</span>",
+      "category": "<a>(.+?)</a>",
+      "images": "<img width=\"\\d+\" height=\"\\d+\" src=\"(.+?)\"/>",
+      "images_caption": "<figcaption class=\"c-detail__media\">(.*?)</figcaption>",
+      "related_links": "<a class=\"c-related__title__link\">(.+?)</a>",
+      "summary": "<p class=\"c-detail__epigraph\">(.*?)</p>",
+      "tags": "<a class=\"c-detail__tags__link\">(.+?)</a>"
+     }
+    },
+    "24chasa.bg|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1 class=\"title\">(.*?)</h1>",
+      "body": "<div class=\"article-content\">(.*?)</div>",
+      "author": "<h2 class=\"title\">(.*?)</h2>",
+      "date": "<time class=\"date\">(.*?)</time>",
+      "category": "<a>(.*?)</a>",
+      "images": "<img height=\"400\" src=\"(.*?)\"/>",
+      "images_caption": "<figcaption>(.*?)</figcaption>",
+      "related_links": "<a>(.*?)</a>",
+      "summary": "<p>(.*?)</p>",
+      "tags": "<a>(.*?)</a>"
+     }
+    },
+    "525.az|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1>(.*?)</h1>",
+      "body": "<div id=\"font_size\">(.*?)</div>",
+      "author": "<p>(.*?)</p>",
+      "date": "<span>(.*?)</span>",
+      "category": "",
+      "images": "<img width=\"370\" src=\"(.*?)\"/>",
+      "images_caption": "",
+      "related_links": "",
+      "summary": "<p>(.*?)</p>",
+      "tags": ""
+     }
+    },
+    "abante.com.ph|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1 class=\"elementor-heading-title\">(.*?)</h1>",
+      "body": "<div class=\"elementor-widget-container\">(.*?)</div>",
+      "author": "<span class=\"elementor-icon-list-text elementor-post-info__item elementor-post-info__item--type-author\">(.*?)</span>",
+      "date": "<time>(.*?)</time>",
+      "category": "<div class=\"elementor-heading-title\">(.*?)</div>",
+      "images": "<div class=\"elementor-widget-container\">(.*?)</div>",
+      "images_caption": "<figcaption>(.*?)</figcaption>",
+      "related_links": "<a href=\"(.*?)\">(.*?)</a>",
+      "summary": "<p>(.*?)</p>",
+      "tags": "<a href=\"(.*?)\" rel=\"tag\">(.*?)</a>"
+     }
+    },
+    "abendzeitung.de|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1>(.*?)</h1>",
+      "body": "<section class=\"artdetail_text\">(.*?)</section>",
+      "author": "<span class=\"author\">(.*?)</span>",
+      "date": "<time>(.*?)</time>",
+      "category": "<li class=\"tiefe1_aktiv\"><a>(.*?)</a></li>",
+      "images": "<img width=\".*?\" height=\".*?\" src=\"(.*?)\"/>",
+      "images_caption": "<span class=\"bildtitel\">(.*?)</span>",
+      "related_links": "<a href=\"(.*?)\">(.*?)</a>",
+      "summary": "<section class=\"artdetail_short\">(.*?)</section>",
+      "tags": "<li>(.*?)</li>"
+     }
+    },
+    "adevarul.ro|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1 class=\"titleAndHeadings\">(.*?)</h1>",
+      "body": "<main class=\"\">(.*?)</main>",
+      "author": "<a class=\"\">(.*?)</a>",
+      "date": "<time class=\"\">(.*?)</time>",
+      "category": "<a class=\" selected\">(.*?)</a>",
+      "images": "<img width=\"(.*?)\" height=\"(.*?)\" class=\"\" src=\"(.*?)\"/>",
+      "images_caption": "<div class=\"caption\">(.*?)</div>",
+      "related_links": "<a class=\"related\">(.*?)</a>",
+      "summary": "<p>(.*?)</p>",
+      "tags": "<a class=\"\">(.*?)</a>"
+     }
+    },
+    "agenciabrasil.ebc.com.br|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1 class=\"titulo-materia\">(.*?)</h1>",
+      "body": "<div class=\"conteudo-noticia\">(.*?)</div>",
+      "author": "<div class=\"autor-noticia\">(.*?)</div>",
+      "date": "<div class=\"data\">Publicado em\\s+(.*?)\\s+-\\s+(.*?)</div>",
+      "category": "<a class=\"editoria\">(.*?)</a>",
+      "images": "<img.*?src=\"(.*?)\".*?>",
+      "images_caption": "<figcaption class=\"fullwidth\">(.*?)</figcaption>",
+      "related_links": "<div class=\"noticias-relacionadas rel-position rowflex\">.*?<a class=\"noticia-relacionada-interna\".*?<div class=\"titulo-noticia-relacionada\">(.*?)</div>.*?</a>.*?</div>",
+      "summary": "<div class=\"conteudo-noticia\">(.*?)</div>",
+      "tags": "<a class=\"tag\">(.*?)</a>"
+     }
+    },
+    "akipress.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<div class=\"title\">(.*?)</div>",
+      "body": "<div class=\"maintxt\">(.*?)</div>",
+      "author": "",
+      "date": "",
+      "category": "<span><a>(.*?)</a></span>\\|<span><a>(.*?)</a></span>",
+      "images": "",
+      "images_caption": "",
+      "related_links": "",
+      "summary": "",
+      "tags": ""
+     }
+    },
+    "alayam.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1 class=\"post-title\">(.+?)</h1>",
+      "body": "<div id=\"postcontent\" class=\"\">(.*?)</div>",
+      "author": "",
+      "date": "<span>(الخميس \\d{2} فبراير \\d{4}, \\d{2}:\\d{2} م)</span>",
+      "category": "<a>(محليات)</a>",
+      "images": "<img class=\"post-img\" src=\"(.*?)\"/>",
+      "images_caption": "",
+      "related_links": "",
+      "summary": "<div class=\"summary-content\">(.*?)</div>",
+      "tags": ""
+     }
+    },
+    "aljazeera.com|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "<h1>(.*?)</h1>",
+      "body": "<div class=\"wysiwyg wysiwyg--all-content\">(.*?)</div>",
+      "author": "<a>(.*?)</a>",
+      "date": "<span>(\\d{2} \\w{3} \\d{4})</span>",
+      "category": "<a>(.*?)</a>",
+      "images": "<div class=\"responsive-image\"></div>",
+      "images_caption": "<figcaption>(.*?)</figcaption>",
+      "related_links": "<a class=\"rich-share__social-link row\">(.*?)</a>",
+      "summary": "<p class=\"article__subhead\">(.*?)</p>",
+      "tags": "<a>(.*?)</a>"
+     }
+    }
+   }
+  },
+  {
+   "id": "20261005-230536-b59d",
+   "name": "ollama · qwen2.5-coder:14b · xpath",
+   "kind": "experiment",
+   "group": {
+    "id": "g-20261005-230535-da51",
+    "name": "Annotation study · 10 layouts · qwen2.5-coder 14b · XPath vs regex vs CSS→REGEXN"
+   },
+   "created_at": "2026-10-05T20:05:36.039244+00:00",
+   "finished_at": "2026-10-05T20:12:12.498904+00:00",
+   "created_by": "A1",
+   "status": "done",
+   "config": {
+    "backend": "ollama",
+    "model": "qwen2.5-coder:14b",
+    "strategy": "whitelist",
+    "sample": {
+     "mode": "first"
+    },
+    "delay_s": 0.0,
+    "max_pages": null,
+    "rule_type": "xpath",
+    "rule_source": "llm",
+    "backend_snapshot": {
+     "api": "ollama",
+     "url": "http://localhost:11434/api/chat",
+     "params": {
+      "temperature": 0.0,
+      "max_tokens": 512,
+      "seed": 42,
+      "num_ctx": 16384
+     },
+     "model_overrides": {},
+     "model": "qwen2.5-coder:14b",
+     "model_info": {
+      "digest": "9ec8897f747e246e970bc5cfdda85d22f1123dc2e3d34978a010a75968716849",
+      "parameter_size": "14.8B",
+      "quantization": "Q4_K_M",
+      "family": "qwen2",
+      "context_length": 32768,
+      "size": 8988124298
+     }
+    }
+   },
+   "scope": [
+    {
+     "domain": "20minutos.es",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "24chasa.bg",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "525.az",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abante.com.ph",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "abendzeitung.de",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "adevarul.ro",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "agenciabrasil.ebc.com.br",
+     "layout_id": "layout-2"
+    },
+    {
+     "domain": "akipress.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "alayam.com",
+     "layout_id": "layout-1"
+    },
+    {
+     "domain": "aljazeera.com",
+     "layout_id": "layout-2"
+    }
+   ],
+   "prompts_used": {
+    "article|xpath": {
+     "source": "auto",
+     "name": "Automatic prompt",
+     "system": "You extract data from web pages. You are given an HTML skeleton of a web page of type \"News Article\" (Standard news/blog article page): tag names, classes and ids, with headings and short text snippets kept as content hints (long texts are shortened; links, image sources and styles are removed); write one XPath expression for each field below.\n\nFields (use null if a field is not on the page):\n- title: Main headline of the article (required)\n- body: Full article text content (required)\n- author: Author name(s)\n- date: Publication date\n- category: Article category or section\n- images: Main article image(s)\n- images_caption: Caption images\n- related_links: Related article links\n- summary: Lead paragraph or summary\n- tags: Article tags or keywords\n\nReturn ONLY a JSON object with exactly these keys, no other text:\n{\"title\": \"<xpath expression>\", \"body\": \"<xpath expression>\", \"author\": \"<xpath expression>\", \"date\": \"<xpath expression>\", \"category\": \"<xpath expression>\", \"images\": \"<xpath expression>\", \"images_caption\": \"<xpath expression>\", \"related_links\": \"<xpath expression>\", \"summary\": \"<xpath expression>\", \"tags\": \"<xpath expression>\"}",
+     "user": "Analyze this HTML skeleton from {domain} and return XPath expressions as JSON:\n\n{skeleton}\n\nReturn only the JSON object."
+    }
+   },
+   "summary": {
+    "layouts": 10,
+    "failed": 0,
+    "mean": 0.549,
+    "sample_mean": 0.5533,
+    "others_mean": 0.549,
+    "per_field": {
+     "title": 0.6599,
+     "body": 0.7412,
+     "author": 0.4568,
+     "date": 0.6829,
+     "category": 0.3503,
+     "images": 0.5638,
+     "images_caption": 0.4374,
+     "related_links": 0.1417,
+     "summary": 1.0,
+     "tags": null
+    },
+    "per_template": {
+     "article": 0.549
+    },
+    "labels": {
+     "MATCH": 1266,
+     "MISS": 785,
+     "PARTIAL": 454,
+     "NO_GT": 1541,
+     "WRONG": 184
+    },
+    "llm_calls": 10,
+    "prompt_tokens": 21645,
+    "gen_tokens": 1923,
+    "llm_ms": 372473.2
+   },
+   "generated_rules": {
+    "20minutos.es|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1[@class='c-detail__title']",
+      "body": "//div[@class='c-detail__body']//p[@class='c-paragraph']",
+      "author": "//div[@class='c-detail__info']//div[@class='c-detail c-detail__author']//a",
+      "date": "//div[@class='c-detail__info']//span[@class='c-detail__date']",
+      "category": "//div[@class='c-detail__info']//div[@class='c-detail c-detail__category']//a",
+      "images": "//div[@class='c-detail__media']//img",
+      "images_caption": "//div[@class='c-detail__media']//figcaption//span[@class='c-detail__media__credit']",
+      "related_links": "//div[@class='c-related']//a[@class='c-related__title__link']",
+      "summary": "//div[@class='c-detail__epigraph']//p[@class='c-detail__epigraph']",
+      "tags": "//ul[@class='c-detail__tags__list']//a[@class='c-detail__tags__link']"
+     }
+    },
+    "24chasa.bg|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1[@class='title']",
+      "body": "//div[@class='article-content']//p",
+      "author": "//h2[@class='title']//a",
+      "date": "//time[@class='date']",
+      "category": "//ul[@class='breadcrumbs']//a[1]",
+      "images": "//figure[@class='featured-image open-image']//img",
+      "images_caption": "//figure[@class='featured-image open-image']//figcaption",
+      "related_links": "//section[@class='more-articles']//a",
+      "summary": "//div[@class='article-content']//p[1]",
+      "tags": "//div[@class='article-meta']//span[@class='tags']//a"
+     }
+    },
+    "525.az|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1",
+      "body": "//div[@id='font_size']",
+      "author": "//p[contains(text(), 'Aytac SAHƏD')]",
+      "date": "//span[contains(text(), '27 Mart 2026')]",
+      "category": "//a[contains(text(), 'Son xəbərlər')]",
+      "images": "//div[@class='full-post-image']/img",
+      "images_caption": "//div[@class='full-post-image']/following-sibling::div[@class='full-post-article']//p",
+      "related_links": "//div[@class='social-buttons']//a",
+      "summary": "//div[@id='font_size']/p[1]",
+      "tags": "//div[@id='font_size']//p[contains(text(), '-')]"
+     }
+    },
+    "abante.com.ph|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1[@class='elementor-heading-title']",
+      "body": "//div[@class='elementor-widget-container']/p",
+      "author": "//a//span[@class='elementor-post-info__item elementor-post-info__item--type-author']",
+      "date": "//time",
+      "category": "//div[@class='elementor-widget-container']//div[@class='elementor-heading-title'][1]",
+      "images": "//div[@class='elementor-widget-container']//img",
+      "images_caption": "//div[@class='elementor-widget-container']//figcaption",
+      "related_links": "//div[@class='elementor-widget-container']//a",
+      "summary": "//div[@class='elementor-widget-container']/p[1]",
+      "tags": "//div[@class='elementor-widget-container']//span[@class='elementor-post-info__item elementor-post-info__item--type-tag']"
+     }
+    },
+    "abendzeitung.de|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1[@class='artdetail_header']",
+      "body": "//section[@class='artdetail_text']//p",
+      "author": "//span[@class='author']",
+      "date": "//time",
+      "category": "//li[@class='tiefe1_aktiv'][2]/a",
+      "images": "//div[@id='fancyExtBild']//img",
+      "images_caption": "//div[@id='fancyExtBild']//figcaption//span[@class='bildtitel']",
+      "related_links": "//div[@id='outbrainTR_1']//div[@class='OUTBRAIN']//a",
+      "summary": "//section[@class='artdetail_short']",
+      "tags": "//div[@id='keywords']//ul//li//span[@class='schlagwortliste']"
+     }
+    },
+    "adevarul.ro|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//article/header/div[@class='title']/h1[@class='titleAndHeadings']",
+      "body": "//article/main/p",
+      "author": "//article/header/div[@class='info']/div[@class='authors metaFont']/a",
+      "date": "//article/header/div[@class='date metaFont']/div[@class='published']/time",
+      "category": "//div[@class='menu']/div[@class='container']/div[@class='items']/a[@class=' selected']",
+      "images": "//article/main/div[@class='container-image']/img",
+      "images_caption": "//article/main/div[@class='container-image']/div[@class='caption']",
+      "related_links": "//article/div[@class='related-wrap related-footer']/a[@class='related']",
+      "summary": "//article/main/p[1]",
+      "tags": "//article/div[@class='meta']/div[@class='tags']/div[@class='tags-list']/a"
+     }
+    },
+    "agenciabrasil.ebc.com.br|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1[@class='titulo-materia']",
+      "body": "//div[@class='conteudo-noticia']//p",
+      "author": "//div[@class='autor-noticia']",
+      "date": "//div[@class='data']",
+      "category": "//a[@class='editoria']",
+      "images": "//figure//img",
+      "images_caption": "//figcaption[@class='fullwidth']",
+      "related_links": "//div[@class='noticias-relacionadas']//a[@class='noticia-relacionada-interna']",
+      "summary": "//div[@class='conteudo-noticia']//p[1]",
+      "tags": "//div[@class='row-tags']//a[@class='tag']"
+     }
+    },
+    "akipress.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//div[@class='maintxt']/div[@class='title']/text()",
+      "body": "//div[@class='maintxt']/div/p/text()",
+      "author": "null",
+      "date": "null",
+      "category": "//div[@class='addinfo']/span/a/text()",
+      "images": "//div[@class='maintxt']/div[@class='img']/img/@src",
+      "images_caption": "null",
+      "related_links": "null",
+      "summary": "null",
+      "tags": "null"
+     }
+    },
+    "alayam.com|layout-1": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1[@class='post-title']",
+      "body": "//div[@id='postcontent']//p",
+      "author": "//div[@class='post-date']/following-sibling::div//a[contains(text(), 'النسخة الورقية')]/preceding-sibling::a",
+      "date": "//div[@class='post-date']//span",
+      "category": "//a[contains(text(), 'محليات')]",
+      "images": "//div[@class='post-img-container']//img[@class='post-img'] | //figure[@class='image']//img[@class='post-content-img']",
+      "images_caption": "//figure[@class='image']//figcaption",
+      "related_links": "//div[@id='divRelatedNews']//a",
+      "summary": "//div[@class='summary-content']//div[@class='summary-points']",
+      "tags": "//div[@id='divTagList']//a"
+     }
+    },
+    "aljazeera.com|layout-2": {
+     "sample_page": "article_001.html",
+     "rules": {
+      "title": "//h1",
+      "body": "//div[contains(@class, 'wysiwyg wysiwyg--all-content')]//p",
+      "author": "//div[contains(@class, 'byline-content')]//a",
+      "date": "//div[contains(@class, 'date-simple')]//span",
+      "category": "//div[contains(@class, 'topics')]//a",
+      "images": "//figure[contains(@class, 'article-featured-image')]//div[contains(@class, 'responsive-image')]",
+      "images_caption": "//figure[contains(@class, 'article-featured-image')]//figcaption",
+      "related_links": "//div[contains(@class, 'related-links')]//a",
+      "summary": "//p[contains(@class, 'article__subhead')]",
+      "tags": "//div[contains(@class, 'tags')]//a"
+     }
+    }
+   }
+  }
+ ]
+}

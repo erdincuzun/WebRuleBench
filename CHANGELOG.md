@@ -7,6 +7,8 @@
 - `metrics.score_selector` labels a score ≥ 0.9 as `MATCH`, as the experiments do (it returned `PARTIAL`).
 - Experiment group, cross check: the per-field and per-layout cards no longer cut off the GT column.
 - Interface and manifest use American spelling ("generalization"), as the documentation does.
+- `paper/annotation_study`: records of the LLM experiments reported in the paper (configurations, prompts,
+  generated rules, per-page scores), their manifest, and `analyze_rules.py`, which reproduces the rule analysis.
 
 ## 1.0.2 — 2026-10
 

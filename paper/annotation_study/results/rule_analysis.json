@@ -1,0 +1,29 @@
+{
+ "lost_points_by_label": {
+  "qwen2.5-coder:14b css": {
+   "MISS": 0.607,
+   "PARTIAL": 0.224,
+   "WRONG": 0.161,
+   "MATCH": 0.008
+  },
+  "qwen2.5-coder:7b css": {
+   "MISS": 0.734,
+   "PARTIAL": 0.161,
+   "WRONG": 0.099,
+   "MATCH": 0.007
+  }
+ },
+ "xpath": {
+  "rules": 100,
+  "whole_class_attribute_tests": 67,
+  "score": 0.5491,
+  "score_with_class_token_tests": 0.6784
+ },
+ "regex_matches_on_sample_page": {
+  "raw / skeleton": 29,
+  "- / -": 23,
+  "- / skeleton": 30,
+  "no rule": 15,
+  "raw / -": 3
+ }
+}

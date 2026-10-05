@@ -182,7 +182,8 @@ src/webrulebench/          all Python code (one installable package, src layout)
 data/                      your data — not in the repository
 demo/data/                 generated reviewer demo data — not in the repository
 tests/                     unit and end-to-end tests, synthetic fixtures
-paper/annotation_study/    inter-annotator agreement study: guideline, sample, analysis and figure scripts, results
+paper/annotation_study/    material of the paper's examples: annotation guideline and sample, agreement and rule analysis,
+                           figure scripts, results and the records of the LLM experiments (see its README)
 pyproject.toml · CHANGELOG.md · CITATION.cff · LICENSE · Dockerfile · run.sh · run_demo.sh
 .github/workflows/tests.yml  CI: ruff + pytest on Python 3.10–3.13
 ```
