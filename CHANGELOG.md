@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.4 — 2026-10
+
+- LLM evaluation: the heuristic repairs of the CSS rules an LLM writes (a missing dot between class names, a class
+  name written as a tag, a weak body selector replaced by the page's `main` or `article` element) are now an
+  experiment option, **off by default**, so that rules are scored as the model wrote them. The choice is saved with
+  the experiment and shown in its views; experiments created before 1.0.4 resume as they ran (with repairs).
+- Two repair errors are fixed: a class named like an HTML tag (`h1.title`, `div.meta`) is no longer turned into a
+  descendant tag when the class occurs in the skeleton, and text inside quotes, brackets or parentheses
+  (`:contains('27 Mart 2026')`, `[class="a b"]`) is left unchanged.
+- Ollama: optional per-model `think` setting (LLM Models → model parameters) for thinking models; `false` makes
+  the model answer without thinking, so that the output limit is not spent on thinking. The setting is saved in the
+  experiment's backend snapshot. An empty response whose output went to thinking now says so.
+- A call error (e.g. a timeout) is no longer reported as "Empty response".
+- `paper/annotation_study`: the LLM experiments of the paper were re-run with 1.0.4 as one comparison group of
+  eight configurations (five local models with CSS rules; XPath, regex and CSS → REGEXN with qwen2.5-coder 14B);
+  `analyze_rules.py` also measures the extraction time per page of each rule language, runs regexes with the
+  flags of the experiments and writes the results table. The records of 1.0.3 remain in that release.
+
 ## 1.0.3 — 2026-10
 
 - Ground-truth approval page: the per-field column shows rule agreement (share of annotator pairs that wrote the
