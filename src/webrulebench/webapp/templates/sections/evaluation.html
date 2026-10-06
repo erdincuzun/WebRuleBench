@@ -102,7 +102,7 @@ const STATUS = {
 };
 const statusOf = s => { const x = STATUS[s]; return x ? [x[0], `${x[1]} ${T(x[2])}`] : ['', s]; };
 
-function ruleLabel(c) { return c.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : c.rule_type.toUpperCase(); }
+function ruleLabel(c) { return (c.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : c.rule_type.toUpperCase()) + ((c.css_repair ?? (c.rule_type === 'css' || c.rule_source === 'llm_css_regexn')) ? ` + ${T('repair')}` : ''); }
 function promptLabel(c) {
   const n = Object.keys(c.prompts || {}).filter(t => c.prompts[t] && c.prompts[t] !== 'auto').length;
   return n ? T('Prompt variant in {n} templates', {n}) : T('automatic');

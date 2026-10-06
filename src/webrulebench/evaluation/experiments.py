@@ -273,8 +273,10 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
     html_s  = (RAW_DIR / dom / sample).read_text(encoding="utf-8", errors="ignore")
     cleaned = HTMLCleaner().clean(html_s, strategy=cfg.get("strategy", "whitelist"))
     skel    = Skeleton(strategy="enriched").extract(cleaned.cleaned_html).skeleton_html
+    # css_repair anahtarı olmayan kayıtlar (1.0.4 öncesi) onarımla çalışmıştı; sürdürülürken de öyle kalır
     ex = LLMExtractor(backend=cfg["backend"], model=cfg.get("model") or None, rule_type=llm_rt,
-                      system_prompt=prompt["system"], user_prompt=prompt["user"], fields=list(fields))
+                      system_prompt=prompt["system"], user_prompt=prompt["user"], fields=list(fields),
+                      repair_css=bool(cfg.get("css_repair", True)))
     res   = ex.extract(skel, domain=dom)
     rules = {f: (v if isinstance(v, str) else "") for f, v in (res.selectors or {}).items()}
 
@@ -384,6 +386,10 @@ def validate_config(cfg: dict) -> dict:
     c["sample"] = smp
     c["delay_s"] = max(0.0, float(c.get("delay_s") or 0))
     c["max_pages"] = int(c["max_pages"]) if c.get("max_pages") else None
+    # LLM'in CSS kurallarına sezgisel onarım: varsayılan kapalı (kurallar modelin yazdığı gibi skorlanır);
+    # yalnızca LLM CSS ürettiğinde (CSS ve CSS→REGEXN) anlamlıdır
+    c["css_repair"] = (c.get("css_repair") in (True, 1, "1", "true", "on")
+                       and (c["rule_type"] == "css" or c["rule_source"] == "llm_css_regexn"))
     # tekrarlanabilirlik: backend'in o anki API tipi, URL'i ve üretim parametreleri deneye yazılır
     # (ayar sayfasında sonradan değişse de deneyin hangi ayarla çalıştığı bilinir)
     b = BACKENDS[c["backend"]]

@@ -74,6 +74,7 @@ function renderHead() {
     `${c.backend} · ${c.model || T('default model')}`,
     c.backend_snapshot?.model_info ? `${c.backend_snapshot.model_info.parameter_size || ''} ${c.backend_snapshot.model_info.quantization || ''} · digest ${(c.backend_snapshot.model_info.digest || '').slice(0, 12)}` : null,
     c.rule_source === 'llm_css_regexn' ? 'CSS → REGEXN' : c.rule_type.toUpperCase(),
+    (c.css_repair ?? (c.rule_type === 'css' || c.rule_source === 'llm_css_regexn')) ? T('CSS repair on') : null,
     `${T('cleaning:')} ${c.strategy}`,
     c.sample.mode === 'random' ? T('sample: random (seed {seed})', {seed: c.sample.seed}) : T('sample: first GT page'),
     c.max_pages ? T('at most {n} pages', {n: c.max_pages}) : null,

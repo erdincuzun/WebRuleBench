@@ -96,6 +96,8 @@ def _slim_experiment(e: dict) -> dict:
         "created_at": e.get("created_at"), "finished_at": e.get("finished_at"), "created_by": e.get("created_by"),
         "backend": c.get("backend"), "api": snap.get("api"), "model": snap.get("model") or c.get("model"),
         "rule_type": c.get("rule_type"), "rule_source": c.get("rule_source", "llm"),
+        # anahtar yoksa (1.0.4 öncesi kayıt) LLM CSS'i onarımla işlenmişti
+        "css_repair": c.get("css_repair", c.get("rule_type") == "css" or c.get("rule_source") == "llm_css_regexn"),
         "strategy": c.get("strategy"), "sample": c.get("sample"),
         "params": snap.get("params") or {},
         "model_info": {k: info.get(k) for k in ("parameter_size", "quantization", "family", "context_length")},

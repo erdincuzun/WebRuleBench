@@ -95,6 +95,7 @@
  "id is required": "id gerekli",
  "page_type must be article or listing": "page_type article veya listing olmalı",
  "{name} must be a number": "{name} sayı olmalı",
+ "{name} must be true or false": "{name} true ya da false olmalı",
  "✅ {n} elements found": "✅ {n} eleman bulundu",
  "✅ {n} matches found": "✅ {n} eşleşme bulundu",
  "❌ Invalid {kind}: {error}": "❌ Geçersiz {kind}: {error}",

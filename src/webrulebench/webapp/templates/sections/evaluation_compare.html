@@ -43,6 +43,7 @@ function cfgRows(A, B) {
   const f = c => ({
     [T('Model')]: `${c.backend} · ${c.model || T('default')}`,
     [T('Rule')]: c.rule_source === 'llm_css_regexn' ? 'CSS → REGEXN' : c.rule_type,
+    [T('CSS repair')]: (c.css_repair ?? (c.rule_type === 'css' || c.rule_source === 'llm_css_regexn')) ? T('on') : T('off'),
     [T('Prompt')]: Object.entries(c.prompts || {}).map(([t, p]) => `${t}: ${p}`).join(', ') || T('automatic'),
     [T('Cleaning')]: c.strategy,
     [T('Sample page')]: c.sample.mode === 'random' ? T('random (seed {seed})', {seed: c.sample.seed}) : T('first GT page'),

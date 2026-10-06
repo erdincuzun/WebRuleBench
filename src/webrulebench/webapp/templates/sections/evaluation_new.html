@@ -28,6 +28,8 @@
     <label style="width:110px;display:none" id="seedWrap">{{ T("Seed") }}<input type="text" id="fSeed" value="42"></label>
     <label style="width:170px" title="{{ T('Maximum number of GT pages to score (empty = all)') }}">{{ T("Max pages") }}<input type="text" id="fMaxPages" placeholder="{{ T('all') }}"></label>
     <label style="width:170px" title="{{ T('Delay between LLM calls (for rate-limited APIs)') }}">{{ T("Delay (s)") }}<input type="text" id="fDelay" value="0"></label>
+    <label style="flex-direction:row;align-items:center;gap:6px;align-self:flex-end" title="{{ T('Heuristic repairs of the CSS rules the LLM writes (e.g. a missing dot between class names), applied before scoring; CSS and CSS→REGEXN only. Off: the rules are scored as the model wrote them.') }}">
+      <input type="checkbox" id="fRepair" style="margin:0"> {{ T("Repair CSS rules") }}</label>
   </div>
 
   <div class="lbl">{{ T("Prompt (per template)") }}</div>
@@ -71,6 +73,9 @@
   <li><b>Prompt</b>: seçilen kural dilleri aynı prompt diline düşüyorsa (ör. yalnızca CSS ya da CSS + CSS→REGEXN) şablon başına deneme prompt'u seçilebilir;
     aksi halde her kural dili kendi otomatik prompt'unu kullanır. <b>👁</b> ile LLM'e gidecek metni görün.</li>
   <li><b>Örnek sayfa</b>: rastgele seçimde seed kaydedilir; aynı seed aynı sayfaları seçer. <b>En fazla sayfa</b> yalnızca skorlama süresini kısaltır.</li>
+  <li><b>CSS kurallarını onar</b>: LLM'in CSS kurallarına sezgisel onarımlar (class adları arasındaki eksik nokta, etiket gibi yazılmış class adı,
+    zayıf gövde seçicisi yerine sayfanın <span class="mono">main</span> ya da <span class="mono">article</span> öğesi). Varsayılan olarak kapalıdır,
+    kurallar modelin yazdığı gibi puanlanır; açıldığında onarım bir deney değişkeni olur ve deneye kaydedilir.</li>
 </ul>
 {% else %}
 <h3>How does it work?</h3>
@@ -86,6 +91,9 @@
   <li><b>Prompt</b>: if the selected rule languages map to the same prompt language (e.g. only CSS, or CSS + CSS→REGEXN), a prompt variant can be chosen per template;
     otherwise each rule language uses its own automatic prompt. Use <b>👁</b> to see the text that will be sent to the LLM.</li>
   <li><b>Sample page</b>: for random selection the seed is saved; the same seed selects the same pages. <b>Max pages</b> only shortens scoring time.</li>
+  <li><b>Repair CSS rules</b>: heuristic repairs of the LLM's CSS rules (a missing dot between class names, a class name written as a tag,
+    the page's <span class="mono">main</span> or <span class="mono">article</span> element instead of a weak body selector). Off by default, so the
+    rules are scored as the model wrote them; switched on, the repairs become an experimental variable and are saved with the experiment.</li>
 </ul>
 {% endif %}
 {% endblock %}
@@ -185,6 +193,7 @@ async function start() {
     sample: sampleMode === 'random' ? {mode: 'random', seed: document.getElementById('fSeed').value} : {mode: 'first'},
     max_pages: document.getElementById('fMaxPages').value.trim() || null,
     delay_s: document.getElementById('fDelay').value.trim() || 0,
+    css_repair: document.getElementById('fRepair').checked,
   };
   const configs = [];
   _models.forEach(mk => {

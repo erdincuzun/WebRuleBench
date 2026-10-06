@@ -65,7 +65,7 @@ const STATUS = {queued: ['', '⏳', 'queued'], running: ['auto', '▶', 'running
 const statusOf = s => { const x = STATUS[s]; return x ? [x[0], `${x[1]} ${T(x[2])}`] : ['', s]; };
 const TABS = [['rank', '🏆', 'Ranking'], ['heat', '🟩', 'Heat map'], ['layout', '🗂', 'Per layout'], ['cross', '🔀', 'Cross check']];
 if (TABS.some(([k]) => k === location.hash.slice(1))) _tab = location.hash.slice(1);   // ör. raporlardan #cross
-const ruleOf = c => c.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : c.rule_type.toUpperCase();
+const ruleOf = c => (c.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : c.rule_type.toUpperCase()) + ((c.css_repair ?? (c.rule_type === 'css' || c.rule_source === 'llm_css_regexn')) ? ` + ${T('repair')}` : '');
 const short = m => `${m.config.backend_snapshot?.model || m.config.model || m.config.backend} · ${ruleOf(m.config)}`;
 
 // Ollama model bilgisi (deney kaydındaki backend_snapshot.model_info)

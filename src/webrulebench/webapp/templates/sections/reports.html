@@ -372,7 +372,7 @@ function agreementSection() {
 // 🤖 LLM SONUÇLARI
 // ═══════════════════════════════════════════════════════
 const L = {sel: null, common: true, quick: false, q: '', dim: 'field', metric: 'mean', x: 'ms'};
-const ruleOf = e => e.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : (e.rule_type || '').toUpperCase();
+const ruleOf = e => (e.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : (e.rule_type || '').toUpperCase()) + (e.css_repair ? ` + ${T('repair')}` : '');
 const sizeB = s => { const m = /([\d.]+)\s*([BM])/i.exec(s || ''); return m ? +m[1] / (m[2].toUpperCase() === 'M' ? 1000 : 1) : null; };
 const BDIMS = {field: 'Field', country: 'Country', language: 'Language', continent: 'Continent', template: 'Template', site: 'Site'};
 

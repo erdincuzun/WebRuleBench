@@ -82,6 +82,33 @@ HTML_TAGS_SET = {
     "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr",
 }
 
+
+def _split_top(s: str, sep: str | None = None) -> list[str]:
+    """Yalnızca en üst düzeyde böl: tırnak, (...) ve [...] içindekiler bölünmez.
+    sep=None → boşluklarda (boş parçalar atılır); aksi halde bu karakterde."""
+    parts, buf, depth, quote = [], [], 0, None
+    for ch in s:
+        if quote:
+            quote = None if ch == quote else quote
+        elif ch in "'\"":
+            quote = ch
+        elif ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth = max(0, depth - 1)
+        elif depth == 0 and (ch.isspace() if sep is None else ch == sep):
+            parts.append("".join(buf))
+            buf = []
+            continue
+        buf.append(ch)
+    parts.append("".join(buf))
+    return [p for p in parts if p] if sep is None else parts
+
+
+def _class_names(html: str) -> set:
+    """HTML'deki bütün class adları."""
+    return {c for v in re.findall(r"""\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')""", html) for c in "".join(v).split()}
+
 # ---------------------------------------------------------------------------
 # PROMPT
 # ---------------------------------------------------------------------------
@@ -314,9 +341,14 @@ class LLMExtractor:
                  rule_type: Literal["css", "xpath", "regex"] = "css",
                  system_prompt: str = None,
                  user_prompt: str = None,
-                 fields: list = None):
-        """fields: yanıttan okunacak alanlar (şablonun alanları). Verilmezse config.FIELDS."""
+                 fields: list = None,
+                 repair_css: bool = False):
+        """fields: yanıttan okunacak alanlar (şablonun alanları). Verilmezse config.FIELDS.
+        repair_css: CSS kurallarına sezgisel onarımlar uygulanır (_fix_selector, _fix_body_from_skeleton);
+        kapalıyken kurallar modelin yazdığı gibi döner — deneylerde bir değişkendir (config.css_repair)."""
         self.fields        = list(fields) if fields else list(FIELDS)
+        self.repair_css    = repair_css
+        self._classes      = set()          # iskeletteki class adları (onarım, extract'ta doldurulur)
         self.backend       = backend
         self.timeout       = timeout
         self.rule_type     = rule_type
@@ -331,6 +363,7 @@ class LLMExtractor:
         import re as _re
         clean_skeleton = _re.sub(r'\s*\*[^*]+\*', '', skeleton_html)
         self._domain   = domain             # replay backend yanıtı alan adına göre seçer
+        self._classes  = _class_names(clean_skeleton)
 
         prompt     = self._user_prompt.format(
             domain=domain,
@@ -342,10 +375,10 @@ class LLMExtractor:
 
         selectors, success, parse_error = self._parse_response(raw)
         if parse_error:
-            error = parse_error
+            error = error or parse_error     # yanıt boşsa çağrı hatası (zaman aşımı vb.) korunur
 
-        # CSS'e özel post-fix'ler — XPath/Regex'te selector söz dizimi farklı olduğundan uygulanmaz
-        if self.rule_type == "css" and "body" in self.fields:
+        # CSS'e özel onarımlar (isteğe bağlı) — XPath/Regex'te selector söz dizimi farklı olduğundan uygulanmaz
+        if self.rule_type == "css" and self.repair_css and "body" in self.fields:
             selectors["body"] = self._fix_body_from_skeleton(
                 selectors.get("body"), skeleton_html
             )
@@ -436,9 +469,15 @@ class LLMExtractor:
         for k in ("seed", "num_ctx", "top_p"):
             if p.get(k) is not None:
                 opts[k] = p[k]
-        data = self._post(cfg["url"].replace("/generate", "/chat"),
-                          json={"model": self.model, "messages": self._messages(prompt), "stream": False, "options": opts})
-        return data.get("message", {}).get("content", ""), "", data.get("prompt_eval_count", 0), data.get("eval_count", 0)
+        body = {"model": self.model, "messages": self._messages(prompt), "stream": False, "options": opts}
+        if p.get("think") is not None:      # düşünen modeller (ör. gemma4): false → doğrudan yanıt
+            body["think"] = bool(p["think"])
+        data = self._post(cfg["url"].replace("/generate", "/chat"), json=body)
+        msg = data.get("message") or {}
+        text, ptok, gtok = msg.get("content") or "", data.get("prompt_eval_count", 0), data.get("eval_count", 0)
+        if not text.strip() and msg.get("thinking"):
+            return "", "Empty response: the model spent its output tokens on thinking (set think = false)", ptok, gtok
+        return text, "", ptok, gtok
 
     def _call_anthropic(self, prompt, cfg, key, p) -> tuple[str, str, int, int]:
         payload = {"model": self.model, "max_tokens": p.get("max_tokens", 512), "system": self._system_prompt,
@@ -499,7 +538,7 @@ class LLMExtractor:
 
         try:
             data = json.loads(match.group())
-            if self.rule_type == "css":
+            if self.rule_type == "css" and self.repair_css:
                 selectors = {f: self._fix_selector(data.get(f), field=f) for f in self.fields}
             else:
                 selectors = {f: (data.get(f).strip() if isinstance(data.get(f), str) else data.get(f)) for f in self.fields}
@@ -525,19 +564,21 @@ class LLMExtractor:
 
         selector = selector.strip()
 
-        # Fix 0: virgüllü selector — her parçayı ayrı fix et
-        if ',' in selector:
-            parts = [self._fix_selector(p.strip(), field) for p in selector.split(',')]
+        # Fix 0: virgüllü selector — her parçayı ayrı fix et (tırnak ve parantez içindeki virgüller hariç)
+        parts = _split_top(selector, ',')
+        if len(parts) > 1:
+            parts = [self._fix_selector(p.strip(), field) for p in parts]
             return ', '.join(p for p in parts if p)
 
         # Fix 4: "token.tagname" → "token tagname"
         # Örnek: "div.c-detail__category.a" → "div.c-detail__category a"
+        # İskelette bu adla bir class varsa (ör. "div.meta", "h1.title") class olarak kalır
         fixed_tokens = []
-        for tok in selector.split():
+        for tok in _split_top(selector):
             dot_idx = tok.rfind('.')
-            if dot_idx > 0:
+            if dot_idx > 0 and not any(c in tok for c in "'\"(["):
                 suffix = tok[dot_idx+1:]
-                if suffix in HTML_TAGS_SET:
+                if suffix in HTML_TAGS_SET and suffix not in self._classes:
                     fixed_tokens.append(tok[:dot_idx])
                     fixed_tokens.append(suffix)
                     continue
@@ -545,7 +586,7 @@ class LLMExtractor:
         selector = ' '.join(fixed_tokens)
 
         # Fix 1: eksik nokta
-        tokens = selector.split()
+        tokens = _split_top(selector)
         fixed  = []
         i = 0
         while i < len(tokens):
@@ -565,7 +606,7 @@ class LLMExtractor:
 
         # Fix 2: body field — main#id veya article#id varsa sadece onu al
         if field == 'body':
-            parts = selector.split()
+            parts = _split_top(selector)
             for part in parts:
                 if re.match(r'^(main|article)#\S+', part):
                     return part
@@ -574,7 +615,7 @@ class LLMExtractor:
         # Örnek: "div.c-detail__date span" → "span.c-detail__date"
         # Sadece __ içeren (BEM element) class'larda uygula
         import re as _re3
-        parts = selector.split()
+        parts = _split_top(selector)
         if len(parts) == 2:
             head, leaf_tag = parts
             head_m = _re3.match("^(\\w+)\\.(.+)$", head)
@@ -593,7 +634,7 @@ class LLMExtractor:
 
         # Fix Tailwind: text-[40px] → tag[class*="text-[40px]"]
         if '[' in selector:
-            tokens = selector.split()
+            tokens = _split_top(selector)
             result = []
             for tok in tokens:
                 if '[' in tok and not tok.startswith('['):

@@ -143,7 +143,8 @@ def api_llm_models_model(name):
             try:
                 mp[k] = typ(v)
             except (TypeError, ValueError):
-                return jsonify({"success": False, "error": _t("{name} must be a number", name=k)}), 400
+                err = _t("{name} must be true or false", name=k) if k == "think" else _t("{name} must be a number", name=k)
+                return jsonify({"success": False, "error": err}), 400
         allp = dict(c.get("model_params") or {})
         if mp:
             allp[model] = mp

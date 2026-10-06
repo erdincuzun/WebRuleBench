@@ -79,6 +79,7 @@
         <label style="width:110px">max_tokens<input type="text" id="mp_max_tokens"></label>
         <label style="width:110px">seed<input type="text" id="mp_seed"></label>
         <label style="width:110px">num_ctx<input type="text" id="mp_num_ctx"></label>
+        <label style="width:110px" title="{{ T('Only for thinking models: false makes the model answer without thinking') }}">think<select id="mp_think"><option value="">{{ T("model default") }}</option><option value="false">false</option><option value="true">true</option></select></label>
       </div>
       <div class="muted" id="mpNote"></div>
       <div class="login-err" id="mpErr"></div>
@@ -178,6 +179,7 @@ function paramStr(p) {
   if (p.max_tokens !== undefined) parts.push(`max ${p.max_tokens}`);
   if (p.seed !== undefined) parts.push(`seed ${p.seed}`);
   if (p.num_ctx !== undefined) parts.push(`ctx ${p.num_ctx}`);
+  if (p.think !== undefined) parts.push(`think ${p.think}`);
   return parts.join(' · ') || `<span class="muted">${T('default')}</span>`;
 }
 
@@ -236,11 +238,11 @@ function openModelParams(backend, model) {
   _mp = {backend, model};
   const b = D.backends.find(x => x.name === backend), cur = b.model_params?.[model] || {}, base = b.params || {};
   document.getElementById('mpTitle').textContent = `⚙ ${model} — ${T('generation parameters')}`;
-  ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx'].forEach(k => {
+  ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx', 'think'].forEach(k => {
     const el = document.getElementById(`mp_${k}`);
     el.value = cur[k] ?? '';
     el.placeholder = base[k] !== undefined ? `${base[k]} (${T('backend')})` : T('provider default');
-    el.closest('label').style.display = (k === 'num_ctx' && b.api !== 'ollama') || (k === 'seed' && !['ollama', 'openai'].includes(b.api)) ? 'none' : '';
+    el.closest('label').style.display = (['num_ctx', 'think'].includes(k) && b.api !== 'ollama') || (k === 'seed' && !['ollama', 'openai'].includes(b.api)) ? 'none' : '';
   });
   const ctxLen = b.catalog.models.find(m => m.name === model)?.info?.context_length;
   document.getElementById('mpNote').textContent = ctxLen ? T("This model's context length: {n} tokens.", {n: ctxLen.toLocaleString(LOCALE)}) : '';
@@ -250,7 +252,7 @@ function openModelParams(backend, model) {
 function closeModelParams() { document.getElementById('mpModal').classList.remove('open'); }
 async function saveModelParams(reset = false) {
   const params = {};
-  if (!reset) ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx'].forEach(k => {
+  if (!reset) ['temperature', 'top_p', 'max_tokens', 'seed', 'num_ctx', 'think'].forEach(k => {
     const el = document.getElementById(`mp_${k}`);
     if (el.closest('label').style.display !== 'none' && el.value.trim() !== '') params[k] = el.value.trim();
   });

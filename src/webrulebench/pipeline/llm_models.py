@@ -114,7 +114,19 @@ def save(backends: dict):
     reload()
 
 
-PARAM_KEYS = {"temperature": float, "top_p": float, "max_tokens": int, "seed": int, "num_ctx": int}
+def _bool(v) -> bool:
+    if isinstance(v, bool):
+        return v
+    s = str(v).strip().lower()
+    if s in ("true", "1", "yes", "on"):
+        return True
+    if s in ("false", "0", "no", "off"):
+        return False
+    raise ValueError(v)
+
+
+# think: düşünen modeller için (Ollama); false → model düşünmeden doğrudan yanıt verir
+PARAM_KEYS = {"temperature": float, "top_p": float, "max_tokens": int, "seed": int, "num_ctx": int, "think": _bool}
 
 
 def effective_params(backend: str, model: str | None = None) -> dict:

@@ -125,7 +125,10 @@ OpenAI-compatible endpoint, and `replay`, which serves recorded responses (the d
 external generators can be imported the same way and scored under the same protocol). API keys can be entered on that page (written to
 `data/.env`, never to `llm_models.json`) or exported as environment variables
 (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `NVIDIA_API_KEY`).
-Use **⚡ Test** to check the connection.
+Use **⚡ Test** to check the connection. Generation parameters (temperature, top_p, max_tokens, seed, num_ctx, and
+`think` for thinking models on Ollama) are set per backend and per model; every experiment records the values it
+used. A thinking model that spends the output limit on thinking returns an empty answer; set `think` to `false`
+for it.
 
 ### 3. Run the pipeline on a single page (command line)
 
@@ -159,6 +162,8 @@ for rule, lang in [("//h1[contains(@class, 'entry-title')]", "xpath"),
 
 Full experiments (layout-based, comparative, cross-check) are run from the
 **LLM Evaluation** section of the web application and summarized in **Reports & Export**.
+Rules are scored as the model wrote them; heuristic repairs of the LLM's CSS rules (e.g. a missing dot between
+class names) can be switched on per experiment ("Repair CSS rules") and are then recorded with it.
 The interface is in English by default; the **EN / TR** switch in the header changes it to
 Turkish (translations in `src/webrulebench/webapp/i18n/`, see `src/webrulebench/webapp/i18n/README.md`).
 
