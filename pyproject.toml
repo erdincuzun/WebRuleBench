@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "webrulebench"
 dynamic = ["version"]
-description = "Open-source environment for benchmarking LLM-generated web extraction rules (CSS, XPath, regex) against multi-annotator ground truth"
+description = "Open-source environment for benchmarking LLM-generated web extraction rules (CSS, XPath, regex) against human-annotated ground truth"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}

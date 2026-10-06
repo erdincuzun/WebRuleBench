@@ -5,7 +5,7 @@
 
 A benchmark environment for evaluating **LLM-generated web extraction rules**
 (news article title/body/date/author/images/tags, and any fields you define in
-a template) against human-curated ground truth. Rules can be **CSS selectors**,
+a template) against human-annotated ground truth. Rules can be **CSS selectors**,
 **XPath expressions** or **regular expressions**: the LLM sees a cleaned
 structural skeleton of *one* sample page per layout, writes one rule per field,
 and the rules are then run — without the LLM — on every ground-truth page of
@@ -35,9 +35,10 @@ reports.py        — leaderboards, breakdowns, CSV / LaTeX / PNG export, manife
 The **web application** (`webapp/`) covers the whole workflow in six
 sections — data collection, templates & prompts, annotation, ground-truth
 approval, LLM evaluation, reports & export — plus settings pages for LLM
-backends and users. Several annotators write rules independently; an admin
-compiles them into the approved ground truth using inter-annotator agreement at two levels:
-rules (Fleiss' κ) and the content they extract (content scores; Krippendorff's α in **Reports**).
+backends and users. One or more annotators write rules independently, and an admin
+compiles them into the approved ground truth; a single annotator is enough. With several
+annotators, agreement is measured at two levels: rules (Fleiss' κ) and the content they
+extract (content scores; Krippendorff's α in **Reports**).
 
 A user guide for the web application (Turkish) is in
 [src/webrulebench/webapp/README.md](src/webrulebench/webapp/README.md); every section also has an in-app

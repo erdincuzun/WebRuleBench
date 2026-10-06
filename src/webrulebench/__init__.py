@@ -1,6 +1,6 @@
 """
 WebRuleBench — benchmarking LLM-generated web extraction rules (CSS, XPath, regex)
-against multi-annotator ground truth.
+against human-annotated ground truth (one or more annotators).
 
   pipeline/     page → cleaning → skeleton → LLM; backend registry; prompts
   rules/        rule execution, CSS → regex (REGEXN), rule agreement statistics
