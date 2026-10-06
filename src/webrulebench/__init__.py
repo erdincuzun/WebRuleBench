@@ -10,4 +10,4 @@ against multi-annotator ground truth.
   cli.py        `webrulebench serve | demo | users`
 """
 
-__version__ = "1.0.2"   # tek sürüm kaynağı: pyproject.toml, --version ve manifest bunu okur
+__version__ = "1.0.3"   # tek sürüm kaynağı: pyproject.toml, --version ve manifest bunu okur

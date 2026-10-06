@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.3 — 2026-10
 
 - Ground-truth approval page: the per-field column shows rule agreement (share of annotator pairs that wrote the
   same normalized rule) and is now labeled so; Fleiss' κ and Krippendorff's α are in Reports → Annotation & GT.
