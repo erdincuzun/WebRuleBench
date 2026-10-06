@@ -1,20 +1,21 @@
 {
- "id": "20261002-003346-5c7c",
+ "id": "20261006-113509-789f",
  "name": "ollama · qwen2.5-coder:7b · css",
- "created_at": "2026-10-01T21:33:46.756570+00:00",
+ "created_at": "2026-10-06T08:35:09.799677+00:00",
  "created_by": "A1",
  "status": "done",
  "config": {
   "backend": "ollama",
-  "rule_type": "css",
-  "rule_source": "llm",
   "strategy": "whitelist",
   "sample": {
    "mode": "first"
   },
-  "model": "qwen2.5-coder:7b",
   "delay_s": 0.0,
   "max_pages": null,
+  "model": "qwen2.5-coder:7b",
+  "rule_type": "css",
+  "rule_source": "llm",
+  "css_repair": false,
   "backend_snapshot": {
    "api": "ollama",
    "url": "http://localhost:11434/api/chat",
@@ -1840,7 +1841,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 22923.2,
+    "elapsed_ms": 25932.5,
     "prompt_tokens": 2843,
     "gen_tokens": 186,
     "skeleton_chars": 10466
@@ -1872,16 +1873,16 @@
    "pages": {
     "article_001.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.6667,
+      "label": "PARTIAL"
      },
      "date": {
       "score": 1.0,
@@ -1914,16 +1915,16 @@
     },
     "article_002.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.6667,
+      "label": "PARTIAL"
      },
      "date": {
       "score": 1.0,
@@ -1956,8 +1957,8 @@
     },
     "article_003.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -1998,16 +1999,16 @@
     },
     "article_004.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "date": {
       "score": 1.0,
@@ -2040,8 +2041,8 @@
     },
     "article_005.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2082,8 +2083,8 @@
     },
     "article_006.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2124,16 +2125,16 @@
     },
     "article_007.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "date": {
       "score": 1.0,
@@ -2166,8 +2167,8 @@
     },
     "article_008.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2208,8 +2209,8 @@
     },
     "article_009.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2250,8 +2251,8 @@
     },
     "article_010.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2292,8 +2293,8 @@
     },
     "article_011.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2334,8 +2335,8 @@
     },
     "article_012.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2376,8 +2377,8 @@
     },
     "article_013.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2418,16 +2419,16 @@
     },
     "article_014.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.6667,
+      "label": "PARTIAL"
      },
      "date": {
       "score": 1.0,
@@ -2460,8 +2461,8 @@
     },
     "article_015.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2502,8 +2503,8 @@
     },
     "article_016.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2544,8 +2545,8 @@
     },
     "article_017.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2586,8 +2587,8 @@
     },
     "article_018.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2628,16 +2629,16 @@
     },
     "article_019.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.6667,
+      "label": "PARTIAL"
      },
      "date": {
       "score": 1.0,
@@ -2670,8 +2671,8 @@
     },
     "article_020.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2712,8 +2713,8 @@
     },
     "article_021.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2754,8 +2755,8 @@
     },
     "article_022.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2796,16 +2797,16 @@
     },
     "article_023.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "date": {
       "score": 1.0,
@@ -2838,8 +2839,8 @@
     },
     "article_024.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2880,16 +2881,16 @@
     },
     "article_025.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.6667,
+      "label": "PARTIAL"
      },
      "date": {
       "score": 1.0,
@@ -2922,8 +2923,8 @@
     },
     "article_026.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -2964,8 +2965,8 @@
     },
     "article_027.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3006,8 +3007,8 @@
     },
     "article_028.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3048,8 +3049,8 @@
     },
     "article_029.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3090,8 +3091,8 @@
     },
     "article_030.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3132,8 +3133,8 @@
     },
     "article_031.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3174,8 +3175,8 @@
     },
     "article_032.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3216,8 +3217,8 @@
     },
     "article_033.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3258,8 +3259,8 @@
     },
     "article_034.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3300,8 +3301,8 @@
     },
     "article_035.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3342,8 +3343,8 @@
     },
     "article_036.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3384,8 +3385,8 @@
     },
     "article_037.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3426,8 +3427,8 @@
     },
     "article_038.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3468,16 +3469,16 @@
     },
     "article_039.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
       "label": "MATCH"
      },
      "author": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.6667,
+      "label": "PARTIAL"
      },
      "date": {
       "score": 1.0,
@@ -3510,8 +3511,8 @@
     },
     "article_040.html": {
      "title": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "body": {
       "score": 1.0,
@@ -3555,9 +3556,9 @@
    "n_pages": 40,
    "prompt_key": "article|css",
    "rules": {
-    "title": ".article-title h1 title",
+    "title": ".article-title h1.title",
     "body": ".article-content",
-    "author": ".article-author .content h2 title a",
+    "author": ".article-author .content h2.title a",
     "date": ".article-meta .meta-data .date",
     "category": ".breadcrumbs li a",
     "images": ".featured-image img",
@@ -3570,19 +3571,19 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 13133.6,
+    "elapsed_ms": 13319.7,
     "prompt_tokens": 2157,
     "gen_tokens": 110,
     "skeleton_chars": 8068
    },
    "summary": {
-    "mean": 0.499,
-    "sample_mean": 0.4341,
-    "others_mean": 0.5009,
+    "mean": 0.6901,
+    "sample_mean": 0.6722,
+    "others_mean": 0.6906,
     "per_field": {
-     "title": 0.0,
+     "title": 1.0,
      "body": 1.0,
-     "author": 0.0,
+     "author": 0.7778,
      "date": 1.0,
      "category": 1.0,
      "images": 0.0523,
@@ -3615,7 +3616,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3657,7 +3658,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3699,7 +3700,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3741,7 +3742,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3783,7 +3784,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3825,7 +3826,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3867,7 +3868,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3909,7 +3910,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3951,7 +3952,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -3993,7 +3994,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4035,7 +4036,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4077,7 +4078,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4119,7 +4120,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4161,7 +4162,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4203,7 +4204,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4245,7 +4246,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4287,7 +4288,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4329,7 +4330,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4371,7 +4372,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4413,7 +4414,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4455,7 +4456,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4497,7 +4498,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4539,7 +4540,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4581,7 +4582,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4623,7 +4624,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4665,7 +4666,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4707,7 +4708,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4749,7 +4750,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4791,7 +4792,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4833,7 +4834,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4875,7 +4876,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4917,7 +4918,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -4959,7 +4960,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5001,7 +5002,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5043,7 +5044,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5085,7 +5086,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5127,7 +5128,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5169,7 +5170,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5211,7 +5212,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5253,7 +5254,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5295,7 +5296,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5337,7 +5338,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5379,7 +5380,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5421,7 +5422,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5463,7 +5464,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5505,7 +5506,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5547,7 +5548,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5589,7 +5590,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5631,7 +5632,7 @@
      },
      "date": {
       "score": 0.0,
-      "label": "MISS"
+      "label": "WRONG"
      },
      "category": {
       "score": 0.0,
@@ -5666,7 +5667,7 @@
     "title": "h1",
     "body": ".full-post-article p",
     "author": "",
-    "date": "div span:contains('27.Mart 2026')",
+    "date": "div span:contains('27 Mart 2026')",
     "category": "",
     "images": ".full-post-image img",
     "images_caption": "",
@@ -5678,7 +5679,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 12519.6,
+    "elapsed_ms": 12630.1,
     "prompt_tokens": 2131,
     "gen_tokens": 99,
     "skeleton_chars": 5381
@@ -7618,7 +7619,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 9989.4,
+    "elapsed_ms": 10134.4,
     "prompt_tokens": 1268,
     "gen_tokens": 137,
     "skeleton_chars": 4414
@@ -9390,7 +9391,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 10221.8,
+    "elapsed_ms": 10302.2,
     "prompt_tokens": 1585,
     "gen_tokens": 106,
     "skeleton_chars": 5333
@@ -9426,8 +9427,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3222,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9438,8 +9439,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.0952,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9468,8 +9469,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.4664,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9480,8 +9481,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9510,8 +9511,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5839,
+      "label": "PARTIAL"
      },
      "author": {
       "score": null,
@@ -9522,8 +9523,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1176,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9552,8 +9553,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2989,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9564,8 +9565,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1053,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9594,8 +9595,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.4099,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9606,8 +9607,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.2727,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9636,8 +9637,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2016,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9648,8 +9649,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.0952,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9678,8 +9679,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3775,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9690,8 +9691,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1176,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9720,8 +9721,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2227,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9732,8 +9733,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1333,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9762,8 +9763,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2943,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9774,8 +9775,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.16,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9804,8 +9805,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2195,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9816,8 +9817,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.125,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9846,8 +9847,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.1715,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9858,8 +9859,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1176,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9888,8 +9889,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3385,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9900,8 +9901,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.2222,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9930,8 +9931,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.4715,
+      "label": "PARTIAL"
      },
      "author": {
       "score": null,
@@ -9942,8 +9943,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.2,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -9972,8 +9973,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2046,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -9984,8 +9985,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.2353,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10014,8 +10015,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2351,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10026,8 +10027,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1111,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10056,8 +10057,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2713,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10068,8 +10069,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1667,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10098,8 +10099,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2114,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10110,8 +10111,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1538,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10140,8 +10141,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2798,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10152,8 +10153,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1538,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10182,8 +10183,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.246,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10194,8 +10195,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.0645,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10224,8 +10225,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.1708,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10236,8 +10237,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.2222,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10266,8 +10267,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2484,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10278,8 +10279,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.0952,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10308,8 +10309,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2386,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10320,8 +10321,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1818,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10350,8 +10351,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.218,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10362,8 +10363,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1111,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10392,8 +10393,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2976,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10404,8 +10405,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1667,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10434,8 +10435,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.304,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10446,8 +10447,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.069,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10476,8 +10477,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3162,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10488,8 +10489,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.16,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10518,8 +10519,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3361,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10530,8 +10531,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1538,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10560,8 +10561,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2965,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10572,8 +10573,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.08,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10602,8 +10603,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.38,
+      "label": "PARTIAL"
      },
      "author": {
       "score": null,
@@ -10614,8 +10615,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1667,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10644,8 +10645,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2477,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10656,8 +10657,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.0833,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10686,8 +10687,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.413,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10698,8 +10699,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1333,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10728,8 +10729,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2345,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10740,8 +10741,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.129,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10770,8 +10771,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3748,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10782,8 +10783,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1481,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10812,8 +10813,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.1926,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10824,8 +10825,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.2,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10854,8 +10855,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2259,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10866,8 +10867,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.0833,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10896,8 +10897,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.1784,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10908,8 +10909,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.125,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10938,8 +10939,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.1543,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10950,8 +10951,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1053,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -10980,8 +10981,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2138,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -10992,8 +10993,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.08,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -11022,8 +11023,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3178,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -11034,8 +11035,8 @@
       "label": "MISS"
      },
      "category": {
-      "score": 0.0,
-      "label": "MISS"
+      "score": 0.1667,
+      "label": "PARTIAL"
      },
      "images": {
       "score": 1.0,
@@ -11064,8 +11065,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.4123,
+      "label": "PARTIAL"
      },
      "author": {
       "score": 1.0,
@@ -11106,35 +11107,35 @@
    "prompt_key": "article|css",
    "rules": {
     "title": "h1.titleAndHeadings",
-    "body": "main",
+    "body": "article main p",
     "author": "div.info .authors a",
     "date": "div.info .date time",
-    "category": "div menu .items a.selected",
+    "category": "div.menu .items a.selected",
     "images": "div.container-image img",
     "images_caption": "div.container-image .caption",
     "related_links": "div.related-wrap .related a",
     "summary": "article header + p:first-child",
-    "tags": "div meta .tags-list a"
+    "tags": "div.meta .tags-list a"
    },
    "regexn": null,
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 27238.1,
+    "elapsed_ms": 28650.9,
     "prompt_tokens": 4798,
     "gen_tokens": 121,
     "skeleton_chars": 19250
    },
    "summary": {
-    "mean": 0.6275,
-    "sample_mean": 0.625,
-    "others_mean": 0.6275,
+    "mean": 0.5536,
+    "sample_mean": 0.5522,
+    "others_mean": 0.5537,
     "per_field": {
      "title": 1.0,
-     "body": 1.0,
+     "body": 0.2899,
      "author": 1.0,
      "date": 0.0,
-     "category": 0.0,
+     "category": 0.1452,
      "images": 1.0,
      "images_caption": 1.0,
      "related_links": 0.0,
@@ -12850,7 +12851,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 11067.8,
+    "elapsed_ms": 11053.5,
     "prompt_tokens": 1771,
     "gen_tokens": 104,
     "skeleton_chars": 6242
@@ -14748,7 +14749,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 8263.4,
+    "elapsed_ms": 8325.5,
     "prompt_tokens": 1134,
     "gen_tokens": 109,
     "skeleton_chars": 2766
@@ -16562,7 +16563,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 8337.0,
+    "elapsed_ms": 8331.4,
     "prompt_tokens": 1303,
     "gen_tokens": 90,
     "skeleton_chars": 3724
@@ -18334,7 +18335,7 @@
    "llm": {
     "success": true,
     "error": "",
-    "elapsed_ms": 15677.1,
+    "elapsed_ms": 16153.7,
     "prompt_tokens": 2655,
     "gen_tokens": 115,
     "skeleton_chars": 11465
@@ -18361,15 +18362,15 @@
  "summary": {
   "layouts": 10,
   "failed": 0,
-  "mean": 0.6183,
-  "sample_mean": 0.6254,
-  "others_mean": 0.6182,
+  "mean": 0.63,
+  "sample_mean": 0.6419,
+  "others_mean": 0.6298,
   "per_field": {
-   "title": 0.8643,
-   "body": 0.9295,
-   "author": 0.7456,
+   "title": 0.9643,
+   "body": 0.8585,
+   "author": 0.8752,
    "date": 0.5669,
-   "category": 0.2392,
+   "category": 0.2554,
    "images": 0.435,
    "images_caption": 0.7985,
    "related_links": 0.2522,
@@ -18377,25 +18378,25 @@
    "tags": null
   },
   "per_template": {
-   "article": 0.6183
+   "article": 0.63
   },
   "labels": {
-   "MATCH": 1523,
-   "MISS": 748,
+   "MATCH": 1526,
+   "MISS": 611,
    "NO_GT": 1541,
-   "PARTIAL": 317,
-   "WRONG": 101
+   "PARTIAL": 402,
+   "WRONG": 150
   },
   "llm_calls": 10,
   "prompt_tokens": 21645,
   "gen_tokens": 1177,
-  "llm_ms": 139371.0
+  "llm_ms": 144833.9
  },
  "error": null,
  "group": {
-  "id": "g-20261002-003346-8720",
-  "name": "Annotation study · 10 layouts · qwen2.5-coder 14b vs 7b · CSS"
+  "id": "g-20261006-113509-80e5",
+  "name": "Annotation study · 10 layouts · five local models (CSS) and rule languages · v1.0.4"
  },
- "started_at": "2026-10-01T21:39:05.553043+00:00",
- "finished_at": "2026-10-01T21:41:46.074607+00:00"
+ "started_at": "2026-10-06T08:40:54.249501+00:00",
+ "finished_at": "2026-10-06T08:43:40.601117+00:00"
 }

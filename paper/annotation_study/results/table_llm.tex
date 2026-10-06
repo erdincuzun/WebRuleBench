@@ -1,0 +1,24 @@
+\begin{table}[!htb]
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{2.5pt}
+  \setlength{\abovetopsep}{3pt}
+  \caption{LLM experiments on the ten layouts of the annotation study (Ollama; temperature 0, seed 42, at most 512 output tokens; whitelist cleaning; each layout's first ground-truth page as sample). Mean scores (0--100) on all ground-truth pages, the sample page and the other pages; LLM: time of the ten calls on a laptop (Apple M1 Pro, 16 GB RAM); ms/page: median over pages of the best of three runs from the raw HTML, parsing included.}
+  \label{tab:llm}
+  \begin{tabular}{@{}lrlrrrrr@{}}
+    \toprule
+    Model (Ollama) & Params & Rules & Mean & Sample & Others & LLM (s) & ms/page \\
+    \midrule
+    \texttt{qwen2.5-coder:14b} & 14.8B & CSS & 71.4 & 69.9 & 71.4 & 320 & 28.4 \\
+    \texttt{qwen2.5-coder:7b} & 7.6B & CSS & 63.0 & 64.2 & 63.0 & 145 & 29.2 \\
+    \texttt{ministral-3:8b} & 8.9B & CSS & 50.4 & 52.9 & 50.3 & 187 & 30.0 \\
+    \texttt{gemma4:latest}$^{a}$ & 8.0B & CSS & 42.7 & 42.8 & 42.7 & 121 & 26.6 \\
+    \texttt{phi4:14b}$^{b}$ & 14.7B & CSS & 37.4 & 37.1 & 37.4 & 658 & 25.6 \\
+    \midrule
+    \texttt{qwen2.5-coder:14b} & 14.8B & XPath & 54.9 & 55.3 & 54.9 & 371 & 2.9 \\
+    \texttt{qwen2.5-coder:14b} & 14.8B & regex & 21.9 & 21.6 & 21.9 & 351 & 1.0 \\
+    \texttt{qwen2.5-coder:14b} & 14.8B & CSS$\rightarrow$REGEXN & 68.4 & 68.8 & 68.4 & 295 & 1.7 \\
+    \bottomrule
+    \multicolumn{8}{@{}l}{\rule{0pt}{2.4ex}$^a$ thinking disabled; $^b$ one response cut off at the output limit.} \\
+  \end{tabular}
+\end{table}
