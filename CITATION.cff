@@ -20,6 +20,6 @@ identifiers:
     value: "10.5281/zenodo.23142233"
     description: "Concept DOI (all versions)"
   - type: doi
-    value: "10.5281/zenodo.23169964"
-    description: "Version 1.0.2"
+    value: "10.5281/zenodo.23180562"
+    description: "Version 1.0.3"
 repository-code: "https://github.com/erdincuzun/WebRuleBench"
