@@ -1,4 +1,4 @@
-# Reviewer demo
+# Demo
 
 Try WebRuleBench in two minutes — no LLM, API key or real data needed:
 
@@ -19,5 +19,5 @@ synthetic and deterministic, so everyone gets the same data). The login for the 
 
 The demo code lives in [`src/webrulebench/demo/`](../src/webrulebench/demo/):
 `generate_pages.py` (three synthetic news sites), `setup_demo.py` (annotators, ground truth,
-replay LLM models, ready experiments). See the main [README](../README.md#try-it-in-two-minutes-reviewer-demo)
+replay LLM models, ready experiments). See the main [README](../README.md#try-it-in-two-minutes-demo)
 for a suggested tour.

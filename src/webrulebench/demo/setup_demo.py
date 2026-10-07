@@ -131,7 +131,7 @@ def _wj(p: Path, data):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="WebRuleBench reviewer demo")
+    ap = argparse.ArgumentParser(description="WebRuleBench demo")
     ap.add_argument("--dir", default=str(DEFAULT_DIR))
     ap.add_argument("--force", action="store_true", help="replace an existing demo folder")
     args = ap.parse_args(argv)
@@ -170,14 +170,14 @@ def main(argv=None):
     models["backends"] = {"demo": {"api": "replay", "url": "llm_replay.json", "default_model": "demo-strong",
                                    "models": ["demo-strong", "demo-weak"], "hidden": [], "model_params": {},
                                    "env_key": None, "params": {},
-                                   "notes": "Replays recorded responses — no LLM or API key needed (reviewer demo)"},
+                                   "notes": "Replays recorded responses — no LLM or API key needed (demo)"},
                           **models["backends"]}
     _wj(out / "llm_models.json", models)
     _wj(out / "mcp_config.json", {"backend": "demo", "model": "demo-strong", "strategy": "whitelist"})
     countries = [{"country": c, "code": code, "continent": cont, "language": lang,
                   "sites": [{"name": name, "url": f"https://{dom}", "notes": "synthetic demo site"}]}
                  for c, code, cont, lang, dom, name in SITES_META]
-    _wj(out / "sites.json", {"meta": {"created": "2026-10-04", "criteria": "synthetic reviewer demo"}, "countries": countries})
+    _wj(out / "sites.json", {"meta": {"created": "2026-10-04", "criteria": "synthetic demo"}, "countries": countries})
 
     # 3. replay yanıtları (XPath: CSS'ten okunabilir çeviri)
     from webrulebench.rules.rule_utils import css_to_xpath_readable, css_to_xpath

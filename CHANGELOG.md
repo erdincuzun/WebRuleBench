@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Documentation and help texts only; the code behaves as in 1.0.4.
+
+- Title and descriptions (CITATION.cff, package metadata, README): "human-annotated ground truth"; a single
+  annotator is enough, and with several the tool measures rule- and content-level agreement.
+- The demo is called simply "demo" (it is meant for anyone trying the tool, not only reviewers); README test count
+  updated.
+
 ## 1.0.4 — 2026-10
 
 - LLM evaluation: the heuristic repairs of the CSS rules an LLM writes (a missing dot between class names, a class

@@ -46,7 +46,7 @@ A user guide for the web application (Turkish) is in
 
 ---
 
-## Try it in two minutes (reviewer demo)
+## Try it in two minutes (demo)
 
 No LLM, API key or data is needed:
 
@@ -99,7 +99,7 @@ LLM backends are called over HTTP with `requests`; no vendor SDK is needed. For 
 | Command | |
 |---|---|
 | `webrulebench serve [--port 5001] [--data DIR]` | start the web application (= `./run.sh`, `python -m webrulebench serve`) |
-| `webrulebench demo [--rebuild]` | reviewer demo on port 5002 (= `./run_demo.sh`) |
+| `webrulebench demo [--rebuild]` | self-contained demo on port 5002 (= `./run_demo.sh`) |
 | `webrulebench users create-admin <name>` | first admin (also `list`, `create`, `reset-token`, `activate`, `deactivate`) |
 | `webrulebench --version` | |
 
@@ -143,7 +143,7 @@ python -m webrulebench.pipeline.llm_extractor data/dataset/raw/<domain>/article_
 ### 4. Score rules on a page (Python)
 
 The experiments compare rules by the values they extract, so the rule language does not affect the score.
-On a page of the reviewer demo (built by `webrulebench demo`):
+On a page of the demo (built by `webrulebench demo`):
 
 ```python
 from bs4 import BeautifulSoup
@@ -188,9 +188,9 @@ src/webrulebench/          all Python code (one installable package, src layout)
   webapp/                  Flask app: core.py, routes/ (one blueprint per section), templates/, static/, i18n/,
                            manage_users.py
   defaults/                shipped templates, prompt variants, LLM registry (copied into data/ on first start)
-  demo/                    reviewer demo: synthetic pages, demo data setup, test fixture generator
+  demo/                    demo: synthetic pages, demo data setup, test fixture generator
 data/                      your data — not in the repository
-demo/data/                 generated reviewer demo data — not in the repository
+demo/data/                 generated demo data — not in the repository
 tests/                     unit and end-to-end tests, synthetic fixtures
 paper/annotation_study/    material of the paper's examples: annotation guideline and sample, agreement and rule analysis,
                            figure scripts, results and the records of the LLM experiments (see its README)
@@ -209,7 +209,7 @@ experiments, users, settings, API keys) lives in `data/`, which is not part of t
 
 ```bash
 pip install -e ".[dev]"
-pytest -q          # 112 tests, incl. an end-to-end build of the reviewer demo
+pytest -q          # 129 tests, incl. an end-to-end build of the demo
 ruff check .       # lint (configured in pyproject.toml)
 ```
 

@@ -21,7 +21,7 @@ jobs:
         run: pip install -e ".[dev]"
       - name: Lint (ruff)
         run: ruff check .
-      - name: Tests (incl. end-to-end reviewer demo)
+      - name: Tests (incl. end-to-end demo)
         run: pytest -q
       - name: CLI
         run: webrulebench --version

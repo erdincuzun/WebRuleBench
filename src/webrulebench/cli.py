@@ -46,7 +46,7 @@ def main(argv=None):
     s.add_argument("--data", default=None, help="data folder (default: data/)")
     s.add_argument("--no-debug", action="store_true")
 
-    d = sub.add_parser("demo", help="reviewer demo: synthetic sites, no LLM needed")
+    d = sub.add_parser("demo", help="self-contained demo: synthetic sites, no LLM needed")
     d.add_argument("--port", type=int, default=5002)
     d.add_argument("--rebuild", action="store_true", help="recreate the demo data folder")
 

@@ -6,7 +6,7 @@ against human-annotated ground truth (one or more annotators).
   rules/        rule execution, CSS → regex (REGEXN), rule agreement statistics
   evaluation/   metrics, layout-based experiments, reports
   webapp/       Flask web application (core, routes, templates, static, i18n)
-  demo/         reviewer demo (synthetic pages, demo data folder)
+  demo/         self-contained demo (synthetic pages, demo data folder)
   cli.py        `webrulebench serve | demo | users`
 """
 

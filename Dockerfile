@@ -1,4 +1,4 @@
-# Reviewer demo image: builds the synthetic demo data and serves the web application on port 5002.
+# Demo image: builds the synthetic demo data and serves the web application on port 5002.
 #   docker build -t webrulebench .
 #   docker run --rm -p 5002:5002 webrulebench
 # The login token is printed at start-up (also in /app/demo/data/REVIEWER_LOGIN.txt).
