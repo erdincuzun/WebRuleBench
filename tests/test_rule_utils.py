@@ -127,3 +127,19 @@ def test_score_selector_defaults_to_css_backward_compat():
     soup = BeautifulSoup(HTML, "html.parser")
     score, label = score_selector(soup, "h1.title", "h1.title", field="title")
     assert (score, label) == (1.0, "MATCH")          # tam eşleşme, deneylerle aynı etiket
+
+
+def test_run_regex_stops_catastrophic_backtracking(monkeypatch):
+    from webrulebench.rules import rule_utils
+    monkeypatch.setattr(rule_utils, "REGEX_TIMEOUT_S", 1.0)
+    rule_utils.regex_timeouts(reset=True)
+    assert run_regex("a" * 40 + "b", r"(a+)+$") == []
+    assert rule_utils.regex_timeouts(reset=True) == [r"(a+)+$"]
+    # sonraki regex yeni yardımcı işlemle normal çalışır
+    assert run_regex("<h1>Başlık</h1>", r"<h1>(.*?)</h1>") == ["Başlık"]
+    assert rule_utils.regex_timeouts() == []
+
+
+def test_run_regex_flags_and_invalid_pattern_unchanged():
+    assert run_regex("<H1>\nx</H1>", r"<h1>(.*?)</h1>") == ["\nx"]   # IGNORECASE | DOTALL
+    assert run_regex("abc", "([") == []

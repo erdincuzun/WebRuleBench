@@ -59,6 +59,7 @@ log = logging.getLogger(__name__)
 # TYPES
 # ---------------------------------------------------------------------------
 Strategy = Literal[
+    "none",
     "raw_regex",
     "whitelist",
     "dom_formula",
@@ -69,6 +70,7 @@ Strategy = Literal[
 ]
 
 STRATEGIES: list[Strategy] = [
+    "none",
     "raw_regex",
     "whitelist",
     "dom_formula",
@@ -166,7 +168,9 @@ class HTMLCleaner:
         original_chars = len(html)
         t0 = time.perf_counter()
 
-        if strategy == "raw_regex":
+        if strategy == "none":                 # temizleme yok: sayfa olduğu gibi (tam HTML deneyleri)
+            cleaned = html
+        elif strategy == "raw_regex":
             cleaned = self._strategy_raw_regex(html)
         else:
             soup = BeautifulSoup(html, "html.parser")

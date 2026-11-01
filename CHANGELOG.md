@@ -2,8 +2,22 @@
 
 ## Unreleased
 
-Documentation and help texts only; the code behaves as in 1.0.4.
-
+- LLM evaluation: new experiment option **Given to the LLM** — the skeleton (default, as before) or the HTML of
+  the cleaned page itself (`skeleton = none`), with an automatic prompt that says so; the new cleaning strategy
+  `none` leaves the page unchanged, so that the full page can be given to models with a large context window. The
+  option is saved with the experiment and shown in its views; experiments without it run with the skeleton, and
+  the skeleton prompts are unchanged.
+- LLM evaluation: an input the server silently shortened because it did not fit the model's context window
+  (Ollama keeps half of the window) is detected from the reported input tokens; the layout is marked as an error
+  with the reason and left out of the means, as a failed call is. Its scores remain in the record.
+- Regex rules run with a time limit (5 s per page): a pattern that backtracks catastrophically no longer stalls
+  an experiment. It runs with Python's `re` as before, in a helper process that is restarted when the limit is
+  exceeded; the page then counts as no match and the pattern is listed in the layout record (`regex_timeouts`).
+- LLM evaluation: the provider's stop reason is saved with each layout's call (`finish_reason`: stop, length,
+  max_tokens …); a response that could not be read and stopped at the output limit says so in its error, with
+  the number of output tokens.
+- LLM Models: per-backend call timeout (seconds; 180 if empty), for long inputs and thinking models. It is not
+  sent to the model and is saved in the experiment's backend snapshot.
 - Title and descriptions (CITATION.cff, package metadata, README): "human-annotated ground truth"; a single
   annotator is enough, and with several the tool measures rule- and content-level agreement.
 - The demo is called simply "demo" (it is meant for anyone trying the tool, not only reviewers); README test count

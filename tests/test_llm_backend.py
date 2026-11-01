@@ -3,7 +3,8 @@ test_llm_backend.py
 ===================
 Ollama çağrısı: modele özel `think` ayarı isteğe yalnızca verildiğinde eklenir; düşünen model çıktı
 token'larını düşünmeye harcayıp boş yanıt dönerse hata bunu söyler; çağrı hatası "Empty response" ile
-örtülmez. (Sunucu gerekmez: _post taklit edilir.)
+örtülmez; sağlayıcının durma nedeni (finish_reason) kaydedilir, çıktı sınırına takılan yanıt bunu söyler.
+(Sunucu gerekmez: _post taklit edilir.)
 """
 
 import pytest
@@ -55,3 +56,37 @@ def test_call_error_is_not_masked_by_empty_response(monkeypatch):
     monkeypatch.setattr(ex, "_call_llm", lambda prompt: ("", "Timeout (30 s)", 0, 0))
     res = ex.extract("<html><body><h1>t</h1></body></html>", domain="x.example")
     assert not res.success and res.error == "Timeout (30 s)"
+
+
+def _openai_extract(monkeypatch, reply):
+    monkeypatch.setitem(LM.BACKENDS, "oa", {"api": "openai", "url": "http://localhost:1/v1"})
+    ex = LLMExtractor(backend="oa", model="m", rule_type="css", fields=["title"])
+    monkeypatch.setattr(ex, "_post", lambda url, **kw: reply)
+    return ex.extract("<html><body><h1>t</h1></body></html>", domain="x.example")
+
+
+def test_finish_reason_is_recorded(monkeypatch):
+    res = _openai_extract(monkeypatch, {"choices": [{"message": {"content": '{"title": "h1"}'}, "finish_reason": "stop"}],
+                                        "usage": {"prompt_tokens": 10, "completion_tokens": 5}})
+    assert res.success and res.finish_reason == "stop" and res.metrics()["finish_reason"] == "stop"
+
+
+def test_output_limit_is_reported_on_unparsed_response(monkeypatch):
+    res = _openai_extract(monkeypatch, {"choices": [{"message": {"content": '{"title": "h1'}, "finish_reason": "length"}],
+                                        "usage": {"prompt_tokens": 10, "completion_tokens": 512}})
+    assert not res.success and res.finish_reason == "length"
+    assert "output limit reached (512 tokens" in res.error
+
+
+def test_ollama_done_reason_is_the_finish_reason(monkeypatch):
+    ex, _ = _extractor(monkeypatch, {"message": {"content": "{}"}, "done_reason": "length", "eval_count": 512})
+    ex._call_ollama("p", CFG, "", {})
+    assert ex._finish == "length"
+
+
+def test_timeout_comes_from_backend_unless_given(monkeypatch):
+    monkeypatch.setitem(LM.BACKENDS, "slow", {"api": "openai", "url": "http://localhost:1/v1", "timeout": 900})
+    assert LLMExtractor(backend="slow").timeout == 900
+    assert LLMExtractor(backend="slow", timeout=30).timeout == 30
+    monkeypatch.setitem(LM.BACKENDS, "plain", {"api": "openai", "url": "http://localhost:1/v1"})
+    assert LLMExtractor(backend="plain").timeout == LM.DEFAULT_TIMEOUT_S

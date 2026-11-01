@@ -14,6 +14,8 @@
   <div class="form-row">
     <label class="grow">{{ T("Name (automatic if left empty)") }}<input type="text" id="fName" placeholder="{{ T('e.g. Local models — CSS and Regex') }}"></label>
     <label style="width:190px">{{ T("HTML cleaning") }}<select id="fStrategy"></select></label>
+    <label style="width:220px" title="{{ T('Skeleton: tag names, classes and ids with short text hints (as in the paper). HTML: the cleaned page itself; long pages need a model and server with a large context window.') }}">{{ T("Given to the LLM") }}
+      <select id="fSkeleton"><option value="enriched">{{ T("Skeleton") }}</option><option value="none">{{ T("HTML (no skeleton)") }}</option></select></label>
   </div>
 
   <div class="lbl">{{ T("Models") }} <span class="muted" style="text-transform:none;letter-spacing:0">— {{ T("to add models / enter keys:") }} <a href="/settings/llm-models" style="color:var(--accent)">⚙ {{ T("LLM Models") }}</a></span></div>
@@ -69,7 +71,10 @@
   <li><b>Modeller</b>: <a href="/settings/llm-models" style="color:var(--accent)">⚙ LLM Modelleri</a> sayfasındaki backend + model çiftleri. Anahtarı olmayan bulut modeli hata verir.</li>
   <li><b>Kural dilleri</b>: CSS, XPath, Regex; <b>CSS→REGEXN</b> LLM'in CSS ürettiği, regex'e REGEXN ile (yalnızca örnek sayfa kullanılarak) çevrildiği koşuldur.
     Skorlama her zaman GT içeriğiyle yapılır.</li>
-  <li><b>HTML temizleme</b>: <span class="mono">whitelist</span> (önerilen) ya da <span class="mono">raw_regex</span>.</li>
+  <li><b>HTML temizleme</b>: <span class="mono">whitelist</span> (önerilen), <span class="mono">raw_regex</span> ya da <span class="mono">none</span> (temizleme yok).</li>
+  <li><b>LLM'e verilen</b>: <b>İskelet</b> (makaledeki gibi; etiket adları, sınıflar, id'ler ve kısa metin ipuçları) ya da <b>HTML</b>: temizlenmiş sayfanın kendisi
+    (<span class="mono">none</span> ile tam sayfa). Otomatik prompt buna göre değişir. Uzun sayfalar geniş bağlam penceresi olan bir model ve sunucu gerektirir;
+    pencereyi aşan girdi sunucuya göre hata verebilir ya da sessizce kesilebilir.</li>
   <li><b>Prompt</b>: seçilen kural dilleri aynı prompt diline düşüyorsa (ör. yalnızca CSS ya da CSS + CSS→REGEXN) şablon başına deneme prompt'u seçilebilir;
     aksi halde her kural dili kendi otomatik prompt'unu kullanır. <b>👁</b> ile LLM'e gidecek metni görün.</li>
   <li><b>Örnek sayfa</b>: rastgele seçimde seed kaydedilir; aynı seed aynı sayfaları seçer. <b>En fazla sayfa</b> yalnızca skorlama süresini kısaltır.</li>
@@ -87,7 +92,10 @@
   <li><b>Models</b>: backend + model pairs from the <a href="/settings/llm-models" style="color:var(--accent)">⚙ LLM Models</a> page. A cloud model without a key fails.</li>
   <li><b>Rule languages</b>: CSS, XPath, Regex; <b>CSS→REGEXN</b> is the condition where the LLM generates CSS that is converted to regex with REGEXN (using only the sample page).
     Scoring is always done against the GT content.</li>
-  <li><b>HTML cleaning</b>: <span class="mono">whitelist</span> (recommended) or <span class="mono">raw_regex</span>.</li>
+  <li><b>HTML cleaning</b>: <span class="mono">whitelist</span> (recommended), <span class="mono">raw_regex</span> or <span class="mono">none</span> (no cleaning).</li>
+  <li><b>Given to the LLM</b>: the <b>skeleton</b> (as in the paper: tag names, classes, ids and short text hints) or the <b>HTML</b> of the cleaned page itself
+    (the full page with <span class="mono">none</span>). The automatic prompt changes accordingly. Long pages need a model and server with a large context window;
+    input beyond the window may fail or be cut off silently, depending on the server.</li>
   <li><b>Prompt</b>: if the selected rule languages map to the same prompt language (e.g. only CSS, or CSS + CSS→REGEXN), a prompt variant can be chosen per template;
     otherwise each rule language uses its own automatic prompt. Use <b>👁</b> to see the text that will be sent to the LLM.</li>
   <li><b>Sample page</b>: for random selection the seed is saved; the same seed selects the same pages. <b>Max pages</b> only shortens scoring time.</li>
@@ -137,13 +145,13 @@ function renderPrompts() {
   el.innerHTML = Object.entries(O.templates).filter(([tid]) => used.has(tid)).map(([tid, t]) => {
     if (!lr) return `<div class="grow" style="min-width:260px"><div class="form-field">${Hub.esc((t.icon || '') + ' ' + t.name)}</div>
       <div class="toolbar" style="margin:4px 0 0">${[...new Set([..._langs].map(llmRule))].map(r =>
-        `<button type="button" class="btn sm" onclick="Hub.showPrompt('${Hub.esc(tid)}', '${r}', 'auto')">👁 ${T('Automatic ({rule})', {rule: r})}</button>`).join('')}</div></div>`;
+        `<button type="button" class="btn sm" onclick="Hub.showPrompt('${Hub.esc(tid)}', '${r}', 'auto', htmlInput())">👁 ${T('Automatic ({rule})', {rule: r})}</button>`).join('')}</div></div>`;
     const ps = t.prompts.filter(p => p.rule_type === lr);
     return `<div class="grow" style="min-width:260px"><div class="form-field">${Hub.esc((t.icon || '') + ' ' + t.name)}</div>
       <div class="toolbar" style="margin:4px 0 0;flex-wrap:nowrap">
         <select data-tid="${Hub.esc(tid)}" style="flex:1"><option value="auto">${T('Automatic prompt ({rule})', {rule: lr})}</option>
           ${ps.map(p => `<option value="${Hub.esc(p.id)}">${Hub.esc(p.name)} · ${Hub.esc(p.owner || '')}</option>`).join('')}</select>
-        <button type="button" class="btn sm" title="${T('Show prompt')}" onclick="Hub.showPrompt('${Hub.esc(tid)}', '${lr}', this.previousElementSibling.value)">👁</button>
+        <button type="button" class="btn sm" title="${T('Show prompt')}" onclick="Hub.showPrompt('${Hub.esc(tid)}', '${lr}', this.previousElementSibling.value, htmlInput())">👁</button>
       </div></div>`;
   }).join('') + `<div class="muted" style="flex-basis:100%">${lr
     ? `${T('Only prompt variants written for {rule} are listed.', {rule: lr})} ${T('New prompt:')} <a href="/schema" style="color:var(--accent)">${T('Templates & Prompts')}</a>.`
@@ -182,6 +190,8 @@ function updateCount() {
   document.getElementById('startBtn').textContent = '▶ ' + (n > 1 ? T('Start comparison') : T('Start experiment'));
 }
 
+const htmlInput = () => document.getElementById('fSkeleton').value === 'none';
+
 async function start() {
   const err = document.getElementById('err'); err.textContent = '';
   if (!_models.size || !_langs.size || !_chosen.size) { err.textContent = T('Select models, rule languages and scope'); return; }
@@ -190,6 +200,7 @@ async function start() {
   const sampleMode = document.getElementById('fSample').value;
   const common = {
     strategy: document.getElementById('fStrategy').value,
+    skeleton: document.getElementById('fSkeleton').value,
     sample: sampleMode === 'random' ? {mode: 'random', seed: document.getElementById('fSeed').value} : {mode: 'first'},
     max_pages: document.getElementById('fMaxPages').value.trim() || null,
     delay_s: document.getElementById('fDelay').value.trim() || 0,

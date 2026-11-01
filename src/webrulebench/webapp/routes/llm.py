@@ -52,6 +52,16 @@ def api_llm_models_save(name):
                 params[k] = typ(v)
             except (TypeError, ValueError):
                 return jsonify({"success": False, "error": _t("{name} must be a number", name=k)}), 400
+    timeout = body.get("timeout")
+    if timeout not in (None, ""):
+        try:
+            timeout = int(timeout)
+            if not 1 <= timeout <= 7200:
+                raise ValueError
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": _t("Timeout must be a whole number of seconds (1–7200)")}), 400
+    else:
+        timeout = None
     models = [m.strip() for m in (body.get("models") or []) if isinstance(m, str) and m.strip()]
     default = (body.get("default_model") or "").strip() or (models[0] if models else "")
     if not default:
@@ -67,6 +77,8 @@ def api_llm_models_save(name):
     backends[new_name] = {"api": api, "url": url, "default_model": default, "models": list(dict.fromkeys(models)),
                           "hidden": [h for h in hidden if isinstance(h, str)], "model_params": model_params,
                           "env_key": env_key, "notes": (body.get("notes") or "").strip(), "params": params}
+    if timeout:
+        backends[new_name]["timeout"] = timeout
     LM.save(backends)
     api_key = (body.get("api_key") or "").strip()
     if api_key and env_key:

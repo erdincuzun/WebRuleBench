@@ -39,7 +39,7 @@ from pathlib import Path
 from typing import Literal
 
 import requests
-from webrulebench.pipeline.llm_models import BACKENDS, default_model as _default_model
+from webrulebench.pipeline.llm_models import BACKENDS, call_timeout, default_model as _default_model
 
 # ---------------------------------------------------------------------------
 # CONFIG — backend ayarları llm_models.json'da (llm_models.py); burada yalnızca yedek varsayılan
@@ -294,6 +294,54 @@ write will run against the page's raw HTML text, not this skeleton) and return r
 Return only the JSON object.""",
 }
 
+# İskelet yerine sayfanın HTML'i verildiğinde (deney ayarı skeleton = none)
+USER_PROMPT_TEMPLATES_HTML_BY_RULE_TYPE = {
+    "css": """Analyze this HTML page from {domain} and return CSS selectors as JSON:
+
+{skeleton}
+
+Return only the JSON object.""",
+    "xpath": """Analyze this HTML page from {domain} and return XPath expressions as JSON:
+
+{skeleton}
+
+Return only the JSON object.""",
+    "regex": """Analyze this HTML page from {domain} (the regex you write will run against the page's raw HTML
+text, which may differ from the HTML shown if it was cleaned) and return regex patterns as JSON:
+
+{skeleton}
+
+Return only the JSON object.""",
+}
+
+
+# ---------------------------------------------------------------------------
+# GİRDİ KESİLMESİ
+# Bağlam penceresini aşan girdiyi bazı sunucular (Ollama) hata vermeden kısaltır: model sayfanın yalnızca
+# bir bölümünü görür ve kural yine üretilir. Sunucunun bildirdiği girdi token sayısından anlaşılır.
+# ---------------------------------------------------------------------------
+TRUNCATION_MAX_CHARS_PER_TOKEN = 6.0   # HTML ≈ 2–3.5, iskelet ≈ 3.5–5 karakter/token
+OUTPUT_LIMIT_REASONS = {"length", "max_tokens"}   # OpenAI/Ollama, Anthropic, Gemini (küçük harfe çevrilmiş)
+
+
+def input_truncation(prompt_chars: int, prompt_tokens: int) -> str:
+    """Girdi kesilmiş görünüyorsa nedenini, görünmüyorsa "" döndürür.
+    - Ollama, sığmayan girdiyi pencerenin yarısına indirir: prompt_tokens = 2^k + birkaç başlangıç token'ı
+      (Qwen, gpt-oss: +2 → 16k'da 8194, 32k'da 16386; gemma4: +3 → 128k'da 65539).
+    - Genel: karakter/token oranı metnin tamamının sayılamayacağı kadar yüksek."""
+    if prompt_tokens <= 0:
+        return ""
+    for extra in range(2, 5):
+        half = prompt_tokens - extra
+        if half >= 1024 and half & (half - 1) == 0:
+            return (f"Input truncated by the server: {prompt_tokens} input tokens is half of a "
+                    f"{2 * half}-token context window — the input did not fit")
+    ratio = prompt_chars / prompt_tokens
+    if ratio > TRUNCATION_MAX_CHARS_PER_TOKEN:
+        return (f"Input truncated by the server: {prompt_chars} characters counted as {prompt_tokens} "
+                f"tokens ({ratio:.1f} characters/token)")
+    return ""
+
 
 # ---------------------------------------------------------------------------
 # RESULT
@@ -312,6 +360,8 @@ class ExtractResult:
     error:         str = ""
     prompt_tokens: int = 0   # LLM girdi token sayısı (API'den)
     gen_tokens:    int = 0   # LLM çıktı token sayısı (API'den)
+    truncated:     str = ""  # girdi kesilmesi (input_truncation) — boşsa yok
+    finish_reason: str = ""  # sağlayıcının bildirdiği durma nedeni (stop, length, max_tokens …) — bildirilmezse boş
 
     def metrics(self) -> dict:
         return {
@@ -325,6 +375,8 @@ class ExtractResult:
             "elapsed_ms":    round(self.elapsed_ms, 2),
             "prompt_tokens": self.prompt_tokens,
             "gen_tokens":    self.gen_tokens,
+            "truncated":     self.truncated,
+            "finish_reason": self.finish_reason,
             "error":         self.error,
         }
 
@@ -337,7 +389,7 @@ class LLMExtractor:
     def __init__(self,
                  backend: Literal["ollama", "claude", "gemini", "groq", "nvidia"] = "ollama",
                  model: str = None,
-                 timeout: int = 180,
+                 timeout: int = None,
                  rule_type: Literal["css", "xpath", "regex"] = "css",
                  system_prompt: str = None,
                  user_prompt: str = None,
@@ -349,19 +401,21 @@ class LLMExtractor:
         self.fields        = list(fields) if fields else list(FIELDS)
         self.repair_css    = repair_css
         self._classes      = set()          # iskeletteki class adları (onarım, extract'ta doldurulur)
+        self._finish       = ""             # son çağrının durma nedeni (_call_llm)
         self.backend       = backend
-        self.timeout       = timeout
+        self.timeout       = timeout or call_timeout(backend)   # verilmezse backend ayarı
         self.rule_type     = rule_type
         self.model         = model or _default_model(backend) or OLLAMA_MODEL
         self._system_prompt = system_prompt or SYSTEM_PROMPTS_BY_RULE_TYPE[rule_type]
         self._user_prompt   = user_prompt   or USER_PROMPT_TEMPLATES_BY_RULE_TYPE[rule_type]
 
-    def extract(self, skeleton_html: str, domain: str = "unknown") -> ExtractResult:
-        """Skeleton HTML'den kural (CSS selector / XPath / Regex) çıkar."""
+    def extract(self, skeleton_html: str, domain: str = "unknown", annotated: bool = True) -> ExtractResult:
+        """Skeleton HTML'den kural (CSS selector / XPath / Regex) çıkar.
+        annotated=False: girdi iskelet değil sayfanın HTML'idir; *annotation* temizliği yapılmaz."""
         # *annotation* token'larını class attribute'larından temizle
         # Örnek: class="text-[19px] *Lora-Regular* *[30px]*" → class="text-[19px]"
         import re as _re
-        clean_skeleton = _re.sub(r'\s*\*[^*]+\*', '', skeleton_html)
+        clean_skeleton = _re.sub(r'\s*\*[^*]+\*', '', skeleton_html) if annotated else skeleton_html
         self._domain   = domain             # replay backend yanıtı alan adına göre seçer
         self._classes  = _class_names(clean_skeleton)
 
@@ -376,6 +430,8 @@ class LLMExtractor:
         selectors, success, parse_error = self._parse_response(raw)
         if parse_error:
             error = error or parse_error     # yanıt boşsa çağrı hatası (zaman aşımı vb.) korunur
+        if not success and self._finish in OUTPUT_LIMIT_REASONS:
+            error += f" — output limit reached ({gtok} tokens, finish_reason {self._finish}): raise max_tokens"
 
         # CSS'e özel onarımlar (isteğe bağlı) — XPath/Regex'te selector söz dizimi farklı olduğundan uygulanmaz
         if self.rule_type == "css" and self.repair_css and "body" in self.fields:
@@ -396,13 +452,17 @@ class LLMExtractor:
             error          = error,
             prompt_tokens  = ptok,
             gen_tokens     = gtok,
+            truncated      = input_truncation(len(self._system_prompt) + len(prompt), ptok),
+            finish_reason  = self._finish,
         )
 
     # ── LLM çağrıları ─────────────────────────────────────────────────────
     def _call_llm(self, prompt: str) -> tuple[str, str, int, int]:
         """(text, error, prompt_tokens, gen_tokens) döndürür.
         Çağrı biçimi backend'in API tipine göre seçilir (llm_models.json); URL ve üretim
-        parametreleri çağrı anında okunur — ayar sayfasındaki değişiklik hemen geçerlidir."""
+        parametreleri çağrı anında okunur — ayar sayfasındaki değişiklik hemen geçerlidir.
+        Sağlayıcının durma nedeni self._finish'e yazılır."""
+        self._finish = ""
         cfg = BACKENDS.get(self.backend)
         if not cfg:
             return "", f"Bilinmeyen backend: {self.backend}", 0, 0
@@ -474,6 +534,7 @@ class LLMExtractor:
             body["think"] = bool(p["think"])
         data = self._post(cfg["url"].replace("/generate", "/chat"), json=body)
         msg = data.get("message") or {}
+        self._finish = data.get("done_reason") or ""
         text, ptok, gtok = msg.get("content") or "", data.get("prompt_eval_count", 0), data.get("eval_count", 0)
         if not text.strip() and msg.get("thinking"):
             return "", "Empty response: the model spent its output tokens on thinking (set think = false)", ptok, gtok
@@ -488,6 +549,7 @@ class LLMExtractor:
         data = self._post(cfg["url"], json=payload,
                           headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"})
         text  = "".join(b.get("text", "") for b in data.get("content", []) if b.get("type", "text") == "text")
+        self._finish = data.get("stop_reason") or ""
         usage = data.get("usage", {})
         return text, "", usage.get("input_tokens", 0), usage.get("output_tokens", 0)
 
@@ -500,6 +562,7 @@ class LLMExtractor:
             "system_instruction": {"parts": [{"text": self._system_prompt}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": gen})
+        self._finish = ((data.get("candidates") or [{}])[0].get("finishReason") or "").lower()
         try:
             text  = data["candidates"][0]["content"]["parts"][0]["text"]
         except (KeyError, IndexError) as e:
@@ -519,8 +582,10 @@ class LLMExtractor:
         if key:
             headers["Authorization"] = f"Bearer {key}"
         data  = self._post(url, json=payload, headers=headers)
-        text  = (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
-        usage = data.get("usage") or {}
+        choice = (data.get("choices") or [{}])[0]
+        text   = choice.get("message", {}).get("content") or ""
+        self._finish = choice.get("finish_reason") or ""
+        usage  = data.get("usage") or {}
         return text, "", usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0)
 
     # ── JSON parse ────────────────────────────────────────────────────────

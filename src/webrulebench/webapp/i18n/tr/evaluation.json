@@ -295,5 +295,12 @@
  "Delete backend \"{name}\"? (The key in .env is not deleted; old experiments keep their saved settings)": "\"{name}\" backend'i silinsin mi? (.env'deki anahtar silinmez; eski deneyler kayıtlı ayarlarıyla kalır)",
  "{name} deleted": "{name} silindi",
  "Seed": "Seed",
- "Replays recorded responses (demo and tests, no LLM needed). URL: a JSON file in the data folder, e.g. llm_replay.json.": "Kayıtlı yanıtları geri oynatır (demo ve testler, LLM gerekmez). URL: veri klasöründe bir JSON dosyası, ör. llm_replay.json."
+ "Replays recorded responses (demo and tests, no LLM needed). URL: a JSON file in the data folder, e.g. llm_replay.json.": "Kayıtlı yanıtları geri oynatır (demo ve testler, LLM gerekmez). URL: veri klasöründe bir JSON dosyası, ör. llm_replay.json.",
+ "Given to the LLM": "LLM'e verilen",
+ "Skeleton": "İskelet",
+ "HTML (no skeleton)": "HTML (iskeletsiz)",
+ "LLM input: HTML (no skeleton)": "LLM girdisi: HTML (iskeletsiz)",
+ "Skeleton: tag names, classes and ids with short text hints (as in the paper). HTML: the cleaned page itself; long pages need a model and server with a large context window.": "İskelet: etiket adları, sınıflar ve id'ler, kısa metin ipuçlarıyla (makaledeki gibi). HTML: temizlenmiş sayfanın kendisi; uzun sayfalar geniş bağlam penceresi olan bir model ve sunucu gerektirir.",
+ "Timeout (s)": "Zaman aşımı (sn)",
+ "How long to wait for one LLM call; raise it for long inputs and thinking models. Not sent to the model.": "Bir LLM çağrısı için en fazla ne kadar beklenir; uzun girdiler ve düşünen modeller için yükseltin. Modele gönderilmez."
 }

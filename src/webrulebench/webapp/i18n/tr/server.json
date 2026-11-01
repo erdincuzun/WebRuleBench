@@ -104,5 +104,7 @@
  "❌ No elements found ({n} merged selectors tried)": "❌ Hiç eleman bulunamadı ({n} birleşik denendi)",
  "❌ No matches found": "❌ Hiç eşleşme bulunamadı",
  "You have no rules for this layout yet — write and save them first": "Bu layout için henüz kuralınız yok — önce yazıp kaydedin",
- "A replay backend needs a JSON file name in the data folder": "Replay backend'i için veri klasöründe bir JSON dosya adı gerekir"
+ "A replay backend needs a JSON file name in the data folder": "Replay backend'i için veri klasöründe bir JSON dosya adı gerekir",
+ "Invalid page representation": "Geçersiz sayfa gösterimi",
+ "Timeout must be a whole number of seconds (1–7200)": "Zaman aşımı tam sayı saniye olmalı (1–7200)"
 }

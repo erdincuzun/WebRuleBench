@@ -111,6 +111,7 @@ def api_template_prompts(tid):
     prompts.sort(key=lambda p: p.get("created_at", ""))
     return Response(json.dumps({
         "auto":    {rt: build_prompt(t, rt) for rt in RULE_TYPES},
+        "auto_html": {rt: build_prompt(t, rt, skeleton=False) for rt in RULE_TYPES},   # deney ayarı skeleton = none
         "prompts": prompts,
     }, ensure_ascii=False), mimetype="application/json")
 

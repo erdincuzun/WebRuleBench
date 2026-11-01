@@ -34,7 +34,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from webrulebench.paths import DATA_DIR as ROOT   # veri klasörü (WRB_DATA_DIR ya da proje kökü)
-EXP_DIR       = ROOT / "experiments"
+from webrulebench.rules.rule_utils import regex_timeouts
+
+EXP_DIR      = ROOT / "experiments"
 RAW_DIR       = ROOT / "dataset" / "raw"
 GT_DIR        = ROOT / "ground_truth" / "approved"
 TEMPLATES     = ROOT / "layout_templates.json"
@@ -42,6 +44,7 @@ PROMPTS_FILE  = ROOT / "template_prompts.json"
 
 RULE_TYPES    = ("css", "xpath", "regex")
 RULE_SOURCES  = ("llm", "llm_css_regexn")
+SKELETONS     = ("enriched", "none")     # none: LLM iskelet yerine temizlenmiş sayfanın HTML'ini görür
 MATCH_AT      = 0.9
 
 _lock    = threading.Lock()
@@ -49,7 +52,7 @@ _running = {}          # id → {"thread", "cancel": Event}
 _queued  = set()       # grup kuyruğunda sırasını bekleyen deney id'leri
 _groups  = {}          # grup id → cancel Event (çalışan grup)
 _quick   = {}          # hızlı test belirteci → {user, at, payload} (kaydedilene kadar bellekte)
-UI_STRATEGIES = ("whitelist", "raw_regex")     # arayüzde sunulan temizleme stratejileri
+UI_STRATEGIES = ("whitelist", "raw_regex", "none")     # arayüzde sunulan temizleme stratejileri
 
 
 # ---------------------------------------------------------------------------
@@ -160,8 +163,10 @@ def eligible_layouts(domains: list | None = None, templates: list | None = None)
 # ---------------------------------------------------------------------------
 # prompt çözümü
 # ---------------------------------------------------------------------------
-def resolve_prompt(template: dict, template_id: str, rule_type: str, prompt_id: str | None) -> dict:
-    """{source, name, system, user}. prompt_id yoksa / 'auto' ise şablondan otomatik prompt."""
+def resolve_prompt(template: dict, template_id: str, rule_type: str, prompt_id: str | None,
+                   skeleton: bool = True) -> dict:
+    """{source, name, system, user}. prompt_id yoksa / 'auto' ise şablondan otomatik prompt
+    (skeleton=False: iskelet yerine sayfanın HTML'i verildiğini söyleyen otomatik prompt)."""
     from webrulebench.pipeline.prompt_builder import build_prompt
     if prompt_id and prompt_id != "auto":
         p = _load_json(PROMPTS_FILE, {}).get("prompts", {}).get(prompt_id)
@@ -171,7 +176,7 @@ def resolve_prompt(template: dict, template_id: str, rule_type: str, prompt_id: 
             raise ExperimentError("Prompt '{name}' is for {prompt_rule}; the experiment uses {rule}",
                                   name=p.get("name"), prompt_rule=p.get("rule_type"), rule=rule_type)
         return {"source": prompt_id, "name": p.get("name"), "system": p["system_prompt"], "user": p["user_prompt"]}
-    b = build_prompt(template, rule_type)
+    b = build_prompt(template, rule_type, skeleton)
     return {"source": "auto", "name": "Automatic prompt", "system": b["system"], "user": b["user"]}
 
 
@@ -266,20 +271,22 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
     pkey      = f"{tid}|{llm_rt}"
     if pkey not in prompts_used:
         pid = (cfg.get("prompts") or {}).get(tid) if llm_rt == rule_type else None
-        prompts_used[pkey] = resolve_prompt(tmpl, tid, llm_rt, pid)
+        prompts_used[pkey] = resolve_prompt(tmpl, tid, llm_rt, pid, cfg.get("skeleton", "enriched") != "none")
     prompt = prompts_used[pkey]
 
-    # 1-2. örnek sayfa → iskelet → LLM
+    # 1-2. örnek sayfa → iskelet (skeleton = none: temizlenmiş HTML) → LLM
     html_s  = (RAW_DIR / dom / sample).read_text(encoding="utf-8", errors="ignore")
     cleaned = HTMLCleaner().clean(html_s, strategy=cfg.get("strategy", "whitelist"))
-    skel    = Skeleton(strategy="enriched").extract(cleaned.cleaned_html).skeleton_html
+    use_skel = cfg.get("skeleton", "enriched") != "none"
+    skel    = Skeleton(strategy="enriched").extract(cleaned.cleaned_html).skeleton_html if use_skel else cleaned.cleaned_html
     # css_repair anahtarı olmayan kayıtlar (1.0.4 öncesi) onarımla çalışmıştı; sürdürülürken de öyle kalır
     ex = LLMExtractor(backend=cfg["backend"], model=cfg.get("model") or None, rule_type=llm_rt,
                       system_prompt=prompt["system"], user_prompt=prompt["user"], fields=list(fields),
                       repair_css=bool(cfg.get("css_repair", True)))
-    res   = ex.extract(skel, domain=dom)
+    res   = ex.extract(skel, domain=dom, annotated=use_skel)
     rules = {f: (v if isinstance(v, str) else "") for f, v in (res.selectors or {}).items()}
 
+    regex_timeouts(reset=True)
     generated = {}
     if source == "llm_css_regexn":
         from webrulebench.rules.regex_generator import generate, css_values
@@ -314,11 +321,16 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
 
     per_field = {f: _mean(page_scores[p][f]["score"] for p in pages) for f in fields}
     others    = [p for p in pages if p != sample]
+    timeouts  = regex_timeouts(reset=True)   # süreyi aşan regex'ler (o sayfada sonuç boş sayıldı)
     return {
         **item, "template_id": tid, "sample_page": sample, "n_pages": len(pages),
+        # girdisi kesilen layout hatalı sayılır (ortalamaya girmez); puanları kayıtta kalır
+        **({"error": res.truncated} if res.truncated else {}),
         "prompt_key": pkey, "rules": rules, "regexn": generated or None,
+        **({"regex_timeouts": timeouts} if timeouts else {}),
         "llm": {"success": res.success, "error": res.error, "elapsed_ms": round(res.elapsed_ms, 1),
-                "prompt_tokens": res.prompt_tokens, "gen_tokens": res.gen_tokens,
+                "prompt_tokens": res.prompt_tokens, "gen_tokens": res.gen_tokens, "truncated": res.truncated,
+                "finish_reason": res.finish_reason,
                 "skeleton_chars": len(skel), "raw_response": (res.raw_response or "")[:4000]},
         "pages": page_scores,
         "summary": {
@@ -378,6 +390,9 @@ def validate_config(cfg: dict) -> dict:
     c.setdefault("strategy", "whitelist")
     if c["strategy"] not in STRATEGIES:
         raise ExperimentError("Invalid cleaning strategy")
+    c.setdefault("skeleton", "enriched")
+    if c["skeleton"] not in SKELETONS:
+        raise ExperimentError("Invalid page representation")
     smp = c.get("sample") or {"mode": "first"}
     if smp.get("mode") not in ("first", "random"):
         raise ExperimentError("Invalid sample page selection")
@@ -397,8 +412,9 @@ def validate_config(cfg: dict) -> dict:
     from webrulebench.pipeline.llm_models import effective_params
     overrides = dict((b.get("model_params") or {}).get(model) or {})
     # params: bu çağrıda gerçekten kullanılan (birleşik) değerler; model_overrides: bunlardan modele özel olanlar
+    from webrulebench.pipeline.llm_models import call_timeout
     c["backend_snapshot"] = {"api": b.get("api"), "url": b.get("url"), "params": effective_params(c["backend"], model),
-                             "model_overrides": overrides, "model": model}
+                             "model_overrides": overrides, "model": model, "timeout": call_timeout(c["backend"])}
     if b.get("api") == "ollama":
         # model makinede yoksa deney başlamadan reddedilir; varsa digest ve bilgileri kaydedilir
         # (aynı etiket yeniden çekilirse model dosyası değişebilir — digest hangi dosyanın kullanıldığını sabitler)

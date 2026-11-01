@@ -15,7 +15,7 @@ that layout, so both accuracy and generalization are measured.
 Raw HTML (data/dataset/raw/)
    │
    ▼
-html_cleaner.py   — noise removal, 7 cleaning strategies
+html_cleaner.py   — noise removal, 7 cleaning strategies (or none)
    │
    ▼
 skeleton.py       — structural skeleton (tag + class + id; headings / short text in "enriched" mode)
@@ -209,7 +209,7 @@ experiments, users, settings, API keys) lives in `data/`, which is not part of t
 
 ```bash
 pip install -e ".[dev]"
-pytest -q          # 129 tests, incl. an end-to-end build of the demo
+pytest -q          # 158 tests, incl. an end-to-end build of the demo
 ruff check .       # lint (configured in pyproject.toml)
 ```
 

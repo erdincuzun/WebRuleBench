@@ -16,6 +16,7 @@ Kullanım:
 """
 
 import re
+import threading
 from typing import Literal
 
 RuleType = Literal["css", "xpath", "regex"]
@@ -191,12 +192,111 @@ def run_xpath(html_or_soup, xpath: str) -> list:
     return result if isinstance(result, list) else [result]
 
 
+# ── Regex süre sınırı ─────────────────────────────────────────────────────
+# LLM'in yazdığı bir regex (ör. iç içe .*? ile) "felaket geri izleme"ye girip saatlerce sürebilir ve re
+# kesilemez. Regex bu yüzden ayrı bir işlemde, yine re ile çalışır; süreyi aşarsa işlem kapatılır, sonuç boş
+# sayılır ve desen regex_timeouts() listesine yazılır (çağıran thread'e özel).
+REGEX_TIMEOUT_S = 5.0
+_FLAGS = re.IGNORECASE | re.DOTALL
+_worker = {"proc": None, "send": None, "recv": None, "text": None}
+_worker_lock = threading.Lock()
+_local = threading.local()
+
+
+def _regex_serve():
+    """Yardımcı işlemin döngüsü: (desen, metin | None) alır, re.findall sonucunu yollar."""
+    import os
+    from multiprocessing.connection import Connection
+    inp, out = Connection(os.dup(0), writable=False), Connection(os.dup(1), readable=False)
+    out.send(("ready", None))
+    text = ""
+    while True:
+        try:
+            pattern, new_text = inp.recv()
+        except EOFError:
+            return
+        if new_text is not None:      # metin yalnızca değiştiğinde gönderilir
+            text = new_text
+        try:
+            out.send(("ok", re.findall(pattern, text, flags=_FLAGS)))
+        except re.error:
+            out.send(("error", None))
+
+
+def _start_worker(w):
+    import os
+    import subprocess
+    import sys
+    from multiprocessing.connection import Connection
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(p for p in sys.path if p)}
+    w["proc"] = subprocess.Popen(
+        [sys.executable, "-c", "from webrulebench.rules.rule_utils import _regex_serve; _regex_serve()"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=env)
+    w["send"] = Connection(os.dup(w["proc"].stdin.fileno()), readable=False)
+    w["recv"] = Connection(os.dup(w["proc"].stdout.fileno()), writable=False)
+    w["text"] = None
+    if not w["recv"].poll(60):        # yorumlayıcının açılışı süre sınırına sayılmaz
+        _stop_worker(w)
+        raise RuntimeError("regex worker did not start")
+    w["recv"].recv()
+
+
+def _stop_worker(w):
+    w["proc"].kill()
+    w["proc"].wait()
+    for c in (w["send"], w["recv"], w["proc"].stdin, w["proc"].stdout):
+        c.close()
+    w["proc"] = None
+
+
+def _findall_limited(pattern: str, text: str):
+    """re.findall'ın sonucu; geçersiz desen → []; süre aşımı → None (işlem yeniden başlatılır)."""
+    import os
+    if os.name != "posix":            # Windows: süre sınırı yok
+        try:
+            return re.findall(pattern, text, flags=_FLAGS)
+        except re.error:
+            return []
+    with _worker_lock:
+        w = _worker
+        if w["proc"] is None or w["proc"].poll() is not None:
+            _start_worker(w)
+        same = w["text"] is not None and w["text"] is text
+        try:
+            w["send"].send((pattern, None if same else text))
+        except OSError:               # işlem kapanmış: yeniden başlat, bir kez daha dene
+            _stop_worker(w)
+            _start_worker(w)
+            w["send"].send((pattern, text))
+        w["text"] = text
+        if w["recv"].poll(REGEX_TIMEOUT_S):
+            status, matches = w["recv"].recv()
+            return matches if status == "ok" else []
+        _stop_worker(w)
+        return None
+
+
+def regex_timeouts(reset: bool = False) -> list[str]:
+    """Bu thread'de süreyi aşan desenler (reset=True: listeyi boşaltır ve önceki içeriği döndürür)."""
+    out = getattr(_local, "timeouts", [])
+    if reset:
+        _local.timeouts = []
+    return out
+
+
 def run_regex(html_or_soup, pattern: str) -> list[str]:
     """Regex'i ham HTML/metin üzerinde çalıştır, eşleşen grupları/tam eşleşmeleri döndürür."""
     text = html_or_soup if isinstance(html_or_soup, str) else str(html_or_soup)
     try:
-        matches = re.findall(pattern, text, flags=re.IGNORECASE | re.DOTALL)
+        re.compile(pattern, _FLAGS)
     except re.error:
+        return []
+    matches = _findall_limited(pattern, text)
+    if matches is None:
+        if not hasattr(_local, "timeouts"):
+            _local.timeouts = []
+        if pattern not in _local.timeouts:
+            _local.timeouts.append(pattern)
         return []
     results = []
     for m in matches:

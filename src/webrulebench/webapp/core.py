@@ -897,7 +897,7 @@ def _public_backend(name: str, c: dict, catalog: bool = False) -> dict:
     return {"name": name, "api": c.get("api"), "url": c.get("url"), "default_model": c.get("default_model"),
             "models": c.get("models") or [], "hidden": c.get("hidden") or [], "model_params": c.get("model_params") or {}, **extra,
             "env_key": c.get("env_key"), "notes": c.get("notes", ""),
-            "params": c.get("params") or {}, "has_key": _backend_has_key(c),
+            "params": c.get("params") or {}, "timeout": c.get("timeout"), "has_key": _backend_has_key(c),
             "key_hint": _key_hint(c.get("env_key")) if c.get("env_key") else None}
 
 

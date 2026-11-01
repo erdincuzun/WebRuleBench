@@ -167,11 +167,11 @@ const Hub = {
   },
 
   // Şablonun prompt'unu göster: pid 'auto' (ya da boş) → otomatik prompt (rule dili için), aksi halde deneme prompt'u
-  async showPrompt(tid, ruleType, pid) {
+  async showPrompt(tid, ruleType, pid, html = false) {
     const d = await (await fetch(`/api/templates/${encodeURIComponent(tid)}/prompts`)).json();
     let name, sys, usr;
     if (!pid || pid === 'auto') {
-      const a = d.auto?.[ruleType];
+      const a = (html ? d.auto_html : d.auto)?.[ruleType];
       if (!a) { this.toast(T('Prompt not found'), 'err'); return; }
       [name, sys, usr] = [`${T('Automatic prompt')} · ${tid} · ${ruleType}`, a.system, a.user];
     } else {

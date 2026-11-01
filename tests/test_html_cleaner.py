@@ -49,3 +49,8 @@ def test_unknown_strategy_raises():
     cleaner = HTMLCleaner(CleanerConfig())
     with pytest.raises(ValueError):
         cleaner.clean("<html></html>", strategy="not_a_real_strategy")
+
+
+def test_none_strategy_returns_page_unchanged():
+    html = _load_html(FIXTURE_DOMAINS[0])
+    assert HTMLCleaner(CleanerConfig()).clean(html, strategy="none").cleaned_html == html

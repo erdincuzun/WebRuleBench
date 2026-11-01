@@ -13,6 +13,9 @@ API tipleri (çağrının biçimi — llm_extractor bu tipe göre çağırır):
   gemini     Google Generative Language generateContent ({model} URL'de)
   openai     OpenAI uyumlu /chat/completions (Groq, NVIDIA NIM, OpenRouter, vLLM, LM Studio …)
 
+timeout: bir LLM çağrısının en fazla bekleneceği süre (sn, backend düzeyinde; yoksa DEFAULT_TIMEOUT_S).
+Modele gönderilmez; uzun girdiler ve düşünen modeller için yükseltilir.
+
 API anahtarları burada DEĞİL: env_key yalnızca değişkenin adıdır; değer ortam
 değişkeninden ya da proje kökündeki .env dosyasından okunur (llm_extractor._api_key).
 
@@ -29,6 +32,7 @@ from webrulebench.paths import DATA_DIR
 MODELS_FILE = DATA_DIR / "llm_models.json"
 # replay: kayıtlı yanıtları geri oynatan sahte backend (hakem demosu, testler); url = yanıt dosyası (veri klasörüne göre)
 API_TYPES   = ("ollama", "anthropic", "gemini", "openai", "replay")
+DEFAULT_TIMEOUT_S = 180
 
 # Varsayılanlar: bu dosya json'a taşınmadan önceki davranışın aynısı (üretim parametreleri dahil),
 # böylece eski deney sonuçlarıyla karşılaştırılabilirlik korunur.
@@ -134,6 +138,11 @@ def effective_params(backend: str, model: str | None = None) -> dict:
     cfg = BACKENDS.get(backend) or {}
     model = model or cfg.get("default_model")
     return {**(cfg.get("params") or {}), **((cfg.get("model_params") or {}).get(model) or {})}
+
+
+def call_timeout(backend: str) -> int:
+    """Backend'in çağrı zaman aşımı (sn)."""
+    return int(BACKENDS.get(backend, {}).get("timeout") or DEFAULT_TIMEOUT_S)
 
 
 def default_model(backend: str) -> str:

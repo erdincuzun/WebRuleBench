@@ -38,6 +38,7 @@
       <div class="muted" id="apiHint" style="margin:-6px 0 10px"></div>
       <div class="form-row">
         <label class="grow">URL<input type="text" id="eUrl" placeholder="https://…/v1"></label>
+        <label style="width:150px" title="{{ T('How long to wait for one LLM call; raise it for long inputs and thinking models. Not sent to the model.') }}">{{ T("Timeout (s)") }}<input type="text" id="eTimeout" placeholder="180"></label>
       </div>
       <div class="form-row">
         <label style="width:260px">{{ T("Key variable") }}<input type="text" id="eEnvKey" placeholder="{{ T('e.g. OPENROUTER_API_KEY') }}"></label>
@@ -333,6 +334,7 @@ function fill(b) {
   document.getElementById('eName').value    = b.name || '';
   document.getElementById('eApi').value     = b.api || 'openai';
   document.getElementById('eUrl').value     = b.url || '';
+  document.getElementById('eTimeout').value = b.timeout ?? '';
   document.getElementById('eEnvKey').value  = b.env_key || '';
   document.getElementById('eDefault').value = b.default_model || '';
   document.getElementById('eModels').value  = (b.models || []).join('\n');
@@ -390,6 +392,7 @@ async function saveEdit() {
     env_key: document.getElementById('eEnvKey').value.trim(), api_key: document.getElementById('eKey').value.trim(),
     default_model: document.getElementById('eDefault').value.trim(),
     models: document.getElementById('eModels').value.split('\n'), notes: document.getElementById('eNotes').value.trim(), params,
+    timeout: document.getElementById('eTimeout').value.trim(),
   };
   if (!name) { err.textContent = T('Name is required'); return; }
   if (!_edit && D.backends.some(b => b.name === name)) { err.textContent = T("'{name}' already exists", {name}); return; }

@@ -93,6 +93,7 @@ function renderHead() {
     <span class="muted mono">${T('{done} / {total} LLM calls', {done, total})}</span>
     <span class="pill">${T('{n} configurations', {n: G.members.length})}</span><span class="pill">${T('{n} layouts', {n: G.scope.length})}</span>
     <span class="pill">${T('cleaning:')} ${Hub.esc(c.strategy)}</span>
+    ${c.skeleton === 'none' ? `<span class="pill">${T('LLM input: HTML (no skeleton)')}</span>` : ''}
     <span class="pill">${c.sample.mode === 'random' ? T('sample: random (seed {seed})', {seed: c.sample.seed}) : T('sample: first GT page')}</span>
     ${c.max_pages ? `<span class="pill">${T('at most {n} pages', {n: c.max_pages})}</span>` : ''}
     <span class="pill">${Hub.esc(G.created_by)} · ${new Date(G.created_at).toLocaleString(LOCALE)}</span>
