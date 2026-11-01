@@ -84,6 +84,44 @@ def test_ollama_done_reason_is_the_finish_reason(monkeypatch):
     assert ex._finish == "length"
 
 
+@pytest.fixture
+def trickle_server():
+    """Başlığı hemen yollayıp gövdeye ara ara bir boşluk yazan, yanıtı hiç bitirmeyen sunucu."""
+    import http.server
+    import threading
+    import time
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            try:
+                for _ in range(100):
+                    self.wfile.write(b" ")
+                    self.wfile.flush()
+                    time.sleep(0.2)
+            except OSError:
+                pass
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{srv.server_port}/v1"
+    srv.shutdown()
+
+
+def test_call_timeout_is_total_even_if_server_keeps_connection_alive(monkeypatch, trickle_server):
+    import time
+    monkeypatch.setitem(LM.BACKENDS, "trickle", {"api": "openai", "url": trickle_server})
+    ex = LLMExtractor(backend="trickle", model="m", rule_type="css", fields=["title"], timeout=1)
+    t0 = time.monotonic()
+    text, error, _, _ = ex._call_llm("p")
+    assert text == "" and error == "Timeout (1 s)" and time.monotonic() - t0 < 3
+
+
 def test_timeout_comes_from_backend_unless_given(monkeypatch):
     monkeypatch.setitem(LM.BACKENDS, "slow", {"api": "openai", "url": "http://localhost:1/v1", "timeout": 900})
     assert LLMExtractor(backend="slow").timeout == 900

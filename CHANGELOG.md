@@ -17,7 +17,8 @@
   max_tokens …); a response that could not be read and stopped at the output limit says so in its error, with
   the number of output tokens.
 - LLM Models: per-backend call timeout (seconds; 180 if empty), for long inputs and thinking models. It is not
-  sent to the model and is saved in the experiment's backend snapshot.
+  sent to the model and is saved in the experiment's backend snapshot. It limits the whole call: a server that
+  keeps the connection open without answering no longer holds an experiment indefinitely.
 - Title and descriptions (CITATION.cff, package metadata, README): "human-annotated ground truth"; a single
   annotator is enough, and with several the tool measures rule- and content-level agreement.
 - The demo is called simply "demo" (it is meant for anyone trying the tool, not only reviewers); README test count

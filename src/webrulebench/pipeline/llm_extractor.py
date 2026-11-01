@@ -514,12 +514,24 @@ class LLMExtractor:
         return text, "", len(self._system_prompt + prompt) // 4, len(text) // 4
 
     def _post(self, url: str, **kw):
-        """POST; HTTP hatasında sağlayıcının açıklamasını da içeren istisna."""
-        resp = requests.post(url, timeout=self.timeout, **kw)
+        """POST; HTTP hatasında sağlayıcının açıklamasını da içeren istisna.
+        self.timeout çağrının toplam süresidir: requests'in timeout'u yalnızca iki okuma arasındaki beklemeyi
+        sınırlar, bağlantıyı ara ara gelen baytlarla canlı tutan bir sunucu onu hiç doldurmaz. Yanıt bu yüzden
+        parça parça okunur ve süre aşılınca bağlantı kapatılır."""
+        deadline = time.monotonic() + self.timeout
+        with requests.post(url, timeout=self.timeout, stream=True, **kw) as resp:
+            chunks = []
+            for chunk in resp.iter_content(chunk_size=1):   # büyük parça, dolana kadar bekler
+                chunks.append(chunk)
+                if time.monotonic() > deadline:
+                    raise requests.Timeout()
+            if time.monotonic() > deadline:
+                raise requests.Timeout()
+            body = b"".join(chunks).decode(resp.encoding or "utf-8", errors="replace")
         if resp.status_code >= 400:
-            body = resp.text.strip().replace("\n", " ")
+            body = body.strip().replace("\n", " ")
             raise RuntimeError(f"HTTP {resp.status_code}: {body[:300]}")
-        return resp.json()
+        return json.loads(body)
 
     def _messages(self, prompt: str) -> list:
         return [{"role": "system", "content": self._system_prompt}, {"role": "user", "content": prompt}]
