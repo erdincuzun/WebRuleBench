@@ -330,7 +330,7 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
         **({"regex_timeouts": timeouts} if timeouts else {}),
         "llm": {"success": res.success, "error": res.error, "elapsed_ms": round(res.elapsed_ms, 1),
                 "prompt_tokens": res.prompt_tokens, "gen_tokens": res.gen_tokens, "truncated": res.truncated,
-                "finish_reason": res.finish_reason,
+                "finish_reason": res.finish_reason, "retries": res.retries,
                 "skeleton_chars": len(skel), "raw_response": (res.raw_response or "")[:4000]},
         "pages": page_scores,
         "summary": {

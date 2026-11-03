@@ -323,6 +323,28 @@ Return only the JSON object.""",
 TRUNCATION_MAX_CHARS_PER_TOKEN = 6.0   # HTML ≈ 2–3.5, iskelet ≈ 3.5–5 karakter/token
 OUTPUT_LIMIT_REASONS = {"length", "max_tokens"}   # OpenAI/Ollama, Anthropic, Gemini (küçük harfe çevrilmiş)
 
+# Geçici HTTP hataları: 429 hız/kota sınırı, 503 sunucu (model) dolu — beklenip yeniden denenir (_post)
+RETRY_STATUSES     = {429, 503}
+MAX_RETRIES        = 3
+RETRY_WAIT_S       = 10     # sağlayıcı bekleme süresi bildirmezse
+RETRY_WAIT_MAX_S   = 60     # tek bekleme en fazla
+
+
+def _retry_wait(retry_after: str | None, body: str) -> float:
+    """Yeniden denemeden önce beklenecek süre (sn): Retry-After başlığı (saniye), yoksa hata gövdesindeki
+    error.evren.resets_at anı (EVREN), yoksa RETRY_WAIT_S; en az 1, en fazla RETRY_WAIT_MAX_S."""
+    wait = None
+    try:
+        wait = float(retry_after)
+    except (TypeError, ValueError):
+        try:
+            from datetime import datetime, timezone
+            reset = json.loads(body)["error"]["evren"]["resets_at"]
+            wait = (datetime.fromisoformat(reset.replace("Z", "+00:00")) - datetime.now(timezone.utc)).total_seconds()
+        except Exception:
+            pass
+    return min(max(wait if wait is not None else RETRY_WAIT_S, 1.0), RETRY_WAIT_MAX_S)
+
 
 def input_truncation(prompt_chars: int, prompt_tokens: int) -> str:
     """Girdi kesilmiş görünüyorsa nedenini, görünmüyorsa "" döndürür.
@@ -362,6 +384,7 @@ class ExtractResult:
     gen_tokens:    int = 0   # LLM çıktı token sayısı (API'den)
     truncated:     str = ""  # girdi kesilmesi (input_truncation) — boşsa yok
     finish_reason: str = ""  # sağlayıcının bildirdiği durma nedeni (stop, length, max_tokens …) — bildirilmezse boş
+    retries:       int = 0   # 429/503 sonrası yeniden deneme sayısı (bekleme süresi elapsed_ms'e girmez)
 
     def metrics(self) -> dict:
         return {
@@ -377,6 +400,7 @@ class ExtractResult:
             "gen_tokens":    self.gen_tokens,
             "truncated":     self.truncated,
             "finish_reason": self.finish_reason,
+            "retries":       self.retries,
             "error":         self.error,
         }
 
@@ -402,6 +426,8 @@ class LLMExtractor:
         self.repair_css    = repair_css
         self._classes      = set()          # iskeletteki class adları (onarım, extract'ta doldurulur)
         self._finish       = ""             # son çağrının durma nedeni (_call_llm)
+        self._retries      = 0              # son çağrıda 429/503 sonrası yeniden deneme sayısı (_post)
+        self._waited       = 0.0            # bu denemeler için beklenen süre (sn)
         self.backend       = backend
         self.timeout       = timeout or call_timeout(backend)   # verilmezse backend ayarı
         self.rule_type     = rule_type
@@ -425,7 +451,7 @@ class LLMExtractor:
         )
         t0                            = time.perf_counter()
         raw, error, ptok, gtok        = self._call_llm(prompt)
-        elapsed_ms                    = (time.perf_counter() - t0) * 1000
+        elapsed_ms                    = (time.perf_counter() - t0 - self._waited) * 1000   # 429/503 beklemesi hariç
 
         selectors, success, parse_error = self._parse_response(raw)
         if parse_error:
@@ -454,6 +480,7 @@ class LLMExtractor:
             gen_tokens     = gtok,
             truncated      = input_truncation(len(self._system_prompt) + len(prompt), ptok),
             finish_reason  = self._finish,
+            retries        = self._retries,
         )
 
     # ── LLM çağrıları ─────────────────────────────────────────────────────
@@ -463,6 +490,7 @@ class LLMExtractor:
         parametreleri çağrı anında okunur — ayar sayfasındaki değişiklik hemen geçerlidir.
         Sağlayıcının durma nedeni self._finish'e yazılır."""
         self._finish = ""
+        self._retries, self._waited = 0, 0.0
         cfg = BACKENDS.get(self.backend)
         if not cfg:
             return "", f"Bilinmeyen backend: {self.backend}", 0, 0
@@ -515,23 +543,32 @@ class LLMExtractor:
 
     def _post(self, url: str, **kw):
         """POST; HTTP hatasında sağlayıcının açıklamasını da içeren istisna.
-        self.timeout çağrının toplam süresidir: requests'in timeout'u yalnızca iki okuma arasındaki beklemeyi
+        self.timeout bir denemenin toplam süresidir: requests'in timeout'u yalnızca iki okuma arasındaki beklemeyi
         sınırlar, bağlantıyı ara ara gelen baytlarla canlı tutan bir sunucu onu hiç doldurmaz. Yanıt bu yüzden
-        parça parça okunur ve süre aşılınca bağlantı kapatılır."""
-        deadline = time.monotonic() + self.timeout
-        with requests.post(url, timeout=self.timeout, stream=True, **kw) as resp:
-            chunks = []
-            for chunk in resp.iter_content(chunk_size=1):   # büyük parça, dolana kadar bekler
-                chunks.append(chunk)
+        parça parça okunur ve süre aşılınca bağlantı kapatılır.
+        429 (hız/kota sınırı) ve 503 (sunucu dolu) geçicidir: sağlayıcının söylediği kadar beklenip en fazla
+        MAX_RETRIES kez yeniden denenir. Deneme sayısı self._retries'e, bekleme süresi self._waited'a yazılır."""
+        for attempt in range(MAX_RETRIES + 1):
+            deadline = time.monotonic() + self.timeout
+            with requests.post(url, timeout=self.timeout, stream=True, **kw) as resp:
+                chunks = []
+                for chunk in resp.iter_content(chunk_size=1):   # büyük parça, dolana kadar bekler
+                    chunks.append(chunk)
+                    if time.monotonic() > deadline:
+                        raise requests.Timeout()
                 if time.monotonic() > deadline:
                     raise requests.Timeout()
-            if time.monotonic() > deadline:
-                raise requests.Timeout()
-            body = b"".join(chunks).decode(resp.encoding or "utf-8", errors="replace")
-        if resp.status_code >= 400:
-            body = body.strip().replace("\n", " ")
-            raise RuntimeError(f"HTTP {resp.status_code}: {body[:300]}")
-        return json.loads(body)
+                body = b"".join(chunks).decode(resp.encoding or "utf-8", errors="replace")
+            if resp.status_code in RETRY_STATUSES and attempt < MAX_RETRIES:
+                t0 = time.perf_counter()
+                time.sleep(_retry_wait(resp.headers.get("Retry-After"), body))
+                self._retries += 1
+                self._waited  += time.perf_counter() - t0
+                continue
+            if resp.status_code >= 400:
+                body = body.strip().replace("\n", " ")
+                raise RuntimeError(f"HTTP {resp.status_code}: {body[:300]}")
+            return json.loads(body)
 
     def _messages(self, prompt: str) -> list:
         return [{"role": "system", "content": self._system_prompt}, {"role": "user", "content": prompt}]

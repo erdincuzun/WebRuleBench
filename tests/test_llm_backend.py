@@ -3,8 +3,9 @@ test_llm_backend.py
 ===================
 Ollama ve OpenAI uyumlu çağrı: modele özel `think` ayarı isteğe yalnızca verildiğinde eklenir; düşünen model çıktı
 token'larını düşünmeye harcayıp boş yanıt dönerse hata bunu söyler; çağrı hatası "Empty response" ile
-örtülmez; sağlayıcının durma nedeni (finish_reason) kaydedilir, çıktı sınırına takılan yanıt bunu söyler.
-(Sunucu gerekmez: _post taklit edilir.)
+örtülmez; sağlayıcının durma nedeni (finish_reason) kaydedilir, çıktı sınırına takılan yanıt bunu söyler;
+429/503 beklenip sınırlı sayıda yeniden denenir, bekleme süresi LLM süresine girmez.
+(Dış sunucu gerekmez: _post taklit edilir ya da yerel bir test sunucusu kullanılır.)
 """
 
 import pytest
@@ -146,3 +147,93 @@ def test_timeout_comes_from_backend_unless_given(monkeypatch):
     assert LLMExtractor(backend="slow", timeout=30).timeout == 30
     monkeypatch.setitem(LM.BACKENDS, "plain", {"api": "openai", "url": "http://localhost:1/v1"})
     assert LLMExtractor(backend="plain").timeout == LM.DEFAULT_TIMEOUT_S
+
+
+def _status_server(replies):
+    """Sırayla (durum, başlıklar, gövde) yanıtlarını veren sunucu; son yanıt tekrarlanır."""
+    import http.server
+    import threading
+
+    calls = []
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length") or 0))
+            status, headers, body = replies[min(len(calls), len(replies) - 1)]
+            calls.append(status)
+            self.send_response(status)
+            for k, v in headers.items():
+                self.send_header(k, v)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv, calls
+
+
+OK_REPLY = (200, {}, b'{"choices": [{"message": {"content": "{\\"title\\": \\"h1\\"}"}, "finish_reason": "stop"}]}')
+
+
+def test_busy_and_rate_limited_calls_are_retried_and_wait_is_not_timed(monkeypatch):
+    from webrulebench.pipeline import llm_extractor as LE
+    srv, calls = _status_server([(503, {}, b'{"error": {"code": "model_capacity_exhausted"}}'),
+                                 (429, {"Retry-After": "7"}, b'{"error": {"code": "rate_limit_exceeded"}}'),
+                                 OK_REPLY])
+    waits, real_sleep = [], LE.time.sleep
+
+    def fake_sleep(s):                          # istenen süreyi kaydeder, gerçekte 0,5 s bekler
+        waits.append(s)
+        real_sleep(0.5)
+
+    monkeypatch.setattr(LE.time, "sleep", fake_sleep)
+    monkeypatch.setitem(LM.BACKENDS, "busy", {"api": "openai", "url": f"http://127.0.0.1:{srv.server_port}/v1"})
+    ex = LLMExtractor(backend="busy", model="m", rule_type="css", fields=["title"])
+    res = ex.extract("<html><body><h1>t</h1></body></html>", domain="x.example")
+    srv.shutdown()
+    assert calls == [503, 429, 200] and waits == [LE.RETRY_WAIT_S, 7.0]
+    assert res.success and res.retries == 2 and res.metrics()["retries"] == 2
+    assert 0 <= res.elapsed_ms < 500            # beklemeler (2 × 0,5 s) süreye girmez
+
+
+def test_retries_are_limited(monkeypatch):
+    from webrulebench.pipeline import llm_extractor as LE
+    srv, calls = _status_server([(503, {}, b'{"error": {"code": "model_capacity_exhausted"}}')])
+    monkeypatch.setattr(LE.time, "sleep", lambda s: None)
+    monkeypatch.setitem(LM.BACKENDS, "full", {"api": "openai", "url": f"http://127.0.0.1:{srv.server_port}/v1"})
+    ex = LLMExtractor(backend="full", model="m", rule_type="css", fields=["title"])
+    text, error, _, _ = ex._call_llm("p")
+    srv.shutdown()
+    assert len(calls) == LE.MAX_RETRIES + 1 and text == "" and error.startswith("HTTP 503")
+
+
+def test_other_errors_are_not_retried(monkeypatch):
+    srv, calls = _status_server([(400, {}, b'{"error": {"code": "bad_request"}}')])
+    monkeypatch.setitem(LM.BACKENDS, "bad", {"api": "openai", "url": f"http://127.0.0.1:{srv.server_port}/v1"})
+    _, error, _, _ = LLMExtractor(backend="bad", model="m", rule_type="css", fields=["title"])._call_llm("p")
+    srv.shutdown()
+    assert calls == [400] and error.startswith("HTTP 400")
+
+
+@pytest.mark.parametrize("retry_after,body,expected", [
+    ("5", "", 5.0),
+    (None, "", 10.0),
+    ("999", "", 60.0),
+    (None, "not json", 10.0),
+])
+def test_retry_wait(retry_after, body, expected):
+    from webrulebench.pipeline.llm_extractor import _retry_wait
+    assert _retry_wait(retry_after, body) == expected
+
+
+def test_retry_wait_uses_evren_resets_at():
+    import json
+    from datetime import datetime, timedelta, timezone
+    from webrulebench.pipeline.llm_extractor import _retry_wait
+    reset = (datetime.now(timezone.utc) + timedelta(seconds=20)).isoformat().replace("+00:00", "Z")
+    w = _retry_wait(None, json.dumps({"error": {"evren": {"resets_at": reset}}}))
+    assert 18 <= w <= 20

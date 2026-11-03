@@ -22,6 +22,9 @@
 - LLM Models: the `think` setting also applies to OpenAI-compatible backends, sent as `thinking` only when set
   (e.g. EVREN LLM API, whose models think by default and share `max_tokens` between thinking and the answer). A
   response whose output tokens all went to reasoning says so in its error, as with Ollama.
+- LLM calls: HTTP 429 (rate or quota limit) and 503 (server or model busy) are retried up to 3 times, after
+  the wait the provider gives (`Retry-After`, or EVREN's `resets_at`; 10 s otherwise, 60 s at most). The wait
+  is not counted in the LLM time, and the number of retries is saved with each layout's call (`retries`).
 - Title and descriptions (CITATION.cff, package metadata, README): "human-annotated ground truth"; a single
   annotator is enough, and with several the tool measures rule- and content-level agreement.
 - The demo is called simply "demo" (it is meant for anyone trying the tool, not only reviewers); README test count
