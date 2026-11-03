@@ -1,7 +1,7 @@
 """
 test_llm_backend.py
 ===================
-Ollama çağrısı: modele özel `think` ayarı isteğe yalnızca verildiğinde eklenir; düşünen model çıktı
+Ollama ve OpenAI uyumlu çağrı: modele özel `think` ayarı isteğe yalnızca verildiğinde eklenir; düşünen model çıktı
 token'larını düşünmeye harcayıp boş yanıt dönerse hata bunu söyler; çağrı hatası "Empty response" ile
 örtülmez; sağlayıcının durma nedeni (finish_reason) kaydedilir, çıktı sınırına takılan yanıt bunu söyler.
 (Sunucu gerekmez: _post taklit edilir.)
@@ -48,6 +48,24 @@ def test_think_is_sent_only_when_set(monkeypatch):
 def test_output_spent_on_thinking_is_reported(monkeypatch):
     ex, _ = _extractor(monkeypatch, {"message": {"content": "", "thinking": "Let me see"}, "eval_count": 512})
     text, error, _, gtok = ex._call_ollama("p", CFG, "", {})
+    assert text == "" and "think = false" in error and gtok == 512
+
+
+OA_CFG = {"api": "openai", "url": "http://localhost:1/v1"}
+
+
+def test_openai_thinking_is_sent_only_when_set(monkeypatch):
+    ex, sent = _extractor(monkeypatch, {"choices": [{"message": {"content": "{}"}}]})
+    ex._call_openai("p", OA_CFG, "", {"max_tokens": 512})
+    ex._call_openai("p", OA_CFG, "", {"max_tokens": 512, "think": False})
+    assert "thinking" not in sent[0] and "think" not in sent[0]
+    assert sent[1]["thinking"] is False
+
+
+def test_openai_output_spent_on_reasoning_is_reported(monkeypatch):
+    ex, _ = _extractor(monkeypatch, {"choices": [{"message": {"content": None, "reasoning": "Let me see"},
+                                                  "finish_reason": "length"}], "usage": {"completion_tokens": 512}})
+    text, error, _, gtok = ex._call_openai("p", OA_CFG, "", {})
     assert text == "" and "think = false" in error and gtok == 512
 
 

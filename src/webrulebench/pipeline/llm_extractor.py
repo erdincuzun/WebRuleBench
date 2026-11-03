@@ -590,15 +590,21 @@ class LLMExtractor:
         for k in ("temperature", "top_p", "seed"):
             if p.get(k) is not None:
                 payload[k] = p[k]
+        if p.get("think") is not None:      # düşünen modeller (ör. EVREN): false → doğrudan yanıt; standart dışı alan, yalnızca verilince
+            payload["thinking"] = bool(p["think"])
         headers = {"Content-Type": "application/json"}
         if key:
             headers["Authorization"] = f"Bearer {key}"
         data  = self._post(url, json=payload, headers=headers)
         choice = (data.get("choices") or [{}])[0]
-        text   = choice.get("message", {}).get("content") or ""
+        msg    = choice.get("message") or {}
+        text   = msg.get("content") or ""
         self._finish = choice.get("finish_reason") or ""
         usage  = data.get("usage") or {}
-        return text, "", usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0)
+        ptok, gtok = usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0)
+        if not text.strip() and (msg.get("reasoning") or msg.get("reasoning_content")):
+            return "", "Empty response: the model spent its output tokens on thinking (set think = false)", ptok, gtok
+        return text, "", ptok, gtok
 
     # ── JSON parse ────────────────────────────────────────────────────────
     def _parse_response(self, raw: str) -> tuple[dict, bool, str]:
