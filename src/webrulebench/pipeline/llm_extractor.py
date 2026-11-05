@@ -34,6 +34,7 @@ import os
 import time
 import re
 import argparse
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -545,32 +546,53 @@ class LLMExtractor:
 
     def _post(self, url: str, **kw):
         """POST; HTTP hatasında sağlayıcının açıklamasını da içeren istisna.
-        self.timeout bir denemenin toplam süresidir: requests'in timeout'u yalnızca iki okuma arasındaki beklemeyi
-        sınırlar, bağlantıyı ara ara gelen baytlarla canlı tutan bir sunucu onu hiç doldurmaz. Yanıt bu yüzden
-        parça parça okunur ve süre aşılınca bağlantı kapatılır.
+        self.timeout bir denemenin toplam süresidir (_attempt): yanıt başlıkları hiç gelmese de aşılınca deneme
+        bırakılır.
         429 (hız/kota sınırı) ve 503 (sunucu dolu) geçicidir: sağlayıcının söylediği kadar beklenip en fazla
         MAX_RETRIES kez yeniden denenir. Deneme sayısı self._retries'e, bekleme süresi self._waited'a yazılır."""
         for attempt in range(MAX_RETRIES + 1):
-            deadline = time.monotonic() + self.timeout
-            with requests.post(url, timeout=self.timeout, stream=True, **kw) as resp:
-                chunks = []
-                for chunk in resp.iter_content(chunk_size=1):   # büyük parça, dolana kadar bekler
-                    chunks.append(chunk)
-                    if time.monotonic() > deadline:
-                        raise requests.Timeout()
-                if time.monotonic() > deadline:
-                    raise requests.Timeout()
-                body = b"".join(chunks).decode(resp.encoding or "utf-8", errors="replace")
-            if resp.status_code in RETRY_STATUSES and attempt < MAX_RETRIES:
+            status, headers, body = self._attempt(url, **kw)
+            if status in RETRY_STATUSES and attempt < MAX_RETRIES:
                 t0 = time.perf_counter()
-                time.sleep(_retry_wait(resp.headers.get("Retry-After"), body, attempt))
+                time.sleep(_retry_wait(headers.get("Retry-After"), body, attempt))
                 self._retries += 1
                 self._waited  += time.perf_counter() - t0
                 continue
-            if resp.status_code >= 400:
+            if status >= 400:
                 body = body.strip().replace("\n", " ")
-                raise RuntimeError(f"HTTP {resp.status_code}: {body[:300]}")
+                raise RuntimeError(f"HTTP {status}: {body[:300]}")
             return json.loads(body)
+
+    def _attempt(self, url: str, **kw) -> tuple[int, dict, str]:
+        """Tek POST denemesi, toplam süresi self.timeout: (durum, başlıklar, gövde).
+        requests'in timeout'u yalnızca iki okuma arasındaki beklemeyi sınırlar; bağlantıyı ara ara gelen baytlarla
+        canlı tutan bir sunucu onu hiç doldurmaz. Gövde bu yüzden parça parça okunur, süre aşılınca bağlantı
+        kapatılır. Başlıklar gelmeden takılan bir istek (ör. bilgisayar uykudan dönünce) bu döngüye hiç ulaşmaz:
+        istek ayrı bir thread'de yapılır ve süre dolunca beklenmeden Timeout verilir."""
+        deadline = time.monotonic() + self.timeout
+        out = {}
+
+        def run():
+            try:
+                with requests.post(url, timeout=self.timeout, stream=True, **kw) as resp:
+                    chunks = []
+                    for chunk in resp.iter_content(chunk_size=1):   # büyük parça, dolana kadar bekler
+                        chunks.append(chunk)
+                        if time.monotonic() > deadline:
+                            raise requests.Timeout()
+                    body = b"".join(chunks).decode(resp.encoding or "utf-8", errors="replace")
+                out["result"] = resp.status_code, resp.headers, body
+            except BaseException as e:                          # çağıran thread'de yeniden fırlatılır
+                out["error"] = e
+
+        t = threading.Thread(target=run, daemon=True)           # süre dolunca bırakılır, soket zaman aşımıyla biter
+        t.start()
+        t.join(self.timeout)
+        if t.is_alive() or time.monotonic() > deadline:
+            raise requests.Timeout()
+        if "error" in out:
+            raise out["error"]
+        return out["result"]
 
     def _messages(self, prompt: str) -> list:
         return [{"role": "system", "content": self._system_prompt}, {"role": "user", "content": prompt}]

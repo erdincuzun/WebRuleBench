@@ -4,7 +4,8 @@ test_llm_backend.py
 Ollama ve OpenAI uyumlu çağrı: modele özel `think` ayarı isteğe yalnızca verildiğinde eklenir; düşünen model çıktı
 token'larını düşünmeye harcayıp boş yanıt dönerse hata bunu söyler; çağrı hatası "Empty response" ile
 örtülmez; sağlayıcının durma nedeni (finish_reason) kaydedilir, çıktı sınırına takılan yanıt bunu söyler;
-429/503 beklenip sınırlı sayıda yeniden denenir, bekleme süresi LLM süresine girmez.
+çağrı süresi yanıt başlıkları gelmeden takılsa da toplamdır; 429/503 beklenip sınırlı sayıda yeniden denenir,
+bekleme süresi LLM süresine girmez.
 (Dış sunucu gerekmez: _post taklit edilir ya da yerel bir test sunucusu kullanılır.)
 """
 
@@ -136,6 +137,45 @@ def test_call_timeout_is_total_even_if_server_keeps_connection_alive(monkeypatch
     import time
     monkeypatch.setitem(LM.BACKENDS, "trickle", {"api": "openai", "url": trickle_server})
     ex = LLMExtractor(backend="trickle", model="m", rule_type="css", fields=["title"], timeout=1)
+    t0 = time.monotonic()
+    text, error, _, _ = ex._call_llm("p")
+    assert text == "" and error == "Timeout (1 s)" and time.monotonic() - t0 < 3
+
+
+@pytest.fixture
+def stalled_headers_server():
+    """Durum satırını yollayıp başlıkları ara ara bir bayt yazan, başlıkları hiç bitirmeyen sunucu."""
+    import socket
+    import threading
+    import time
+
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    srv.listen()
+    stop = threading.Event()
+
+    def serve():
+        try:
+            conn, _ = srv.accept()
+            with conn:
+                conn.sendall(b"HTTP/1.1 200 OK\r\nX-Wait: ")
+                while not stop.wait(0.2):           # time.sleep değil: başka testler onu taklit eder
+                    conn.sendall(b"a")
+        except OSError:
+            pass
+
+    t = threading.Thread(target=serve, daemon=True)
+    t.start()
+    yield f"http://127.0.0.1:{srv.getsockname()[1]}/v1"
+    stop.set()
+    srv.close()
+    t.join(2)
+
+
+def test_call_timeout_is_total_even_before_headers_arrive(monkeypatch, stalled_headers_server):
+    import time
+    monkeypatch.setitem(LM.BACKENDS, "stalled", {"api": "openai", "url": stalled_headers_server})
+    ex = LLMExtractor(backend="stalled", model="m", rule_type="css", fields=["title"], timeout=1)
     t0 = time.monotonic()
     text, error, _, _ = ex._call_llm("p")
     assert text == "" and error == "Timeout (1 s)" and time.monotonic() - t0 < 3

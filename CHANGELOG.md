@@ -18,7 +18,8 @@
   the number of output tokens.
 - LLM Models: per-backend call timeout (seconds; 180 if empty), for long inputs and thinking models. It is not
   sent to the model and is saved in the experiment's backend snapshot. It limits the whole call: a server that
-  keeps the connection open without answering no longer holds an experiment indefinitely.
+  keeps the connection open without answering, or a request whose response never starts (e.g. after the computer
+  slept), no longer holds an experiment indefinitely.
 - LLM Models: the `think` setting also applies to OpenAI-compatible backends, sent as `thinking` only when set
   (e.g. EVREN LLM API, whose models think by default and share `max_tokens` between thinking and the answer). A
   response whose output tokens all went to reasoning says so in its error, as with Ollama.
