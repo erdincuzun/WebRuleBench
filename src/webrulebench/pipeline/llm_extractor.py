@@ -325,14 +325,16 @@ OUTPUT_LIMIT_REASONS = {"length", "max_tokens"}   # OpenAI/Ollama, Anthropic, Ge
 
 # Geçici HTTP hataları: 429 hız/kota sınırı, 503 sunucu (model) dolu — beklenip yeniden denenir (_post)
 RETRY_STATUSES     = {429, 503}
-MAX_RETRIES        = 3
-RETRY_WAIT_S       = 10     # sağlayıcı bekleme süresi bildirmezse
+MAX_RETRIES        = 5
+RETRY_WAIT_S       = 10     # ilk bekleme; her denemede ikiye katlanır (10, 20, 40, 60, 60)
 RETRY_WAIT_MAX_S   = 60     # tek bekleme en fazla
 
 
-def _retry_wait(retry_after: str | None, body: str) -> float:
-    """Yeniden denemeden önce beklenecek süre (sn): Retry-After başlığı (saniye), yoksa hata gövdesindeki
-    error.evren.resets_at anı (EVREN), yoksa RETRY_WAIT_S; en az 1, en fazla RETRY_WAIT_MAX_S."""
+def _retry_wait(retry_after: str | None, body: str, attempt: int = 0) -> float:
+    """Yeniden denemeden önce beklenecek süre (sn): RETRY_WAIT_S · 2^attempt; sağlayıcı daha uzun bir süre
+    bildirirse o — Retry-After başlığı (saniye), yoksa hata gövdesindeki error.evren.resets_at anı (EVREN).
+    Sağlayıcının bildirdiği süre kısa kalabilir (EVREN: model dolu iken birkaç saniye), bu yüzden alt sınır
+    katlanan süredir. En fazla RETRY_WAIT_MAX_S."""
     wait = None
     try:
         wait = float(retry_after)
@@ -343,7 +345,7 @@ def _retry_wait(retry_after: str | None, body: str) -> float:
             wait = (datetime.fromisoformat(reset.replace("Z", "+00:00")) - datetime.now(timezone.utc)).total_seconds()
         except Exception:
             pass
-    return min(max(wait if wait is not None else RETRY_WAIT_S, 1.0), RETRY_WAIT_MAX_S)
+    return min(max(wait or 0.0, RETRY_WAIT_S * 2 ** attempt), RETRY_WAIT_MAX_S)
 
 
 def input_truncation(prompt_chars: int, prompt_tokens: int) -> str:
@@ -561,7 +563,7 @@ class LLMExtractor:
                 body = b"".join(chunks).decode(resp.encoding or "utf-8", errors="replace")
             if resp.status_code in RETRY_STATUSES and attempt < MAX_RETRIES:
                 t0 = time.perf_counter()
-                time.sleep(_retry_wait(resp.headers.get("Retry-After"), body))
+                time.sleep(_retry_wait(resp.headers.get("Retry-After"), body, attempt))
                 self._retries += 1
                 self._waited  += time.perf_counter() - t0
                 continue

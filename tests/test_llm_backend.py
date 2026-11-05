@@ -195,7 +195,7 @@ def test_busy_and_rate_limited_calls_are_retried_and_wait_is_not_timed(monkeypat
     ex = LLMExtractor(backend="busy", model="m", rule_type="css", fields=["title"])
     res = ex.extract("<html><body><h1>t</h1></body></html>", domain="x.example")
     srv.shutdown()
-    assert calls == [503, 429, 200] and waits == [LE.RETRY_WAIT_S, 7.0]
+    assert calls == [503, 429, 200] and waits == [10, 20]       # Retry-After 7 < katlanan 20
     assert res.success and res.retries == 2 and res.metrics()["retries"] == 2
     assert 0 <= res.elapsed_ms < 500            # beklemeler (2 × 0,5 s) süreye girmez
 
@@ -219,15 +219,19 @@ def test_other_errors_are_not_retried(monkeypatch):
     assert calls == [400] and error.startswith("HTTP 400")
 
 
-@pytest.mark.parametrize("retry_after,body,expected", [
-    ("5", "", 5.0),
-    (None, "", 10.0),
-    ("999", "", 60.0),
-    (None, "not json", 10.0),
+@pytest.mark.parametrize("retry_after,body,attempt,expected", [
+    (None, "", 0, 10),          # katlanan bekleme: 10, 20, 40, 60, 60
+    (None, "", 1, 20),
+    (None, "", 2, 40),
+    (None, "", 4, 60),
+    ("5", "", 0, 10),           # sağlayıcının kısa süresi alt sınırın altında kalır
+    ("30", "", 0, 30),          # daha uzunsa o beklenir
+    ("999", "", 0, 60),
+    (None, "not json", 1, 20),
 ])
-def test_retry_wait(retry_after, body, expected):
+def test_retry_wait(retry_after, body, attempt, expected):
     from webrulebench.pipeline.llm_extractor import _retry_wait
-    assert _retry_wait(retry_after, body) == expected
+    assert _retry_wait(retry_after, body, attempt) == expected
 
 
 def test_retry_wait_uses_evren_resets_at():
@@ -235,5 +239,5 @@ def test_retry_wait_uses_evren_resets_at():
     from datetime import datetime, timedelta, timezone
     from webrulebench.pipeline.llm_extractor import _retry_wait
     reset = (datetime.now(timezone.utc) + timedelta(seconds=20)).isoformat().replace("+00:00", "Z")
-    w = _retry_wait(None, json.dumps({"error": {"evren": {"resets_at": reset}}}))
+    w = _retry_wait(None, json.dumps({"error": {"evren": {"resets_at": reset}}}), 0)
     assert 18 <= w <= 20
