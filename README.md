@@ -165,6 +165,9 @@ Full experiments (layout-based, comparative, cross-check) are run from the
 **LLM Evaluation** section of the web application and summarized in **Reports & Export**.
 Rules are scored as the model wrote them; heuristic repairs of the LLM's CSS rules (e.g. a missing dot between
 class names) can be switched on per experiment ("Repair CSS rules") and are then recorded with it.
+Fields are defined by templates; [docs/custom_template.md](docs/custom_template.md) walks through a new template
+for shop product pages (fields, metrics, automatic prompt, annotation, approval and an experiment).
+
 The interface is in English by default; the **EN / TR** switch in the header changes it to
 Turkish (translations in `src/webrulebench/webapp/i18n/`, see `src/webrulebench/webapp/i18n/README.md`).
 
@@ -191,6 +194,7 @@ src/webrulebench/          all Python code (one installable package, src layout)
   demo/                    demo: synthetic pages, demo data setup, test fixture generator
 data/                      your data — not in the repository
 demo/data/                 generated demo data — not in the repository
+docs/                      worked example: a custom template (custom_template.md)
 tests/                     unit and end-to-end tests, synthetic fixtures
 paper/annotation_study/    material of the paper's examples: annotation guideline and sample, agreement and rule analysis,
                            figure scripts, results and the records of the LLM experiments (see its README)

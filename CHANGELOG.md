@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Documentation: `docs/custom_template.md`, a worked example of a template for another page type (shop product
+  pages with discount and shipping): planning the fields, creating the template in the interface or through the
+  API, the automatic prompt, annotation, approval, an experiment and scoring a rule from Python. A test runs the
+  example.
 - Data collection: before a page is downloaded, the site's robots.txt is checked (user agents `WebRuleBench`
   and `*`; read once per site and cached) and a page that is not allowed is not downloaded; requests to one
   site are spaced by its `Crawl-delay` or a minimum pause (1 s by default). An administrator can switch the
