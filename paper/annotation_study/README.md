@@ -26,7 +26,7 @@ LLM experiments with five local models.
 ## Data
 
 The rules of the three annotators, the approved ground truth and the page list are archived on Zenodo under
-CC BY 4.0 (doi:[10.5281/zenodo.23143117](https://doi.org/10.5281/zenodo.23143117)); the archived HTML pages are
+CC BY 4.0: version 1.1 with the reviewed reference and the experiment records (doi:[10.5281/zenodo.24175285](https://doi.org/10.5281/zenodo.24175285)), version 1.0 with the reference as first approved (doi:[10.5281/zenodo.23143117](https://doi.org/10.5281/zenodo.23143117)); the archived HTML pages are
 available on request for research use (doi:[10.5281/zenodo.23143325](https://doi.org/10.5281/zenodo.23143325)),
 since their content is copyrighted by the publishers. Both use the WebRuleBench data-folder layout.
 
