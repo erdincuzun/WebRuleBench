@@ -17,6 +17,133 @@ let _compileRawGt     = {};   // {field: ham değer}
 let _compileSelByLang = {};   // {lang: {field: {user, selector}}}
 let _compileK2ByLang  = {};   // {lang: K2 sonucu}
 let _compileInclude   = {};   // {lang: GT'ye dahil mi}
+let _compileNotes     = {};   // {field: text} — the admin's note on a field (for a left-out field: the reason)
+let _compileFocus     = null; // field shown in the detail panel under the table
+let _compileNoteOpen  = false; // note box of the detail panel is open (pencil)
+let _compileCov       = {};   // {lang|field|rule: {n, total, empty: [pages]}} — pages on which a rule returns a value
+let _compileRecorded  = {};   // {field: {by, at, reason, annotators}} — decisions already stored in the GT
+
+const _hasRule = v => Array.isArray(v) ? v.some(Boolean)
+  : (v && typeof v === 'object') ? Object.values(v).some(Boolean) : !!v;
+
+// Fields that at least one annotator wrote a rule for but that will not be written to the GT
+// (no selection in any included language): {field: [annotators]}. Leaving such a field out must be
+// a decision of the admin, not an oversight — the row is marked and saving asks for confirmation.
+function _compileLeftOut() {
+  if (!_compileData) return {};
+  const langs = Object.keys(COMPILE_LANGS).filter(l => _compileInclude[l]);
+  const out = {};
+  _compileFields().forEach(f => {
+    if (langs.some(l => _compileSelByLang[l]?.[f]?.selector)) return;
+    const who = Object.keys(_compileRawUsers).filter(u => _hasRule(_compileRawUsers[u][f])).sort();
+    if (who.length) out[f] = who;
+  });
+  return out;
+}
+
+// A stored decision still stands if the same annotators have a rule for the field
+const _compileDecided = (f, who) => !!_compileRecorded[f] && (_compileRecorded[f].annotators || []).join() === who.join();
+
+function compileSetNote(field, value) {
+  if (_compileRO()) return;
+  _compileNotes[field] = value.trim();
+  _compileNoteOpen = false;
+  _compileRenderTable();
+}
+
+// ── PAGE COVERAGE ────────────────────────────────────────
+// A rule is approved for every page of the layout but is usually checked on one page. The server runs
+// each rule on all pages of the layout; the table shows on how many of them it returns a value.
+const _covKey = (field, rule) => `${_compileLang}|${field}|${rule}`;
+
+function _covBadge(field, rule) {
+  if (!rule) return '';
+  const c = _compileCov[_covKey(field, rule)];
+  if (!c) return '<span class="compile-cov">…</span>';
+  const cls = c.n === c.total ? 'all' : c.n ? 'part' : 'none';
+  return `<span class="compile-cov ${cls}" title="${_escAttr(T('Returns a value on {n} of {total} pages', {n: c.n, total: c.total}))}">${c.n}/${c.total}</span>`;
+}
+
+// Rules shown in the current language tab (annotators, current GT, to save) that have no coverage yet
+async function _compileLoadCoverage() {
+  const d = _compileData;
+  if (!d) return;
+  const lang = _compileLang, rules = {};
+  const want = (field, rule) => {
+    if (rule && typeof rule === 'string' && !_compileCov[_covKey(field, rule)]) rules[_covKey(field, rule)] = { field, rule };
+  };
+  _compileFields().forEach(f => {
+    Object.values(d.users).forEach(u => want(f, (u.selectors || {})[f]));
+    want(f, (d.gt_selectors || {})[f]);
+    want(f, _compileSelected[f]?.selector);
+  });
+  if (!Object.keys(rules).length) return;
+  try {
+    const res = await fetch(`/api/compile-coverage/${activeDomain}/${_compileLayoutId}`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ rule_type: lang, rules }),
+    });
+    const r = await res.json();
+    Object.entries(r.coverage || {}).forEach(([k, v]) => { _compileCov[k] = { ...v, total: r.total }; });
+  } catch (e) { return; }
+  if (_compileData && _compileLang === lang) _compileRenderTable();
+}
+
+function compileToggleNote() {
+  _compileNoteOpen = !_compileNoteOpen;
+  _compileRenderTable();
+  if (_compileNoteOpen) document.querySelector('#compileDetail .compile-note')?.focus();
+}
+
+function compileFocus(field, edit) {
+  if (field !== _compileFocus) _compileNoteOpen = false;
+  _compileFocus = field;
+  _compileRenderTable();
+  if (edit) document.getElementById('compileDetailRule')?.focus();
+}
+
+function compileGoPage(page) {
+  const sel = document.getElementById('compilePreviewPage');
+  sel.value = page;
+  compileLoadPreview();
+}
+
+// Detail panel under the table: the rule to save at full width, its page coverage and the admin's note
+function _compileRenderDetail(leftOut) {
+  const el = document.getElementById('compileDetail');
+  if (!el) return;
+  const fields = _compileFields();
+  if (!_compileFocus || !fields.includes(_compileFocus))
+    _compileFocus = fields.find(f => leftOut[f] && !_compileDecided(f, leftOut[f])) || fields[0];
+  const f = _compileFocus;
+  if (!f) { el.innerHTML = ''; return; }
+  const cur = _compileSelected[f], who = leftOut[f], decided = who && _compileDecided(f, who);
+  const ro  = _compileRO() ? 'readonly' : '';
+  const src = !cur ? '' : cur.user === '__manual__' ? T('Entered by hand')
+    : T('Source: {src}', {src: cur.user === '__gt__' ? T('current GT') : cur.user});
+  const c = cur ? _compileCov[_covKey(f, cur.selector)] : null;
+  const MAXP = 8;
+  const note = _compileNotes[f] || '';
+  const noteTip = who ? T('Reason for leaving it out (optional)') : T('Note on this decision (optional)');
+  const cov = !cur ? '' : !c ? `<div class="cd-cov">…</div>` : `<div class="cd-cov ${c.n === c.total ? 'all' : c.n ? 'part' : 'none'}">
+      ${_escHtml(T('Returns a value on {n} of {total} pages', {n: c.n, total: c.total}))}${c.empty.length ? ` · ${_escHtml(T('No value on:'))}
+      ${c.empty.slice(0, MAXP).map(p => `<a class="cd-page" onclick="compileGoPage('${_jsq(p)}')">${_escHtml(p.replace(/\.html?$/, ''))}</a>`).join(' ')}
+      ${c.empty.length > MAXP ? `<span class="muted">${_escHtml(T('+{n} more', {n: c.empty.length - MAXP}))}</span>` : ''}` : ''}</div>`;
+  el.innerHTML = `
+    <div class="cd-head"><span class="cd-field" style="color:${_fieldColor(f)}">${_escHtml(f)}</span>
+      <span class="cd-label">${_escHtml(T('Rule to save ({lang})', {lang: COMPILE_LANGS[_compileLang]}))}</span>
+      <span class="cd-src">${_escHtml(src)}</span>
+      <button type="button" class="cd-note-btn ${note ? 'has' : ''}" title="${_escAttr(noteTip)}" onclick="compileToggleNote()">✎</button></div>
+    <div class="cd-rule"><input type="text" id="compileDetailRule" class="compile-manual ${cur?.user === '__manual__' ? 'manual' : ''}" value="${_escAttr(cur?.selector || '')}" ${ro}
+        placeholder="${_escAttr(T('— not written to GT'))}" onchange="compileManualSet('${f}', this.value)"
+        onmouseenter="compileHoverCell(this.value)" onmouseleave="compileHoverCell(null)">
+      ${_compileLang === 'regex' && !_compileRO() ? `<button type="button" class="compile-gen-btn" title="${_escAttr(T('Generate regex from CSS (REGEXN)'))}" onclick="compileSuggestRegex('${f}', this)">↻</button>` : ''}</div>
+    ${cov}
+    ${who ? `<div class="compile-out-note ${decided ? 'decided' : ''}">${decided ? '⊘' : '⚠'} ${_escHtml(T('{who} wrote a rule — not in the GT', {who: who.join(', ')}))}</div>` : ''}
+    ${_compileNoteOpen
+      ? `<textarea class="compile-note" rows="2" ${ro} placeholder="${_escAttr(noteTip)}" onchange="compileSetNote('${f}', this.value)">${_escHtml(note)}</textarea>`
+      : note ? `<div class="cd-note" onclick="compileToggleNote()" title="${_escAttr(note)}">✎ ${_escHtml(note)}</div>` : ''}`;
+}
 
 function _ruleOf(v, lang) {
   if (v && typeof v === 'object' && !Array.isArray(v)) return v[lang] || '';
@@ -69,6 +196,7 @@ function compileSetLang(lang) {
   _compileRenderLangBar();
   _compileUpdateSummary();
   _compileHighlightAll();
+  _compileLoadCoverage();
 }
 
 function _compileRenderLangBar() {
@@ -89,6 +217,7 @@ function _compileRenderLangBar() {
 
 function compileSetInclude(on) {
   _compileInclude[_compileLang] = on;
+  _compileRenderTable();
   _compileRenderLangBar();
   _compileUpdateSummary();
 }
@@ -127,10 +256,12 @@ function compileManualSet(field, value) {
       showToast(T('{lang} included in GT', {lang: COMPILE_LANGS[_compileLang]}), 'ok');
     }
   }
+  _compileFocus = field;
   _compileRenderTable();
   _compileRenderLangBar();
   _compileUpdateSummary();
   _compileHighlightAll();
+  _compileLoadCoverage();
 }
 
 let _compileLayoutId  = null;
@@ -193,11 +324,14 @@ function _normCssOne(sel) {
   }
   return out.join(' ');
 }
-function _normalizeRule(rule, lang = 'css') {
+// The order of comma-separated alternatives is kept unless the field is merged: without merging the first
+// alternative that matches is used, so 'h1, h2' and 'h2, h1' are different rules (rule_agreement.py).
+function _normalizeRule(rule, lang = 'css', merge = false) {
   if (typeof rule !== 'string' || !rule.trim()) return null;
   if (lang !== 'css') return rule.trim();
   const alts = _splitTop(rule, ',').filter(a => a !== ',' && a.trim()).map(_normCssOne);
-  return alts.length ? alts.sort().join(', ') : null;
+  if (merge) alts.sort();
+  return alts.length ? alts.join(', ') : null;
 }
 function _observedAgreement(ratings) {
   const r = ratings.filter(Boolean), n = r.length;
@@ -288,7 +422,8 @@ function _computeK1() {
   fields.forEach(field => {
     const sels = userKeys.map(u => (users[u]?.selectors || {})[field] || null);
     const nonEmpty = sels.filter(Boolean);
-    const kappa = _observedAgreement(sels.map(x => _normalizeRule(x, _compileLang)));
+    const merge = !!tmpl.fields?.[field]?.merge;
+    const kappa = _observedAgreement(sels.map(x => _normalizeRule(x, _compileLang, merge)));
     const suggested_sel = _modeOf(nonEmpty) || null;
     const suggested_user = suggested_sel
       ? userKeys.find(u => (users[u]?.selectors || {})[field] === suggested_sel) || null
@@ -408,6 +543,7 @@ function compileAutoSelect() {
   _compileRenderTable();
   _compileUpdateSummary();
   _compileHighlightAll();
+  _compileLoadCoverage();
   showToast('💡 ' + T('{n} fields auto-selected', {n: changed}), 'ok');
 }
 
@@ -436,6 +572,10 @@ async function openCompileModal(layoutId) {
   _compileRawUsers = {};
   Object.entries(data.users || {}).forEach(([u, ud]) => { _compileRawUsers[u] = { ...(ud.selectors || {}) }; });
   _compileRawGt = { ...(data.gt_selectors || {}) };
+  _compileRecorded = { ...(data.layout?.excluded_fields || {}) };
+  _compileNotes = { ...(data.layout?.field_notes || {}),
+    ...Object.fromEntries(Object.entries(_compileRecorded).map(([f, d]) => [f, d.reason || ''])) };
+  _compileFocus = null; _compileCov = {};
   _compileSelByLang = {}; _compileK2ByLang = {}; _compileInclude = {};
   Object.keys(COMPILE_LANGS).forEach(lang => {
     const sel = {};
@@ -485,7 +625,6 @@ function _compileRenderTable() {
       ${users.map(u => `<th class="user-col">${u}</th>`).join('')}
       <th style="color:var(--green)">${T('Current GT')}</th>
       <th class="metric-col" title="${_escAttr(T('Rule agreement (share of annotator pairs that wrote the same normalized rule) = {v}', {v: '0–1'}))}">${T('Rule agreement')}</th>
-      <th title="${_escAttr(T('{lang} rule to be written to the GT — filled by selecting a cell; the admin can edit it by hand', {lang: COMPILE_LANGS[_compileLang]}))}">${T('To save')}</th>
     </tr>`;
   } else {
     thead.innerHTML = `<tr>
@@ -500,8 +639,15 @@ function _compileRenderTable() {
   }
 
   // ── Body ──
+  const leftOut = _compileLeftOut();
+  _compileRenderDetail(leftOut);
   const tbody = document.getElementById('compileTableBody');
   tbody.innerHTML = fields.map(field => {
+    const who      = leftOut[field];
+    const decided  = who && _compileDecided(field, who);
+    const outMark  = !who ? '' : decided
+      ? ` <span class="compile-out decided" title="${_escAttr(T('Left out of the GT by {by}', {by: _compileRecorded[field].by || '—'}))}">⊘</span>`
+      : ` <span class="compile-out" title="${_escAttr(T('{who} wrote a rule for this field, but it is not in the GT', {who: who.join(', ')}))}">⚠</span>`;
     const gtSel  = (data.gt_selectors || {})[field] || '';
     const selCur = _compileSelected[field];
     const k1info = _compileK1[field] || {};
@@ -531,7 +677,7 @@ function _compileRenderTable() {
         return `<td><span class="${cls}" title="${_escAttr(sel)}" style="${cellStyle}"
           onclick="compileSelectCell('${field}','${u}','${_jsq(sel)}')"
           onmouseenter="compileHoverCell('${_jsq(sel)}')"
-          onmouseleave="compileHoverCell(null)">${_escHtml(sel)}</span></td>`;
+          onmouseleave="compileHoverCell(null)">${_escHtml(sel)}</span>${_covBadge(field, sel)}</td>`;
       });
 
       const isGtSelected = selCur?.user === '__gt__';
@@ -541,20 +687,16 @@ function _compileRenderTable() {
         ? `<td><span class="${gtCls}" title="${_escAttr(gtSel)}" style="${gtStyle}"
             onclick="compileSelectCell('${field}','__gt__','${_jsq(gtSel)}')"
             onmouseenter="compileHoverCell('${_jsq(gtSel)}')"
-            onmouseleave="compileHoverCell(null)">${_escHtml(gtSel)}</span></td>`
+            onmouseleave="compileHoverCell(null)">${_escHtml(gtSel)}</span>${_covBadge(field, gtSel)}</td>`
         : `<td><span class="compile-sel-cell empty">—</span></td>`;
 
       const hasSelection = !!selCur;
       const kBadge = _kappaBadge(k1info.kappa ?? null);
-      return `<tr>
-        <td class="field-name">${field}${hasSelection ? ' <span style="color:var(--green);font-size:10px">✓</span>' : ''}${k1info.suggested_sel && !hasSelection ? ' <span style="color:var(--accent2);font-size:10px">💡</span>' : ''}</td>
+      return `<tr class="${field === _compileFocus ? 'focus' : ''}">
+        <td class="field-name" onclick="compileFocus('${field}')">${field}${hasSelection ? ' <span style="color:var(--green);font-size:10px">✓</span>' : ''}${k1info.suggested_sel && !hasSelection ? ' <span style="color:var(--accent2);font-size:10px">💡</span>' : ''}${outMark}</td>
         ${userCells.join('')}
         ${gtCell}
         <td style="white-space:nowrap">${kBadge}</td>
-        <td><input type="text" class="compile-manual ${selCur?.user === '__manual__' ? 'manual' : ''}" value="${_escAttr(selCur?.selector || '')}" ${_compileRO() ? 'readonly' : ''}
-          placeholder="${_escAttr(T('— not written to GT'))}" title="${selCur?.user === '__manual__' ? T('Entered by hand') : selCur ? _escAttr(T('Source: {src}', {src: selCur.user === '__gt__' ? T('current GT') : selCur.user})) : ''}"
-          onchange="compileManualSet('${field}', this.value)" onmouseenter="compileHoverCell(this.value)" onmouseleave="compileHoverCell(null)">
-          ${_compileLang === 'regex' && !_compileRO() ? `<button type="button" class="compile-gen-btn" title="${_escAttr(T('Generate regex from CSS (REGEXN)'))}" onclick="compileSuggestRegex('${field}', this)">↻</button>` : ''}</td>
       </tr>`;
 
     } else {
@@ -592,8 +734,8 @@ function _compileRenderTable() {
       const fmt = v => `<span style="color:${_scoreColor(v)}">${v.toFixed(2)}</span>`;
 
       const hasSelection = !!selCur;
-      return `<tr>
-        <td class="field-name">${field}${hasSelection ? ' <span style="color:var(--green);font-size:10px">✓</span>' : ''}${k2info.suggested_user && !hasSelection ? ' <span style="color:var(--accent2);font-size:10px">💡</span>' : ''}</td>
+      return `<tr class="${field === _compileFocus ? 'focus' : ''}">
+        <td class="field-name" onclick="compileFocus('${field}')">${field}${hasSelection ? ' <span style="color:var(--green);font-size:10px">✓</span>' : ''}${k2info.suggested_user && !hasSelection ? ' <span style="color:var(--accent2);font-size:10px">💡</span>' : ''}${outMark}</td>
         ${userCells.join('')}
         ${allScores.length ? `
         <td class="compile-score-cell" style="color:${em==='✓'?'var(--green)':'var(--red)'}">${em}</td>
@@ -632,6 +774,8 @@ function _hexToRgb(hex) {
 
 function compileSelectCell(field, user, selector) {
   _compileSelected[field] = { user, selector };
+  if (field !== _compileFocus) _compileNoteOpen = false;
+  _compileFocus = field;
   _compileRenderTable();
   _compileUpdateSummary();
   _compileHighlightAll();
@@ -731,24 +875,46 @@ function _compileInjectStyles(doc) {
 function _compileRenderPages() {
   const data    = _compileData;
   const wrap    = document.getElementById('compilePagesWrap');
-  const union   = data.union_pages;
   const gtPages = new Set(data.gt_pages);
+  // pages already in the GT plus pages the annotators assigned to this layout
+  const pages   = [...new Set([...data.gt_pages, ...data.union_pages])].sort();
+  // Once a layout is approved, a page that is not in its GT yet is not selected by default: it comes
+  // from an annotator's own assignment and must be added on purpose (it is marked "new").
+  const approved = gtPages.size > 0;
 
-  wrap.innerHTML = union.map(p => {
+  wrap.innerHTML = pages.map(p => {
     const inGT = gtPages.has(p);
     return `<div class="compile-page-row">
-      <input type="checkbox" class="compile-page-cb" value="${p}" checked>
+      <input type="checkbox" class="compile-page-cb" value="${p}" ${inGT || !approved ? 'checked' : ''} ${inGT ? '' : 'data-new="1"'} ${_compileRO() ? 'disabled' : ''} onchange="_compilePageCount()">
       <span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${p}</span>
-      ${inGT ? '<span style="font-size:10px;color:var(--green)">GT</span>' : ''}
+      ${inGT ? '<span style="font-size:10px;color:var(--green)">GT</span>'
+             : approved ? `<span class="compile-page-new" title="${_escAttr(T('Assigned by an annotator, not in the GT'))}">${T('new')}</span>` : ''}
     </div>`;
   }).join('') || `<div style="color:var(--text3);font-size:12px;padding:4px">${T('No user assignments')}</div>`;
 
-  document.getElementById('compileSelectAllPages').checked = true;
-  document.getElementById('compilePageCount').textContent = T('{n} pages', {n: union.length});
+  _compilePageCount();
+}
+
+// The page list lives in a modal (hidden, not removed), so the selection is still read on save
+function _compilePageCount() {
+  const all = document.querySelectorAll('.compile-page-cb').length;
+  const sel = document.querySelectorAll('.compile-page-cb:checked').length;
+  // pages not in the GT: how many there are and how many of them are selected (will be added on save)
+  const fresh = document.querySelectorAll('.compile-page-cb[data-new]').length;
+  const added = document.querySelectorAll('.compile-page-cb[data-new]:checked').length;
+  const approved = (_compileData?.gt_pages || []).length > 0;
+  document.getElementById('compilePageCount').textContent = T('{n} of {total} pages selected', {n: sel, total: all})
+    + (approved && fresh ? ' · ' + (added ? '⚠ ' + T('{n} new will be added', {n: added}) : T('{n} new not selected', {n: fresh})) : '');
+  document.getElementById('compileSelectAllPages').checked = all > 0 && sel === all;
+}
+
+function compileOpenPages(open) {
+  document.getElementById('compilePagesModal').classList.toggle('open', open);
 }
 
 function compileToggleAllPages(checked) {
   document.querySelectorAll('.compile-page-cb').forEach(cb => cb.checked = checked);
+  _compilePageCount();
 }
 
 function _compileUpdateSummary() {
@@ -758,8 +924,11 @@ function _compileUpdateSummary() {
   const tmpl        = _templates[tid] || {};
   const totalFields = tmpl.fields ? Object.keys(tmpl.fields).length : Object.keys(layout.selectors || {}).length;
   const incl = Object.keys(COMPILE_LANGS).filter(l => _compileInclude[l]).map(l => COMPILE_LANGS[l]);
+  const leftOut = _compileLeftOut();
+  const open    = Object.keys(leftOut).filter(f => !_compileDecided(f, leftOut[f]));
   document.getElementById('compileSummary').textContent =
-    T('{lang}: {n} / {total} fields selected · Included in GT: {langs}', {lang: COMPILE_LANGS[_compileLang], n: selCount, total: totalFields, langs: incl.join(', ') || '—'});
+    T('{lang}: {n} / {total} fields selected · Included in GT: {langs}', {lang: COMPILE_LANGS[_compileLang], n: selCount, total: totalFields, langs: incl.join(', ') || '—'})
+    + (open.length ? ' · ⚠ ' + T('Annotator rules not in the GT: {fields}', {fields: open.join(', ')}) : '');
   _compileRenderLangBar();
 }
 
@@ -865,11 +1034,29 @@ async function compileSave() {
 
   if (!Object.keys(selectors).length) { showToast(T('Select at least one field'), 'err'); return; }
 
-  const res  = await fetch(`/api/compile/${activeDomain}/${_compileLayoutId}`, {
+  // Fields with an annotator rule that are not written to the GT: ask once, then store the decision
+  const leftOut = _compileLeftOut();
+  const ask = Object.keys(leftOut).filter(f => !_compileDecided(f, leftOut[f]));
+  const question = fs => T('Annotators wrote rules for these fields, but they will not be in the GT:') + '\n\n'
+    + fs.map(f => `  • ${f} (${leftOut[f].join(', ')})`).join('\n') + '\n\n'
+    + T('Check them in the table. Leave them out of the GT and record this as your decision?');
+  if (ask.length && !confirm(question(ask))) return;
+  const excluded = Object.fromEntries(Object.keys(leftOut).map(f => [f, _compileNotes[f] || '']));
+  const notes    = Object.fromEntries(Object.keys(selectors).filter(f => _compileNotes[f]).map(f => [f, _compileNotes[f]]));
+
+  const post = () => fetch(`/api/compile/${activeDomain}/${_compileLayoutId}`, {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ selectors, pages }),
+    body: JSON.stringify({ selectors, pages, excluded, notes }),
   });
-  const data = await res.json();
+  let res  = await post();
+  let data = await res.json();
+  if (res.status === 409 && data.unconfirmed) {
+    // the server found left-out fields this page did not list (e.g. a rule saved meanwhile)
+    Object.assign(leftOut, data.unconfirmed);
+    if (!confirm(question(Object.keys(data.unconfirmed)))) return;
+    Object.keys(data.unconfirmed).forEach(f => { excluded[f] = _compileNotes[f] || ''; });
+    res = await post(); data = await res.json();
+  }
   if (data.success) {
     showToast('✓ ' + T('{fields} fields, {pages} pages saved to GT', {fields: data.fields, pages: data.pages}), 'ok');
     closeCompileModal();
@@ -879,3 +1066,37 @@ async function compileSave() {
   }
 }
 
+
+// ── SPLITTER ─────────────────────────────────────────────
+// Drag the bar between the table and the page preview to resize them; double-click resets.
+// The width is remembered in this browser.
+(function () {
+  const KEY = 'wrb.compile.split', DEF = 55;
+  const init = () => {
+    const bar = document.getElementById('compileSplitter'), left = document.querySelector('.compile-left');
+    if (!bar || !left) return;
+    const body = left.parentElement, frame = document.getElementById('compileIframe');
+    const set = pct => { left.style.width = Math.min(80, Math.max(25, pct)) + '%'; };
+    const saved = parseFloat(localStorage.getItem(KEY));
+    if (saved) set(saved);
+    bar.addEventListener('mousedown', e => {
+      e.preventDefault();
+      bar.classList.add('drag');
+      if (frame) frame.style.pointerEvents = 'none';        // the preview would swallow the mouse events
+      const move = ev => {
+        const r = body.getBoundingClientRect();
+        set((ev.clientX - r.left) / r.width * 100);
+      };
+      const up = () => {
+        document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up);
+        bar.classList.remove('drag');
+        if (frame) frame.style.pointerEvents = '';
+        localStorage.setItem(KEY, parseFloat(left.style.width));
+        if (typeof _compileApplyZoom === 'function') _compileApplyZoom();
+      };
+      document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
+    });
+    bar.addEventListener('dblclick', () => { set(DEF); localStorage.removeItem(KEY); });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();

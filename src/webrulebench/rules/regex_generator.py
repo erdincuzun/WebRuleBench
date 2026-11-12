@@ -38,7 +38,7 @@ Kullanım:
 import html as _html
 import re
 
-from webrulebench.rules.rule_utils import run_regex
+from webrulebench.rules.rule_utils import run_regex, split_selector_list
 
 # CSS kaçışları da tanımlayıcıya dahil: Tailwind ".text-\[40px\]", ".sm\:flex"
 _IDENT = re.compile(r"-?(?:[A-Za-z_]|\\.)(?:[\w-]|\\.)*")
@@ -277,7 +277,7 @@ def _candidates_for_alt(chain: list, kind: str, example_html: str | None, contai
 
 def candidates(css: str, kind: str = "text", example_html: str | None = None) -> list:
     """CSS selector → [(strateji, regex)] adayları. Desteklenmeyen seçicide []."""
-    alts = [a.strip() for a in (css or "").split(",") if a.strip()]
+    alts = split_selector_list(css or "")
     chains = [_parse_chain(a) for a in alts]
     if not chains or not all(chains):
         return []
@@ -374,7 +374,7 @@ def css_values(html_or_soup, css: str, kind: str = "text", merge: bool = False) 
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_or_soup, "html.parser") if isinstance(html_or_soup, str) else html_or_soup
     els, seen = [], set()
-    for part in (p.strip() for p in css.split(",") if p.strip()):
+    for part in split_selector_list(css):
         try:
             found = soup.select(part)
         except Exception:

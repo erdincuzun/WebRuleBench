@@ -161,6 +161,18 @@ def api_save_layout():
     gt = load_ground_truth(domain)
     if not gt.get("layouts"):
         gt["layouts"] = {}
+    # the editor sends a fresh layout object: keep the admin's recorded decisions on left-out fields
+    # (a decision ends when the field gets a rule)
+    kept = {f: v for f, v in ((gt["layouts"].get(layout_id) or {}).get("excluded_fields") or {}).items()
+            if not _has_rule((layout.get("selectors") or {}).get(f))}
+    if kept and "excluded_fields" not in layout:
+        layout["excluded_fields"] = kept
+    old_notes = (gt["layouts"].get(layout_id) or {}).get("field_notes")
+    if old_notes and "field_notes" not in layout:
+        layout["field_notes"] = old_notes
+    if layout.get("selectors"):
+        layout["rule_sources"] = rule_sources(layout["selectors"], layout_user_selectors(domain, layout_id),
+                                              (get_template(layout.get("template_id", "")) or {}).get("fields"))
     gt["layouts"][layout_id] = layout
     save_ground_truth(domain, gt)
 

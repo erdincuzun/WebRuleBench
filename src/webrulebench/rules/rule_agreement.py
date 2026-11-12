@@ -98,14 +98,23 @@ def _norm_css_one(sel: str) -> str:
     return " ".join(out)
 
 
-def normalize_rule(rule, lang: str = "css") -> str | None:
+def normalize_rule(rule, lang: str = "css", merge: bool = False) -> str | None:
+    """Rule without the writing differences that do not change what it extracts.
+
+    The order of the comma-separated alternatives of a CSS rule is kept unless the field is merged:
+    without merging, the first alternative that matches is used, so 'h1, h2' and 'h2, h1' can extract
+    different text and are different rules. With merge=True all alternatives are combined, the order
+    does not change the extracted set, and the alternatives are sorted.
+    """
     if not isinstance(rule, str) or not rule.strip():
         return None
     if lang != "css":
         return rule.strip()
     alts = [a for a in _split_top(rule, ",") if a != ","]
     alts = [_norm_css_one(a) for a in alts if a.strip()]
-    return ", ".join(sorted(alts)) if alts else None
+    if merge:
+        alts = sorted(alts)
+    return ", ".join(alts) if alts else None
 
 
 def observed_agreement(ratings: list) -> float | None:

@@ -421,10 +421,16 @@ class LLMExtractor:
                  system_prompt: str = None,
                  user_prompt: str = None,
                  fields: list = None,
-                 repair_css: bool = False):
+                 repair_css: bool = False,
+                 snapshot: dict = None):
         """fields: yanıttan okunacak alanlar (şablonun alanları). Verilmezse config.FIELDS.
         repair_css: CSS kurallarına sezgisel onarımlar uygulanır (_fix_selector, _fix_body_from_skeleton);
-        kapalıyken kurallar modelin yazdığı gibi döner — deneylerde bir değişkendir (config.css_repair)."""
+        kapalıyken kurallar modelin yazdığı gibi döner — deneylerde bir değişkendir (config.css_repair).
+        snapshot: backend settings stored with an experiment when it was created ({api, url, params, timeout}).
+        If given, the call uses these instead of the current settings, so that an experiment runs (and is
+        resumed) with the configuration its record shows, also when the settings were changed in between.
+        Secrets are not part of a snapshot: the API key is read from the current configuration."""
+        self.snapshot      = dict(snapshot) if snapshot else None
         self.fields        = list(fields) if fields else list(FIELDS)
         self.repair_css    = repair_css
         self._classes      = set()          # iskeletteki class adları (onarım, extract'ta doldurulur)
@@ -432,7 +438,7 @@ class LLMExtractor:
         self._retries      = 0              # son çağrıda 429/503 sonrası yeniden deneme sayısı (_post)
         self._waited       = 0.0            # bu denemeler için beklenen süre (sn)
         self.backend       = backend
-        self.timeout       = timeout or call_timeout(backend)   # verilmezse backend ayarı
+        self.timeout       = timeout or (self.snapshot or {}).get("timeout") or call_timeout(backend)   # verilmezse backend ayarı
         self.rule_type     = rule_type
         self.model         = model or _default_model(backend) or OLLAMA_MODEL
         self._system_prompt = system_prompt or SYSTEM_PROMPTS_BY_RULE_TYPE[rule_type]
@@ -495,6 +501,11 @@ class LLMExtractor:
         self._finish = ""
         self._retries, self._waited = 0, 0.0
         cfg = BACKENDS.get(self.backend)
+        snap = self.snapshot
+        if snap and snap.get("url") is not None:
+            # stored configuration of the experiment: API type, URL and the merged generation parameters
+            cfg = {**(cfg or {}), "api": snap.get("api") or (cfg or {}).get("api"), "url": snap["url"],
+                   "params": dict(snap.get("params") or {}), "model_params": {}}
         if not cfg:
             return "", f"Bilinmeyen backend: {self.backend}", 0, 0
         api = cfg.get("api") or {"ollama": "ollama", "claude": "anthropic", "gemini": "gemini"}.get(self.backend, "openai")

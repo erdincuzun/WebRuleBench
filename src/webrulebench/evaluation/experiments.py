@@ -282,7 +282,9 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
     # css_repair anahtarı olmayan kayıtlar (1.0.4 öncesi) onarımla çalışmıştı; sürdürülürken de öyle kalır
     ex = LLMExtractor(backend=cfg["backend"], model=cfg.get("model") or None, rule_type=llm_rt,
                       system_prompt=prompt["system"], user_prompt=prompt["user"], fields=list(fields),
-                      repair_css=bool(cfg.get("css_repair", True)))
+                      repair_css=bool(cfg.get("css_repair", True)),
+                      # run with the settings stored when the experiment was created, not the current ones
+                      snapshot=cfg.get("backend_snapshot"))
     res   = ex.extract(skel, domain=dom, annotated=use_skel)
     rules = {f: (v if isinstance(v, str) else "") for f, v in (res.selectors or {}).items()}
 

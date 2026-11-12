@@ -28,15 +28,9 @@
           <tbody id="compileTableBody"></tbody>
         </table>
       </div>
-      <div style="padding:8px 12px;border-top:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text2)">
-        {{ T("Page union") }}
-        <span id="compilePageCount" style="color:var(--text3);font-weight:400;margin-left:6px"></span>
-        <label style="float:right;display:flex;align-items:center;gap:5px;font-weight:400;cursor:pointer">
-          <input type="checkbox" id="compileSelectAllPages" onchange="compileToggleAllPages(this.checked)"> {{ T("Select all") }}
-        </label>
-      </div>
-      <div class="compile-pages-wrap" id="compilePagesWrap"></div>
+      <div class="compile-detail" id="compileDetail"></div>
     </div>
+    <div class="compile-splitter" id="compileSplitter" title="{{ T('Drag to resize · double-click to reset') }}"></div>
     <!-- SAĞ: önizleme -->
     <div class="compile-right">
       <div class="compile-preview-toolbar">
@@ -54,15 +48,29 @@
         </div>
       </div>
       <div class="compile-iframe-wrap" id="compileIframeWrap">
-        <iframe id="compileIframe" title="{{ T('Preview') }}"></iframe>
+        <iframe id="compileIframe" sandbox="allow-same-origin allow-scripts" title="{{ T('Preview') }}"></iframe>
       </div>
     </div>
   </div>
   <div class="bulk-footer">
+    <a class="compile-pages-link" onclick="compileOpenPages(true)" title="{{ T('Pages assigned to this layout in the GT') }}">📄 <span id="compilePageCount"></span></a>
     <span id="compileSummary" style="font-size:12px;color:var(--text3);margin-right:auto"></span>
     <span class="readonly-note" id="readonlyNote" style="display:none">👁 {{ T("View mode — only admins can save to GT") }}</span>
     <a class="btn btn-secondary" href="/ground-truth/{{ domain }}">← {{ T("Layouts") }}</a>
     <button type="button" class="btn btn-primary" id="compileSaveBtn" onclick="compileSave()">💾 {{ T("Save to GT") }}</button>
+  </div>
+</div>
+<!-- Page union: kept in the page (hidden) so that the selection is read on save -->
+<div class="modal-overlay" id="compilePagesModal" onclick="if (event.target === this) compileOpenPages(false)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <b>{{ T("Page union") }}</b>
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;margin-left:auto;margin-right:14px">
+        <input type="checkbox" id="compileSelectAllPages" onchange="compileToggleAllPages(this.checked)"> {{ T("Select all") }}
+      </label>
+      <button type="button" class="btn btn-secondary sm" onclick="compileOpenPages(false)">{{ T("Close") }}</button>
+    </div>
+    <div class="modal-content"><div class="compile-pages-wrap" id="compilePagesWrap"></div></div>
   </div>
 </div>
 {% endblock %}
@@ -75,8 +83,22 @@
   <li>Tabloda her satır bir alan, her sütun bir annotatördür; <b>Mevcut GT</b> sütunu kayıtlı GT'yi gösterir. Bir hücrenin üzerine gelince önizlemede eşleşen elemanlar vurgulanır.</li>
   <li><b>K1 — Selector</b>: kural uyumu (aynı normalize kuralı yazan annotatör çiftlerinin oranı) ve en sık yazılan kural önerisi. <b>K2 — İçerik</b>: önizlemedeki sayfada <b>⚡ İçerik Karşılaştır</b> ile ROUGE / Jaccard skorları.</li>
   <li><b>💡 Otomatik Seç</b> etkin katmanın önerilerini uygular; hücreye tıklayarak alan bazında değiştirebilirsiniz (admin).</li>
-  <li><b>Sayfa Birleşimi</b>: GT'de bu layout'a atanacak sayfaları seçin, sonra <b>💾 GT'ye Kaydet</b>.</li>
+  <li><b>Sayfa Birleşimi</b>: alttaki <b>📄 … sayfa seçili</b> bağlantısı sayfa listesini açar; GT'de bu layout'a atanacak sayfaları seçin, sonra <b>💾 GT'ye Kaydet</b>. Onaylı bir layout'ta GT'de olmayan, bir annotatörün atadığı sayfa <b>yeni</b> olarak işaretlenir ve kendiliğinden seçilmez.</li>
 </ol>
+<h3>Alan paneli ve sayfa kapsamı</h3>
+<p>Bir alanın adına tıklayınca (ya da bir hücre seçince) tablonun altındaki panel açılır: kural tam genişlikte düzenlenir;
+  <b>✎</b> ile o alanla ilgili kararın notu yazılır (not GT'de layout'a <span class="mono">field_notes</span> olarak kaydedilir).</p>
+<p>Her kuralın altındaki <span class="mono">10/45</span>, kuralın layout'un 45 sayfasından 10'unda değer döndürdüğünü gösterir
+  (yeşil: tüm sayfalar, sarı: bir kısmı, kırmızı: hiçbiri). Kural bir sayfada yazılıp bütün sayfalar için onaylandığından, yalnızca
+  bazı sayfalarda bulunan bir sınıfa bağlı kural diğerlerinde sessizce boş döner. Panelde değer dönmeyen sayfalar listelenir;
+  bir sayfaya tıklayınca önizlemede açılır. Seçimlik bir alanda bazı sayfaların boş olması olağandır.</p>
+<p>Tablo ile sayfa önizlemesi arasındaki çubuk sürüklenerek genişlikleri değiştirilir (çift tıklama sıfırlar).</p>
+<h3>GT dışında bırakılan alanlar</h3>
+<p>Bir annotatörün kural yazdığı ama GT'ye alınmayan alan <b>⚠</b> ile işaretlenir; böylece bir alan gözden kaçarak dışarıda kalmaz.
+  Kaydederken bu alanlar listelenir ve onayınız istenir. Onaylarsanız karar (kim, ne zaman, isteğe bağlı gerekçe ve kuralı yazan
+  annotatörler) layout'a <span class="mono">excluded_fields</span> olarak kaydedilir ve alan <b>⊘</b> ile gösterilir. Alana GT kuralı
+  seçildiğinde ya da başka bir annotatör kural yazdığında karar yeniden sorulur. Layout listesindeki <b>⚠ n</b>, henüz karar
+  verilmemiş alan sayısıdır.</p>
 <h3>Kayıt</h3>
 <p>Seçilen kurallar ve sayfalar <span class="mono">ground_truth/approved/{{ domain }}.json</span> dosyasına yazılır; kimin ve ne zaman derlediği
   layout'a kaydedilir (layout listesindeki "güncelleme var" durumu buna göre hesaplanır). Bir annotatörün seçimi alınırken
@@ -85,7 +107,7 @@
 <ul>
   <li><b>CSS | XPath | Regex</b> sekmeleri her dili ayrı derler: her sekmede o dilin annotatör seçimleri, kural uyumu ve K2 skorları ayrı hesaplanır. Sekmedeki <span class="mono">3/10</span> seçili alan sayısıdır.</li>
   <li><b>GT'ye dahil</b>: işaretli olmayan dil GT'ye yazılmaz; daha önce GT'de varsa kaydedince çıkarılır. Hangi dillerde GT oluşturulacağına admin karar verir.</li>
-  <li><b>Kaydedilecek</b> sütunu o dil için GT'ye yazılacak kuralı gösterir; hücre seçimiyle dolar, admin elle de yazabilir (boşaltırsanız alan o dilde GT'ye yazılmaz).</li>
+  <li>Alan panelindeki <b>Kaydedilecek kural</b> o dil için GT'ye yazılacak kuralı gösterir; hücre seçimiyle dolar, admin elle de yazabilir (boşaltırsanız alan o dilde GT'ye yazılmaz).</li>
   <li>XPath önizlemede tarayıcının DOM'unda, Regex ham HTML üzerinde (sunucuda) çalışır; Regex eşleşmeleri sayfada vurgulanamaz.</li>
   <li>Regex sekmesinde <b>↻</b>, alanın CSS'inden (CSS sekmesindeki seçim, yoksa mevcut GT) regex üretir — REGEXN (Uzun, 2020) yaklaşımının
     genişletilmiş hali; sonuç layout'un sayfalarında CSS ile doğrulanır. Elle kural girilen dil otomatik olarak GT'ye dahil edilir.</li>
@@ -102,8 +124,22 @@
   <li>In the table each row is a field and each column an annotator; the <b>Current GT</b> column shows the saved GT. Hovering over a cell highlights the matching elements in the preview.</li>
   <li><b>K1 — Selector</b>: rule agreement (share of annotator pairs that wrote the same normalized rule) and the most frequent rule as the suggestion. <b>K2 — Content</b>: ROUGE / Jaccard scores on the preview page with <b>⚡ Compare content</b>.</li>
   <li><b>💡 Auto select</b> applies the suggestions of the active layer; you can change them per field by clicking a cell (admin).</li>
-  <li><b>Page union</b>: select the pages to be assigned to this layout in the GT, then <b>💾 Save to GT</b>.</li>
+  <li><b>Page union</b>: the <b>📄 … pages selected</b> link at the bottom opens the page list; select the pages to be assigned to this layout in the GT, then <b>💾 Save to GT</b>. In an approved layout, a page that an annotator assigned but that is not in the GT is marked <b>new</b> and is not selected by default.</li>
 </ol>
+<h3>Field panel and page coverage</h3>
+<p>Clicking a field name (or selecting a cell) opens the panel under the table: the rule is edited at full width, and <b>✎</b>
+  opens a note on the decision for that field (stored with the layout in the GT as <span class="mono">field_notes</span>).</p>
+<p>The <span class="mono">10/45</span> under each rule means that the rule returns a value on 10 of the 45 pages of the layout
+  (green: all pages, yellow: some, red: none). A rule is written on one page and approved for all of them, so a rule that depends
+  on a class only some pages have silently returns nothing on the others. The panel lists the pages without a value; clicking
+  one opens it in the preview. For an optional field, some empty pages are normal.</p>
+<p>The bar between the table and the page preview can be dragged to resize them (double-click resets).</p>
+<h3>Fields left out of the GT</h3>
+<p>A field that an annotator wrote a rule for but that is not written to the GT is marked with <b>⚠</b>, so that a field is not
+  left out by oversight. On save these fields are listed and you are asked to confirm. If you confirm, the decision (who, when,
+  an optional reason and the annotators who wrote a rule) is stored with the layout as <span class="mono">excluded_fields</span>
+  and the field is shown with <b>⊘</b>. The question is asked again when a GT rule is selected for the field or another annotator
+  writes a rule. In the layout list, <b>⚠ n</b> is the number of fields without a decision.</p>
 <h3>Saving</h3>
 <p>The selected rules and pages are written to <span class="mono">ground_truth/approved/{{ domain }}.json</span>; who compiled the layout and when
   is stored with the layout (the "has updates" status in the layout list is computed from this). When an annotator's rule is taken,
@@ -112,7 +148,7 @@
 <ul>
   <li>The <b>CSS | XPath | Regex</b> tabs compile each language separately: in each tab the annotators' rules, rule agreement and K2 scores of that language are computed separately. The <span class="mono">3/10</span> on a tab is the number of selected fields.</li>
   <li><b>Include in GT</b>: a language that is not checked is not written to the GT; if it was in the GT before, it is removed on save. The admin decides which languages the GT is created for.</li>
-  <li>The <b>To save</b> column shows the rule that will be written to the GT for that language; it is filled by selecting a cell, and the admin can also type it by hand (if you clear it, the field is not written to the GT in that language).</li>
+  <li>The <b>Rule to save</b> in the field panel is the rule that will be written to the GT for that language; it is filled by selecting a cell, and the admin can also type it by hand (if you clear it, the field is not written to the GT in that language).</li>
   <li>In the preview, XPath runs on the browser's DOM and Regex on the raw HTML (on the server); Regex matches cannot be highlighted on the page.</li>
   <li>In the Regex tab, <b>↻</b> generates a regex from the field's CSS (the selection in the CSS tab, otherwise the current GT) — an extended version of the
     REGEXN (Uzun, 2020) approach; the result is verified against the CSS on the layout's pages. A language in which a rule is entered by hand is automatically included in the GT.</li>

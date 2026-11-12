@@ -168,6 +168,52 @@ def api_compile_texts():
     return jsonify({"texts": texts, "counts": counts})
 
 
+@bp.route("/api/compile-coverage/<path:domain>/<layout_id>", methods=["POST"])
+def api_compile_coverage(domain, layout_id):
+    """On how many pages of the layout does each rule return a value?
+
+    A rule is approved for all pages of a layout but is usually written and checked on one of them; a rule
+    that is too specific (e.g. names a class that only some pages have) silently returns nothing elsewhere.
+    Body: {rule_type, rules: {key: {field, rule}}}. Values are extracted as in the scoring of experiments
+    (field kind and merge setting of the template), on the pages of the layout in the ground truth.
+    Returns {total, coverage: {key: {n, empty: [pages]}}}."""
+    _, err = require_login()
+    if err: return err
+    from webrulebench.evaluation import experiments as X
+    data      = request.get_json(silent=True) or {}
+    rule_type = data.get("rule_type", "css")
+    if rule_type not in RULE_LANGS:
+        return jsonify({"error": _t("Invalid rule_type")}), 400
+    gt     = load_ground_truth(domain)
+    layout = gt.get("layouts", {}).get(layout_id)
+    if not layout:
+        return jsonify({"error": _t("Layout not found")}), 404
+    fields = (get_template(layout.get("template_id", "")) or {}).get("fields") or {}
+    pages  = {f for f, v in gt.get("page_assignments", {}).items() if v.get("layout_id") == layout_id and not v.get("skipped")}
+    if not pages:        # not approved yet: the pages the annotators assigned to the layout
+        for uname in load_users():
+            pages |= {f for f, v in load_user_annotation(domain, uname).get("page_assignments", {}).items()
+                      if v.get("layout_id") == layout_id and not v.get("skipped")}
+    pages = sorted(p for p in pages if (DATASET_DIR / domain / p).is_file())
+    rules = {k: v for k, v in (data.get("rules") or {}).items()
+             if isinstance(v, dict) and isinstance(v.get("rule"), str) and v["rule"].strip()}
+    cov = {k: {"n": 0, "empty": []} for k in rules}
+    for page in pages:
+        html = (DATASET_DIR / domain / page).read_text(encoding="utf-8", errors="ignore")
+        soup = BeautifulSoup(html, "html.parser")
+        for k, v in rules.items():
+            fdef = fields.get(v.get("field") or "", {})
+            try:
+                vals = X.rule_values(html, soup, v["rule"], rule_type, X._kind(fdef), bool(fdef.get("merge")))
+            except Exception:
+                vals = []                      # an invalid rule returns nothing
+            if vals:
+                cov[k]["n"] += 1
+            else:
+                cov[k]["empty"].append(page)
+    return jsonify({"total": len(pages), "coverage": cov})
+
+
 @bp.route("/api/compile/<path:domain>/<layout_id>", methods=["POST"])
 def api_compile_save(domain, layout_id):
     """Admin saves compiled selectors + union pages to GT for a layout."""
@@ -177,16 +223,50 @@ def api_compile_save(domain, layout_id):
     data      = request.json
     selectors = data.get("selectors", {})   # {field: selector}
     pages     = data.get("pages", [])        # list of filenames (union)
+    excluded  = data.get("excluded") or {}   # {field: reason} — fields the admin leaves out on purpose
+    notes     = data.get("notes") or {}      # {field: note} — the admin's remark on an approved field
 
     gt = load_ground_truth(domain)
     if layout_id not in gt.get("layouts", {}):
         return jsonify({"error": _t("Layout not found")}), 404
-
-    # Update selectors
-    gt["layouts"][layout_id]["selectors"] = selectors
-    # Kim/ne zaman derledi — kural dili bazında (GT Onayı listelerindeki "güncelleme var" durumu için)
+    layout   = gt["layouts"][layout_id]
     username = current_user()
     now      = datetime.now(timezone.utc).isoformat()
+
+    # A field with an annotator rule but no GT rule must be an explicit decision, not an oversight:
+    # the save is refused until the admin confirms each such field; the decision is stored with the layout.
+    fdefs   = (get_template(layout.get("template_id", "")) or {}).get("fields") or {}
+    fields  = list(fdefs.keys())
+    user_sels = layout_user_selectors(domain, layout_id)
+    missing = unapproved_fields(fields, user_sels, selectors)
+    unconfirmed = {f: who for f, who in missing.items() if f not in excluded}
+    if unconfirmed:
+        return jsonify({"success": False, "unconfirmed": unconfirmed,
+                        "error": _t("Annotators wrote rules for fields that are not in the GT: {fields}. Confirm that they are left out.",
+                                    fields=", ".join(unconfirmed))}), 409
+    previous, decisions = layout.get("excluded_fields") or {}, {}
+    for f, who in missing.items():
+        reason = str(excluded.get(f) or "").strip()[:500]
+        prev   = previous.get(f) or {}
+        # an unchanged decision keeps who made it and when
+        decisions[f] = prev if prev and prev.get("reason", "") == reason and prev.get("annotators") == who \
+            else {"by": username, "at": now, "reason": reason, "annotators": who}
+    if decisions:
+        layout["excluded_fields"] = decisions
+    else:
+        layout.pop("excluded_fields", None)
+
+    # notes on approved fields (why this rule, how the field is read); left-out fields carry their reason above
+    field_notes = {f: str(notes.get(f) or "").strip()[:1000] for f in selectors if str(notes.get(f) or "").strip()}
+    if field_notes:
+        layout["field_notes"] = field_notes
+    else:
+        layout.pop("field_notes", None)
+
+    # Update selectors, and record which annotators wrote each approved rule (none: the administrator did)
+    gt["layouts"][layout_id]["selectors"] = selectors
+    layout["rule_sources"] = rule_sources(selectors, user_sels, fdefs)
+    # Kim/ne zaman derledi — kural dili bazında (GT Onayı listelerindeki "güncelleme var" durumu için)
     # yalnızca GT'de bulunan diller; GT'den çıkarılan dilin derleme bilgisi de silinir
     gt["layouts"][layout_id]["compiled"] = {lang: {"at": now, "by": username} for lang in _rule_langs(selectors)}
 
@@ -201,6 +281,7 @@ def api_compile_save(domain, layout_id):
         pa[fname] = {"layout_id": layout_id, "skipped": False}
 
     save_ground_truth(domain, gt)
-    _audit(f"COMPILE  domain={domain}  layout={layout_id}  pages={len(pages)}  fields={list(selectors.keys())}")
+    _audit(f"COMPILE  domain={domain}  layout={layout_id}  pages={len(pages)}  fields={list(selectors.keys())}"
+           + (f"  excluded={list(decisions)}" if decisions else ""))
 
-    return jsonify({"success": True, "pages": len(pages), "fields": len(selectors)})
+    return jsonify({"success": True, "pages": len(pages), "fields": len(selectors), "excluded": len(decisions)})

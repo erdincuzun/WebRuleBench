@@ -36,6 +36,7 @@ mcp = FastMCP("WebRuleBench")
 # PATHS
 # ---------------------------------------------------------------------------
 from webrulebench.paths import DATA_DIR as _DATA   # noqa: E402
+from webrulebench.rules.rule_utils import split_selector_list   # noqa: E402
 DATASET_DIR  = _DATA / "dataset" / "raw"
 APPROVED_DIR = _DATA / "ground_truth" / "approved"
 ANNOTATIONS_DIR = _DATA / "annotations"
@@ -140,7 +141,7 @@ def merge_flag(domain: str, filename: str, field: str) -> bool:
 def extract_with_selector(soup, selector: str, field: str, merge: bool = False):
     if not selector:
         return "" if field != "images" else []
-    parts = [p.strip() for p in selector.split(",") if p.strip()]
+    parts = split_selector_list(selector)
     if merge:
         seen, els = set(), []
         for part in parts:
@@ -263,7 +264,7 @@ def validate_selector(
         html = html_path.read_text(encoding="utf-8")
         soup = BeautifulSoup(html, "html.parser")
         merge = merge_flag(domain, filename, field) if field else False
-        parts = [p.strip() for p in selector.split(",") if p.strip()]
+        parts = split_selector_list(selector)
 
         if merge:
             seen, els = set(), []
@@ -438,7 +439,7 @@ def bulk_test(
                     continue
                 base  = field.split("[")[0]
                 merge = bool(tmpl_fields.get(base, {}).get("merge", False))
-                parts = [p.strip() for p in sel.split(",") if p.strip()]
+                parts = split_selector_list(sel)
 
                 if merge:
                     seen, els = set(), []

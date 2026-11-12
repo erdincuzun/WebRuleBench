@@ -23,7 +23,7 @@ CASES = {
     "DIV.b.a#x > IMG": "div#x.a.b > img",
     "a[href='x']": 'a[href="x"]',
     "a[ href = x ]": 'a[href="x"]',
-    "h2 a, h1 a": "h1 a, h2 a",
+    "h2 a,h1 a": "h2 a, h1 a",
     "*.x": ".x",
     'a[href~="x y"]': 'a[href~="x y"]',
     "li:nth-child(2) a": "li:nth-child(2) a",
@@ -39,6 +39,28 @@ def test_normalize_writing_differences(raw, expected):
 def test_normalize_keeps_meaning_differences():
     assert normalize_rule("div.x > img") != normalize_rule("div.x img")
     assert normalize_rule("h1") != normalize_rule("h1.title")
+
+
+def test_alternative_order_is_kept_unless_the_field_is_merged():
+    # without merging the first alternative that matches is used: 'h1, h2' and 'h2, h1' can extract different text
+    assert normalize_rule("h1, h2") != normalize_rule("h2, h1")
+    assert normalize_rule("h2 a, h1 a") == "h2 a, h1 a"
+    assert observed_agreement([normalize_rule("h1, h2"), normalize_rule("h2, h1")]) == 0.0
+    # merged fields combine all alternatives: the order does not change the extracted set
+    assert normalize_rule("h2 a, h1 a", merge=True) == "h1 a, h2 a"
+    assert normalize_rule("img.b, img.a", merge=True) == normalize_rule("img.a,IMG.b", merge=True)
+    assert observed_agreement([normalize_rule("h1, h2", merge=True), normalize_rule("h2, h1", merge=True)]) == 1.0
+
+
+def test_alternative_order_changes_the_extracted_text():
+    """The reason for the rule above, shown on a page."""
+    from bs4 import BeautifulSoup
+    from webrulebench.evaluation.experiments import rule_values
+    html = "<h2>Section</h2><h1>Headline</h1>"
+    soup = BeautifulSoup(html, "html.parser")
+    assert rule_values(html, soup, "h1, h2", "css", "text", False) == ["Headline"]
+    assert rule_values(html, soup, "h2, h1", "css", "text", False) == ["Section"]
+    assert sorted(rule_values(html, soup, "h1, h2", "css", "text", True)) == sorted(rule_values(html, soup, "h2, h1", "css", "text", True))
 
 
 def test_normalize_empty_and_other_languages():
@@ -78,9 +100,10 @@ def test_krippendorff_alpha_nominal():
 def test_browser_copy_normalizes_identically():
     src = (ROOT / "src" / "webrulebench" / "webapp" / "static" / "compile.js").read_text(encoding="utf-8")
     code = src[src.index("function _splitTop"):src.index("function _observedAgreement")]
-    js = code + f"\nconsole.log(JSON.stringify({json.dumps(list(CASES))}.map(c => _normalizeRule(c))));"
+    cases = list(CASES) + ["h2, h1", "img.b,IMG.a"]
+    js = code + f"\nconsole.log(JSON.stringify({json.dumps(cases)}.map(c => [_normalizeRule(c), _normalizeRule(c, 'css', true)])));"
     out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout
-    assert json.loads(out) == [normalize_rule(c) for c in CASES]
+    assert json.loads(out) == [[normalize_rule(c), normalize_rule(c, merge=True)] for c in cases]
 
 
 def test_fleiss_kappa_undefined_for_single_subject():

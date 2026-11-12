@@ -974,7 +974,7 @@ async function selectPage(filename) {
   frame.style.display = 'block';
   empty.style.display = 'none';
   applyJsToggle();
-  frame.src = `/api/page/${activeDomain}/${filename}`;
+  frame.src = _pageUrl(filename);
 
   renderAssignPanel();
   loadPageUrl(filename);
@@ -2512,12 +2512,18 @@ async function autoDetect() {
 }
 
 // ── REDOWNLOAD PAGE ────────────────────────────────────
+// Downloaded pages are untrusted. Default: the server sends them with a policy that blocks their scripts,
+// and the frame stays readable for highlighting and picking. "JS enabled": the page's scripts run, but in an
+// opaque origin of its own (no allow-same-origin, server header "sandbox allow-scripts"), so they cannot reach
+// the application; the frame cannot be read then, and picking is not available.
+const _jsOn    = () => !!document.getElementById('jsToggle')?.checked;
+const _pageUrl = filename => `/api/page/${activeDomain}/${filename}` + (_jsOn() ? '?js=1' : '');
 function applyJsToggle() {
-  const frame   = document.getElementById('pageFrame');
-  const enabled = document.getElementById('jsToggle')?.checked;
-  frame.setAttribute('sandbox', enabled
-    ? 'allow-same-origin allow-scripts'
-    : 'allow-same-origin');
+  const frame = document.getElementById('pageFrame');
+  frame.setAttribute('sandbox', _jsOn() ? 'allow-scripts' : 'allow-same-origin allow-scripts');
+  // switching the mode reloads the open page with the matching policy
+  if (activeFile && frame.src && !frame.src.endsWith('about:blank') && frame.src.endsWith('?js=1') !== _jsOn())
+    frame.src = _pageUrl(activeFile);
 }
 
 async function loadPageUrl(filename) {
@@ -4124,7 +4130,7 @@ init();
         <span id="baddMatchBadge" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
       </div>
       <div style="flex:1;overflow:hidden;position:relative">
-        <iframe id="baddIframe" style="width:100%;height:100%;border:none;background:#fff"></iframe>
+        <iframe id="baddIframe" sandbox="allow-same-origin allow-scripts" style="width:100%;height:100%;border:none;background:#fff"></iframe>
       </div>
     </div>
 

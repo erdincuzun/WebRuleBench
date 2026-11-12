@@ -231,6 +231,23 @@ role-based access (annotator / admin). The application is intended for a small,
 trusted group on an internal network and is not designed for public-facing
 deployment.
 
+Downloaded pages are untrusted content. The previews (page viewer, bulk-import link
+picker, ground-truth approval) receive them with a `Content-Security-Policy` that
+blocks their scripts, inline event handlers and `javascript:` links, so a downloaded
+page cannot act in the application's origin; the pages are otherwise shown as
+downloaded, and images, fonts and style sheets they refer to are still requested
+from the original sites. The viewer's **JS enabled** switch is an explicit opt-in for
+pages that need their scripts to render: the page is then served with
+`Content-Security-Policy: sandbox allow-scripts` and loaded without
+`allow-same-origin`, i.e. in an opaque origin of its own without access to the
+application's cookies, storage or API (element picking is not available in this
+mode). Rules are always run on the stored HTML, never on a page changed by scripts.
+
+Deployment assumptions: run the application on your own machine or behind your
+institution's network; put it behind HTTPS if it is reached over a network; do not
+expose it to the public internet; give accounts only to annotators you trust (an
+administrator can add sites and download pages from any URL).
+
 ---
 
 ## License

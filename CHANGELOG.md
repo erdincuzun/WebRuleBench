@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+- CSS selector lists are split only at top-level commas. A selector with a comma inside parentheses, square
+  brackets or quotes — `article :is(h1, h2).headline`, `:not(.a, .b)`, `[title="a, b"]` — was split there and
+  matched nothing; it now runs as one selector in annotation validation, scoring, the regex generator, the
+  XPath translation and the MCP server, which all use one function (`rule_utils.split_selector_list`).
+- Rule agreement: the order of the comma-separated alternatives of a CSS rule is kept when rules are
+  normalized, except for merged fields. Without merging the first alternative that matches is used, so
+  `h1, h2` and `h2, h1` can extract different text and are no longer counted as the same rule; for merged
+  fields all alternatives are combined and the order is still ignored. The browser copy does the same.
+- Experiments run and resume with the backend settings stored when they were created (API type, URL,
+  generation parameters, timeout — `backend_snapshot`). Before, the call read the current settings, so editing
+  a backend after creating an experiment changed the request while the record kept the old values. API keys
+  are not stored and are still read from the environment.
+- Security: downloaded pages are served with a `Content-Security-Policy` that blocks their scripts, inline
+  event handlers and `javascript:` links, and every preview frame (page viewer, bulk-import link picker,
+  ground-truth approval) is sandboxed; highlighting and picking still work. The viewer's **JS enabled** switch
+  now runs a page's scripts in an opaque origin of its own (`sandbox allow-scripts`, no `allow-same-origin`)
+  instead of the application's origin; picking is not available in that mode. The page route also refuses
+  paths outside the dataset folder. The README documents the deployment assumptions.
+- Ground-truth approval: a field that an annotator wrote a rule for but that is not written to the ground truth
+  is marked on the approval page (⚠), and saving asks the administrator to confirm that it is left out. The
+  decision is stored with the layout (`excluded_fields`: who, when, an optional reason and the annotators who
+  wrote a rule) and the server refuses a save that leaves such a field out without one, so a field can no longer
+  be missing from the reference by oversight. The layout list shows the number of fields without a decision.
+- Ground-truth approval: each rule shows on how many pages of the layout it returns a value (e.g. `10/45`), for
+  the annotators' rules, the current ground truth and the rule to be saved. A rule is written on one page and
+  approved for all of them; one that depends on something only some pages have now shows it instead of silently
+  returning nothing elsewhere. Values are extracted as in the scoring of experiments.
+- Ground-truth approval: clicking a field opens a panel under the table where the rule to save is edited at full
+  width, the pages without a value are listed (click to preview) and a note on the decision can be written (✎);
+  notes are stored with the layout (`field_notes`). The panel replaces the "To save" column of the table.
+- Ground-truth approval: more room for the table — the page union opens from a link in the footer ("n of m pages
+  selected") instead of taking a fixed part of the page, rule cells are narrower, and the bar between the table
+  and the page preview can be dragged to resize them (remembered in the browser; double-click resets).
+- Ground-truth approval: in an approved layout, a page that an annotator assigned but that is not in the ground
+  truth is marked "new" in the page list and is no longer selected by default, so that saving does not add it
+  unnoticed; the footer link says how many new pages there are. Pages of the ground truth that no annotator
+  assigned are now listed too (they were dropped on save before).
+- Ground-truth approval: the source of each approved rule is stored with the layout (`rule_sources`: the
+  annotators who wrote the same rule, or none when the administrator wrote or edited it on the approval page);
+  the layout list shows the number of such rules (✎ n).
 - LLM evaluation: new experiment option **Given to the LLM** — the skeleton (default, as before) or the HTML of
   the cleaned page itself (`skeleton = none`), with an automatic prompt that says so; the new cleaning strategy
   `none` leaves the page unchanged, so that the full page can be given to models with a large context window. The

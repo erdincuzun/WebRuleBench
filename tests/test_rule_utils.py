@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from webrulebench.rules.rule_utils import css_to_xpath, run_css, run_xpath, run_regex, run_rule
+from webrulebench.rules.rule_utils import css_to_xpath, run_css, run_xpath, run_regex, run_rule, split_selector_list
 from webrulebench.evaluation.metrics import score_selector
 
 HTML = """
@@ -143,3 +143,50 @@ def test_run_regex_stops_catastrophic_backtracking(monkeypatch):
 def test_run_regex_flags_and_invalid_pattern_unchanged():
     assert run_regex("<H1>\nx</H1>", r"<h1>(.*?)</h1>") == ["\nx"]   # IGNORECASE | DOTALL
     assert run_regex("abc", "([") == []
+
+
+# --- selector lists are split at top-level commas only (commas inside (), [] and quotes are kept) ---
+
+NESTED = """
+<html><body>
+<article><h2 class="headline">Inside</h2><p title="a, b">Text</p></article>
+<h2 class="headline">Outside</h2>
+</body></html>
+"""
+
+
+@pytest.mark.parametrize("selector, parts", [
+    ("h1, h2", ["h1", "h2"]),
+    ("article :is(h1, h2).headline", ["article :is(h1, h2).headline"]),
+    (":not(.a, .b) > p , div[title='a, b'] ,", [":not(.a, .b) > p", "div[title='a, b']"]),
+    ('a[data-x="),("], b', ['a[data-x="),("]', "b"]),
+    ("", []),
+])
+def test_split_selector_list(selector, parts):
+    assert split_selector_list(selector) == parts
+
+
+def test_nested_comma_selector_runs_as_one_selector():
+    soup = BeautifulSoup(NESTED, "html.parser")
+    assert [e.get_text() for e in run_css(soup, "article :is(h1, h2).headline")] == ["Inside"]
+    assert [e.get_text() for e in run_css(soup, 'p[title="a, b"], h9')] == ["Text"]
+    assert len(run_css(soup, "article :is(h1, h2).headline, body > h2")) == 2     # a real list still works
+
+
+def test_nested_comma_selector_in_scoring():
+    """The values an experiment scores (rule_values) and the regex generator's CSS values."""
+    from webrulebench.evaluation.experiments import rule_values, score_field
+    from webrulebench.rules.regex_generator import css_values
+    soup = BeautifulSoup(NESTED, "html.parser")
+    rule = "article :is(h1, h2).headline"
+    assert rule_values(NESTED, soup, rule, "css", "text", False) == ["Inside"]
+    assert css_values(soup, rule) == ["Inside"]
+    assert score_field(["Inside"], rule_values(NESTED, soup, rule, "css", "text", False), "rouge") == (1.0, "MATCH")
+    # without merging, the first alternative of the list that matches is used; the nested comma is not an alternative
+    assert rule_values(NESTED, soup, "h9, article :is(h1, h2).headline", "css", "text", False) == ["Inside"]
+
+
+def test_nested_comma_selector_as_reference_in_score_selector():
+    soup = BeautifulSoup(NESTED, "html.parser")
+    score, label = score_selector(soup, "article :is(h1, h2).headline", "article h2")
+    assert label == "MATCH" and score == 1.0

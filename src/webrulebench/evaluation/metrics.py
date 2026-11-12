@@ -214,7 +214,8 @@ def score_selector(soup, gt_selector, llm_selector,
         return -1.0, "NO_GT"
 
     if gt_rule_type == "css":
-        gt_parts = [p.strip() for p in gt_selector.split(",") if p.strip()]
+        from webrulebench.rules.rule_utils import split_selector_list
+        gt_parts = split_selector_list(gt_selector)
         if len(gt_parts) > 1:
             best_score, best_label = 0.0, "WRONG"
             for part in gt_parts:

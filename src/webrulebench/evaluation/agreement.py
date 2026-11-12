@@ -82,7 +82,7 @@ def agreement_study(layouts: list | None = None, users: list | None = None, lang
         lay_sims, lay_rule = [], []
         for f, fd in fields.items():
             metric_of[f] = fd.get("metric", "rouge")
-            norm = [RA.normalize_rule(rules[u][f], lang) for u in rules]
+            norm = [RA.normalize_rule(rules[u][f], lang, bool(fd.get("merge"))) for u in rules]
             rule_subjects.setdefault(f, []).append(norm)
             nn = [x for x in norm if x]
             for i, j in itertools.combinations(range(len(nn)), 2):

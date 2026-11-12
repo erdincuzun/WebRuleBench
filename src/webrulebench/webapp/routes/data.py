@@ -82,13 +82,30 @@ def api_site(domain):
     })
 
 
+# Downloaded pages are untrusted content shown inside the application. By default their scripts do not run
+# (also inline handlers and javascript: links), so a page cannot act in the application's origin; the
+# previews load it in an iframe that the application can still read to highlight and pick elements.
+PAGE_CSP = "script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"
+# ?js=1 (the viewer's "JS enabled" switch): scripts run, but the page is put into an opaque origin of its own,
+# without access to the application's cookies, storage or API; picking elements is not available in this mode.
+PAGE_CSP_ACTIVE = "sandbox allow-scripts"
+
+
 @bp.route("/api/page/<domain>/<filename>")
 def api_page(domain, filename):
-    """Serve raw HTML file content."""
+    """Serve a downloaded HTML page for the previews (see PAGE_CSP)."""
     path = DATASET_DIR / domain / filename
-    if not path.exists():
+    try:
+        path.resolve().relative_to(DATASET_DIR.resolve())      # stay inside the dataset folder
+    except ValueError:
         return jsonify({"error": _t("File not found")}), 404
-    return send_file(path, mimetype="text/html")
+    if not path.is_file():
+        return jsonify({"error": _t("File not found")}), 404
+    resp = send_file(path, mimetype="text/html")
+    resp.headers["Content-Security-Policy"] = PAGE_CSP_ACTIVE if request.args.get("js") == "1" else PAGE_CSP
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "no-referrer"
+    return resp
 
 
 @bp.route("/api/page/delete", methods=["POST"])

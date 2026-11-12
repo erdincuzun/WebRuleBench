@@ -281,3 +281,38 @@ def test_retry_wait_uses_evren_resets_at():
     reset = (datetime.now(timezone.utc) + timedelta(seconds=20)).isoformat().replace("+00:00", "Z")
     w = _retry_wait(None, json.dumps({"error": {"evren": {"resets_at": reset}}}), 0)
     assert 18 <= w <= 20
+
+
+# --- an experiment calls the LLM with the settings stored when it was created ---
+
+def _capture(monkeypatch, snapshot):
+    monkeypatch.setitem(LM.BACKENDS, "ollama", {"api": "ollama", "url": "http://changed-later:1/api/chat",
+                                                "params": {"temperature": 0.9, "seed": 7, "max_tokens": 64},
+                                                "model_params": {"m": {"temperature": 0.5}}, "timeout": 30})
+    ex = LLMExtractor(backend="ollama", model="m", rule_type="css", fields=["title"], snapshot=snapshot)
+    sent = {}
+
+    def fake_post(url, **kw):
+        sent.update(url=url, body=kw["json"])
+        return {"message": {"content": '{"title": "h1"}'}, "prompt_eval_count": 1, "eval_count": 1}
+
+    monkeypatch.setattr(ex, "_post", fake_post)
+    ex.extract("<h1>x</h1>")
+    return ex, sent
+
+
+def test_snapshot_settings_are_used_instead_of_current_ones(monkeypatch):
+    snap = {"api": "ollama", "url": "http://as-created:11434/api/chat", "timeout": 240,
+            "params": {"temperature": 0.0, "seed": 42, "max_tokens": 512, "num_ctx": 16384}}
+    ex, sent = _capture(monkeypatch, snap)
+    assert sent["url"] == "http://as-created:11434/api/chat"
+    opts = sent["body"]["options"]
+    assert opts["temperature"] == 0.0 and opts["seed"] == 42 and opts["num_ctx"] == 16384     # not 0.9 / 0.5 / 7
+    assert ex.timeout == 240
+
+
+def test_current_settings_are_used_without_a_snapshot(monkeypatch):
+    ex, sent = _capture(monkeypatch, None)
+    assert sent["url"] == "http://changed-later:1/api/chat"
+    assert sent["body"]["options"]["temperature"] == 0.5 and sent["body"]["options"]["seed"] == 7
+    assert ex.timeout == 30

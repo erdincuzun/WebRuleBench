@@ -91,7 +91,7 @@ Hub.ready().then(async () => {
     const go = `/ground-truth/${encodeURIComponent(DOMAIN)}/${encodeURIComponent(l.layout_id)}`;
     return `
     <tr>
-      <td><b>${Hub.esc(l.name)}</b>${l.pending ? ' <span class="pill req">⏳</span>' : ''}<div class="muted mono">${Hub.esc(l.layout_id)}</div></td>
+      <td><b>${Hub.esc(l.name)}</b>${l.pending ? ' <span class="pill req">⏳</span>' : ''}${(l.unreviewed || []).length ? ` <span class="pill req" title="${Hub.esc(T('Annotator rules not in the GT: {fields}', {fields: l.unreviewed.join(', ')}))}">⚠ ${l.unreviewed.length}</span>` : ''}${(l.admin_rules || []).length ? ` <span class="pill" title="${Hub.esc(T('Rules written or edited by the administrator (no annotator wrote them): {fields}', {fields: l.admin_rules.join(', ')}))}">✎ ${l.admin_rules.length}</span>` : ''}<div class="muted mono">${Hub.esc(l.layout_id)}</div></td>
       <td>${t ? Hub.esc((t.icon || '') + ' ' + t.name) : '<span class="muted">—</span>'}</td>
       <td>${l.annotators.length ? l.annotators.map(u => `<span class="pill">${Hub.esc(u)}</span>`).join(' ') : '<span class="muted">—</span>'}</td>
       <td class="num" title="${T('Assigned in GT / union of annotators')}">${l.gt_pages} / ${l.union_pages}</td>

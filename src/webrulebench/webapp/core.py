@@ -150,6 +150,7 @@ def page_type_for_layout(layout: dict) -> str:
 # Kullanıcı kayıtları users_store.py'de (token özetleri, token sürümü, etkin/pasif).
 from webrulebench import users_store
 from webrulebench.rules import rule_agreement as RA
+from webrulebench.rules.rule_utils import split_selector_list
 from webrulebench.webapp import i18n as I18N
 
 
@@ -494,9 +495,63 @@ def _rule_langs(selectors: dict) -> list:
     return [lang for lang in RULE_LANGS if any(_rule_of(v, lang) for v in (selectors or {}).values())]
 
 
-def _rule_ratings(users: dict, field: str, lang: str) -> list:
+def _has_rule(val) -> bool:
+    """True if the field value holds a rule in any rule language."""
+    return any(_rule_of(val, lang) for lang in RULE_LANGS)
+
+
+def unapproved_fields(fields: list, user_selectors: dict, gt_selectors: dict) -> dict:
+    """Fields that at least one annotator wrote a rule for but that have no rule in the ground truth.
+
+    fields: field names of the layout's template; user_selectors: {annotator: {field: rule}};
+    gt_selectors: {field: rule} of the (to be) approved ground truth. Returns {field: [annotators]}.
+    Such a field is either an oversight or a deliberate decision of the administrator; the approval
+    page asks, and the decision is stored in the layout as ``excluded_fields``.
+    """
+    out = {}
+    for f in fields or sorted({f for s in user_selectors.values() for f in (s or {})}):
+        if _has_rule((gt_selectors or {}).get(f)):
+            continue
+        who = sorted(u for u, s in user_selectors.items() if _has_rule((s or {}).get(f)))
+        if who:
+            out[f] = who
+    return out
+
+
+def rule_sources(gt_selectors: dict, user_selectors: dict, fields: dict | None = None) -> dict:
+    """Where each approved rule comes from: {field: {lang: [annotators]}}.
+
+    The list holds the annotators who wrote the same rule (compared after the normalization used for rule
+    agreement). An empty list means that no annotator wrote this rule: the administrator wrote or edited
+    it on the approval page. Stored with the layout at approval time, because annotators may change their
+    rules later. fields: the template's field definitions (for the merge setting, see normalize_rule).
+    """
+    out = {}
+    for f, val in (gt_selectors or {}).items():
+        merge = bool(((fields or {}).get(f) or {}).get("merge"))
+        for lang in RULE_LANGS:
+            rule = RA.normalize_rule(_rule_of(val, lang), lang, merge)
+            if not rule:
+                continue
+            out.setdefault(f, {})[lang] = sorted(
+                u for u, s in user_selectors.items()
+                if RA.normalize_rule(_rule_of((s or {}).get(f), lang), lang, merge) == rule)
+    return out
+
+
+def layout_user_selectors(domain: str, layout_id: str) -> dict:
+    """{annotator: {field: rule}} for the registered users who wrote rules for this layout."""
+    out = {}
+    for uname in load_users():
+        sels = (load_user_annotation(domain, uname).get("layouts", {}).get(layout_id) or {}).get("selectors") or {}
+        if sels:
+            out[uname] = sels
+    return out
+
+
+def _rule_ratings(users: dict, field: str, lang: str, merge: bool = False) -> list:
     """Annotatörlerin bir alan için normalize edilmiş kuralları (boşlar None)."""
-    return [RA.normalize_rule(_rule_of(d["selectors"].get(field), lang), lang) for d in users.values()]
+    return [RA.normalize_rule(_rule_of(d["selectors"].get(field), lang), lang, merge) for d in users.values()]
 
 
 def _audit_compile_times() -> dict:
@@ -575,7 +630,8 @@ def _gt_layout_summaries(domain: str, audit_times: dict) -> list:
             else:
                 status = "approved"
             # layout × alan: gözlenen ikili kural uyumu (normalize); Fleiss κ raporda, layout'lar konu sayılarak
-            ratings = {f: _rule_ratings(users, f, lang) for f in fields}
+            ratings = {f: _rule_ratings(users, f, lang, bool(((tmpl.get("fields") or {}).get(f) or {}).get("merge")))
+                       for f in fields}
             kfields = {f: RA.observed_agreement(r) for f, r in ratings.items()}
             kappas = [k for k in kfields.values() if k is not None]
             langs[lang] = {
@@ -595,6 +651,13 @@ def _gt_layout_summaries(domain: str, audit_times: dict) -> list:
             "gt_pages":    sum(1 for v in gt_pa.values() if v.get("layout_id") == lid and not v.get("skipped")),
             "union_pages": len(union_pages),
             "langs":       langs,
+            # approved CSS rules that no annotator wrote (written or edited by the administrator)
+            "admin_rules": sorted(f for f, s in (layout.get("rule_sources")
+                                                 or rule_sources(gt_sels, {u: d["selectors"] for u, d in users.items()}, tmpl.get("fields"))).items()
+                                  if "css" in s and not s["css"]),
+            # annotator rules that are neither in the GT nor recorded as left out by the administrator
+            "unreviewed":  sorted(f for f in unapproved_fields(fields, {u: d["selectors"] for u, d in users.items()}, gt_sels)
+                                  if f not in (layout.get("excluded_fields") or {})),
         })
     return result
 
@@ -764,7 +827,7 @@ def _run_selector(soup, selector: str, merge: bool, rule_type: str = "css", raw_
         return {"valid": True, "message": _t("✅ {n} matches found", n=len(elems)), "count": len(elems),
                 "previews": previews, "texts": texts}
 
-    parts = [p.strip() for p in selector.split(",") if p.strip()]
+    parts = split_selector_list(selector)
 
     if merge:
         seen  = set()
@@ -922,7 +985,7 @@ def _extract_with_selector(soup, selector: str, field: str, merge: bool = False)
     if not selector:
         return "" if field != "images" else []
 
-    parts = [p.strip() for p in selector.split(",") if p.strip()]
+    parts = split_selector_list(selector)
 
     if merge:
         seen = set()

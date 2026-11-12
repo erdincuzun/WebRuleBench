@@ -22,6 +22,35 @@ from typing import Literal
 RuleType = Literal["css", "xpath", "regex"]
 
 
+def split_selector_list(selector: str) -> list:
+    """Split a CSS selector list at its top-level commas: 'h1, h2' -> ['h1', 'h2'].
+
+    Commas inside parentheses, square brackets or quotes belong to one selector and are kept, so
+    ':is(h1, h2)', ':not(.a, .b)' and '[title="a, b"]' are not split. Parts are stripped; empty
+    parts are dropped. Every place that runs or translates a CSS rule uses this function.
+    """
+    parts, cur, depth, quote, esc = [], "", 0, "", False
+    for ch in selector or "":
+        if esc:
+            cur, esc = cur + ch, False
+        elif ch == "\\":
+            cur, esc = cur + ch, True
+        elif quote:
+            cur += ch
+            if ch == quote:
+                quote = ""
+        elif ch in "\"'":
+            quote, cur = ch, cur + ch
+        elif ch == "," and depth == 0:
+            parts.append(cur)
+            cur = ""
+        else:
+            depth += (ch in "([") - (ch in ")]")
+            cur += ch
+    parts.append(cur)
+    return [x.strip() for x in parts if x.strip()]
+
+
 def css_to_xpath(css: str) -> str | None:
     """CSS selector'ı XPath'e çevir. Çeviremezse None döner."""
     if not css or not css.strip():
@@ -31,7 +60,7 @@ def css_to_xpath(css: str) -> str | None:
     except ImportError:
         return None
 
-    parts = [p.strip() for p in css.split(",") if p.strip()]
+    parts = split_selector_list(css)
     xpaths = []
     for part in parts:
         try:
@@ -118,9 +147,7 @@ def css_to_xpath_readable(css: str, strict_classes: bool = False) -> str | None:
     if not css or not css.strip() or "\\" in css:
         return None
     out = []
-    for part in (p.strip() for p in css.split(",")):
-        if not part:
-            continue
+    for part in split_selector_list(css):
         # birleştiricileri ayır; attribute değerleri içindeki boşluk/'>' korunur
         tokens, buf, depth = [], "", 0
         for ch in part:
@@ -166,7 +193,7 @@ def _to_lxml_tree(html_or_soup):
 
 def run_css(soup, selector: str) -> list:
     """CSS selector'ı BeautifulSoup ağacında çalıştır, virgüllü parçaları birleştirir."""
-    parts = [p.strip() for p in selector.split(",") if p.strip()]
+    parts = split_selector_list(selector)
     seen, elems = set(), []
     for part in parts:
         try:
