@@ -3,7 +3,7 @@
   \footnotesize
   \setlength{\tabcolsep}{2.5pt}
   \setlength{\abovetopsep}{3pt}
-  \caption{LLM experiments on the ten layouts of the annotation study, scored against the reviewed reference. Ollama, 4-bit quantized models (Q4\_K\_M); temperature 0, seed 42, at most 512 output tokens; whitelist cleaning; the first ground-truth page of each layout as the sample. \textbf{Mean:} mean score (0--100) over all ground-truth pages. \textbf{Sample:} score on the sample pages (ten pages, one per layout). \textbf{Gap:} smallest and largest difference, over the ten layouts, between the sample page and the other pages of the layout. \textbf{LLM:} time for the ten calls on a laptop (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median over pages of the best of three runs from the raw HTML, including parsing.}
+  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. Ollama, 4-bit quantized models (Q4\_K\_M); temperature 0, seed 42, at most 512 output tokens; whitelist cleaning; first ground-truth page of each layout as the sample. \textbf{Mean:} score (0--100) over all ground-truth pages. \textbf{Sample:} score on the ten sample pages. \textbf{Gap:} smallest and largest difference between the sample page and the other pages of a layout. \textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from the raw HTML, including parsing.}
   \label{tab:llm}
   \begin{tabular}{@{}lrlrrrrr@{}}
     \toprule

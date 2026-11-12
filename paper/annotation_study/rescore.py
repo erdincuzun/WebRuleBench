@@ -143,6 +143,9 @@ def main():
                          "sample": lsum["sample_mean"], "others": lsum["others_mean"],
                          "difference_points": round(100 * (lsum["sample_mean"] - lsum["others_mean"]), 2)})
         e["summary"] = X.summarize(e)
+        if e.get("group"):
+            # run with v1.0.4; the scores are against the reviewed reference
+            e["group"] = {**e["group"], "name": "Annotation study · 10 layouts · rescored"}
         e["rescored"] = {"at": now, "reference": "reviewed reference (paper/softwarex/gt_review.md)",
                          "note": "Rules, prompts, tokens and times are those of the original run; only the scores were recomputed.",
                          "submitted_summary": before}

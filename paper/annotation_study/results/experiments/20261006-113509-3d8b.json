@@ -18395,12 +18395,12 @@
  "error": null,
  "group": {
   "id": "g-20261006-113509-80e5",
-  "name": "Annotation study · 10 layouts · five local models (CSS) and rule languages · v1.0.4"
+  "name": "Annotation study · 10 layouts · rescored"
  },
  "started_at": "2026-10-06T08:49:27.703336+00:00",
  "finished_at": "2026-10-06T09:00:47.939963+00:00",
  "rescored": {
-  "at": "2026-11-12T09:31:13+00:00",
+  "at": "2026-11-12T19:56:02+00:00",
   "reference": "reviewed reference (paper/softwarex/gt_review.md)",
   "note": "Rules, prompts, tokens and times are those of the original run; only the scores were recomputed.",
   "submitted_summary": {

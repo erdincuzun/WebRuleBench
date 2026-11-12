@@ -200,13 +200,13 @@ def write_table(runs: list, speed: dict, path: Path):
            if e["config"]["sample"]["mode"] == "random"]
     rng = lambda xs: f"{min(xs):.1f}--{max(xs):.1f}"
     lines = [r"\begin{table}[!htb]", r"  \centering", r"  \footnotesize", r"  \setlength{\tabcolsep}{2.5pt}", r"  \setlength{\abovetopsep}{3pt}",
-             r"  \caption{LLM experiments on the ten layouts of the annotation study, scored against the reviewed reference. "
+             r"  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. "
              + f"Ollama, 4-bit quantized models ({quant.replace('_', chr(92) + '_')}); temperature {temp:g}, seed {seed}, at most {max_tokens} output tokens; "
-             + f"{strategy.replace('_', ' ')} cleaning; the first ground-truth page of each layout as the sample. "
-             + r"\textbf{Mean:} mean score (0--100) over all ground-truth pages. \textbf{Sample:} score on the sample pages (ten pages, "
-             r"one per layout). \textbf{Gap:} smallest and largest difference, over the ten layouts, between the sample page and "
-             r"the other pages of the layout. \textbf{LLM:} time for the ten calls on a laptop (Apple M1 Pro, 16 GB RAM). "
-             r"\textbf{ms/page:} median over pages of the best of three runs from the raw HTML, including parsing.}",
+             + f"{strategy.replace('_', ' ')} cleaning; first ground-truth page of each layout as the sample. "
+             + r"\textbf{Mean:} score (0--100) over all ground-truth pages. \textbf{Sample:} score on the ten sample pages. "
+             r"\textbf{Gap:} smallest and largest difference between the sample page and the other pages of a layout. "
+             r"\textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from "
+             r"the raw HTML, including parsing.}",
              r"  \label{tab:llm}", r"  \begin{tabular}{@{}lrlrrrrr@{}}", r"    \toprule",
              r"    Model (Ollama) & Params & Rules & Mean & Sample & Gap & LLM (s) & ms/page \\", r"    \midrule"]
     used, digests = set(), {}
