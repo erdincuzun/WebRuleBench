@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Data collection: before a page is downloaded, the site's robots.txt is checked (user agents `WebRuleBench`
+  and `*`; read once per site and cached) and a page that is not allowed is not downloaded; requests to one
+  site are spaced by its `Crawl-delay` or a minimum pause (1 s by default). An administrator can switch the
+  check off or change the pause on the Data Collection page (`dataset/download_settings.json`); the change is
+  written to the audit log. Before, pages were requested without looking at robots.txt and without a pause.
 - CSS selector lists are split only at top-level commas. A selector with a comma inside parentheses, square
   brackets or quotes — `article :is(h1, h2).headline`, `:not(.a, .b)`, `[title="a, b"]` — was split there and
   matched nothing; it now runs as one selector in annotation validation, scoring, the regex generator, the

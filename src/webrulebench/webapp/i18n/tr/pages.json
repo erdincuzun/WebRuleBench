@@ -353,5 +353,10 @@
  "Annotator pairs — content similarity": "Annotatör çiftleri — içerik benzerliği",
  "Pair": "Çift",
  "Cells": "Hücre",
- "Content agreement": "İçerik uyumu"
+ "Content agreement": "İçerik uyumu",
+ "Check robots.txt": "robots.txt kontrolü",
+ "Pause between requests (s)": "İstekler arası bekleme (sn)",
+ "Before a page is downloaded, the robots.txt of the site is checked and requests to one site are spaced.": "Sayfa indirilmeden önce sitenin robots.txt dosyası kontrol edilir ve aynı siteye yapılan istekler arasında beklenir.",
+ "Pages will be downloaded without checking the robots.txt of the site. Switch the check off?": "Sayfalar sitenin robots.txt dosyasına bakılmadan indirilecek. Kontrol kapatılsın mı?",
+ "Download settings saved": "İndirme ayarları kaydedildi"
 }

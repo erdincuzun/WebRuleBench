@@ -288,3 +288,6 @@ th.th-num { text-align: right; }
 .lang-switch button:hover { color: var(--text); }
 .lang-switch button.active { background: rgba(91,124,250,.15); color: var(--text); }
 .login-lang { display: flex; justify-content: center; margin-top: 4px; }
+.dl-settings { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--text2); }
+.dl-settings label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.dl-settings input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 2px 5px; font-size: 12px; }

@@ -5,6 +5,10 @@
   <input type="search" id="q" class="picker" placeholder="{{ T('Search domain, name or country...') }}">
   <select id="fCountry" title="{{ T('Country') }}"></select>
   <span class="muted" id="count"></span>
+  <span class="dl-settings" data-admin title="{{ T('Before a page is downloaded, the robots.txt of the site is checked and requests to one site are spaced.') }}">
+    <label><input type="checkbox" id="dlRobots" onchange="saveDlSettings()"> {{ T("Check robots.txt") }}</label>
+    <label>{{ T("Pause between requests (s)") }} <input type="number" id="dlDelay" min="0" max="60" step="0.5" style="width:56px" onchange="saveDlSettings()"></label>
+  </span>
 </div>
 <div class="table-wrap">
   <table>
@@ -67,6 +71,13 @@
     <b>Sayfayı yeniden indir</b> araçları bulunur (admin).</li>
   <li><b>⚡ Toplu ekle</b> (admin): bir listing sayfasından CSS selector ile linkler çıkarılır, bulunan sayfalar sırayla indirilir.</li>
 </ol>
+<h3>Sayfaları özenli indirme</h3>
+<p>Bir sayfa indirilmeden önce sitenin <span class="mono">robots.txt</span> dosyası okunur (site başına bir kez, bir saat saklanır) ve adres
+  <span class="mono">WebRuleBench</span> ile <span class="mono">*</span> kullanıcı ajanları için kontrol edilir. İzin verilmeyen sayfa indirilmez;
+  robots.txt dosyası sunucu hatası yüzünden okunamayan sitenin sayfası da indirilmez; robots.txt'i olmayan sitede kural yoktur.
+  Aynı siteye yapılan istekler arasında sitenin <span class="mono">Crawl-delay</span> değeri ya da <b>İstekler arası bekleme</b>
+  (hangisi uzunsa) kadar beklenir. Admin kontrolü kapatabilir ve beklemeyi değiştirebilir (bu sayfanın üstünde); değişiklik denetim kaydına
+  yazılır. Sitenin kullanım şartlarına ayrıca bakın: robots.txt onların yerini tutmaz.</p>
 <h3>Ülke</h3>
 <ul>
   <li>Ülke listeden seçilir; listede yoksa <b>+ Yeni ülke…</b> ile İngilizce adı, ISO 3166 kodu (TR, FR…), kıtası ve dili girilir.</li>
@@ -92,6 +103,13 @@
     <b>Re-download page</b> tools (admin).</li>
   <li><b>⚡ Bulk add</b> (admin): links are extracted from a listing page with a CSS selector and the pages found are downloaded one by one.</li>
 </ol>
+<h3>Downloading politely</h3>
+<p>Before a page is downloaded, the site's <span class="mono">robots.txt</span> is read (once per site, cached for an hour) and the address is
+  checked for the user agents <span class="mono">WebRuleBench</span> and <span class="mono">*</span>. A page that is not allowed is not downloaded,
+  and neither is one of a site whose robots.txt cannot be read because of a server error; a site without a robots.txt has no rules.
+  Requests to the same site are spaced by its <span class="mono">Crawl-delay</span> or by <b>Pause between requests</b>, whichever is longer.
+  An administrator can switch the check off and change the pause (top of this page); the change is written to the audit log.
+  Check the terms of use of a site yourself: robots.txt does not replace them.</p>
 <h3>Country</h3>
 <ul>
   <li>The country is selected from the list; if it is not listed, use <b>+ New country…</b> and enter its English name, ISO 3166 code (TR, FR…), continent and language.</li>
@@ -303,7 +321,23 @@ document.getElementById('sfCountry').addEventListener('change', () => {
 document.getElementById('sfUrl').addEventListener('change', e => applySuggestion(domainOf(e.target.value.trim()), true));
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && _form) closeSiteForm(); });
 
+// Politeness settings of the downloader (robots.txt check, pause between requests to one site)
+async function loadDlSettings() {
+  const s = await fetch('/api/download-settings').then(r => r.json());
+  document.getElementById('dlRobots').checked = !!s.respect_robots;
+  document.getElementById('dlDelay').value = s.min_delay_s;
+}
+async function saveDlSettings() {
+  const on = document.getElementById('dlRobots').checked;
+  if (!on && !confirm(T('Pages will be downloaded without checking the robots.txt of the site. Switch the check off?'))) { loadDlSettings(); return; }
+  const r = await fetch('/api/download-settings', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({respect_robots: on, min_delay_s: parseFloat(document.getElementById('dlDelay').value) || 0})}).then(r => r.json());
+  Hub.toast(r.success ? '✓ ' + T('Download settings saved') : (r.error || T('Error')), r.success ? 'ok' : 'err');
+  loadDlSettings();
+}
+
 Hub.ready().then(async () => {
+  loadDlSettings();
   await reload();
   document.getElementById('q').addEventListener('input', render);
   document.getElementById('fCountry').addEventListener('change', render);

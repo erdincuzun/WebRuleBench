@@ -243,6 +243,12 @@ pages that need their scripts to render: the page is then served with
 application's cookies, storage or API (element picking is not available in this
 mode). Rules are always run on the stored HTML, never on a page changed by scripts.
 
+Downloading pages: the downloader checks the site's robots.txt before each page and
+spaces its requests (see the Data Collection help). It is meant for collecting a small
+number of pages per site for annotation; whether a site's terms of use permit this, and
+what may be done with the pages afterwards, is the user's responsibility. Downloaded
+pages are the publishers' content and should not be redistributed without permission.
+
 Deployment assumptions: run the application on your own machine or behind your
 institution's network; put it behind HTTPS if it is reached over a network; do not
 expose it to the public internet; give accounts only to annotators you trust (an

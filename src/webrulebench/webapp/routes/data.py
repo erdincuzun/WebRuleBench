@@ -82,6 +82,21 @@ def api_site(domain):
     })
 
 
+@bp.route("/api/download-settings", methods=["GET", "POST"])
+def api_download_settings():
+    """Politeness settings of the downloader: robots.txt check and pause between requests (admin to change)."""
+    if request.method == "POST":
+        _, err = require_admin()
+        if err: return err
+        try:
+            s = FETCH_POLICY.save_settings(request.get_json(silent=True) or {})
+        except (TypeError, ValueError):
+            return jsonify({"error": _t("Invalid value")}), 400
+        _audit(f"DOWNLOAD_SETTINGS  user={current_user()}  respect_robots={s['respect_robots']}  min_delay_s={s['min_delay_s']}")
+        return jsonify({"success": True, **s})
+    return jsonify(FETCH_POLICY.settings())
+
+
 # Downloaded pages are untrusted content shown inside the application. By default their scripts do not run
 # (also inline handlers and javascript: links), so a page cannot act in the application's origin; the
 # previews load it in an iframe that the application can still read to highlight and pick elements.

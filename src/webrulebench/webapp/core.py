@@ -54,7 +54,14 @@ def _fetch_html(url: str) -> tuple[str | None, str, str | None]:
     """
     Fetch a URL: requests first, Playwright fallback.
     Returns (html, method, error_message)
+    The site's robots.txt is checked first and requests to one host are spaced (fetch_policy.py); both can
+    be changed in the download settings.
     """
+    rb = FETCH_POLICY.check(url)
+    if not rb["allowed"]:
+        return None, "robots", ("robots.txt of the site does not allow this page"
+                                if rb["robots"] == "disallowed" else "robots.txt of the site could not be read")
+    FETCH_POLICY.wait(url, rb["crawl_delay"])
     # 1. requests
     try:
         resp = _requests.get(url, headers=FETCH_HEADERS, timeout=20, allow_redirects=True)
@@ -99,6 +106,16 @@ EXCLUDED_FILE   = BASE_DIR / "dataset" / "excluded_domains.json"
 SITES_FILE      = BASE_DIR / "sites.json"
 INDEX_FILE      = BASE_DIR / "dataset" / "index.json"
 DL_LOG_FILE     = BASE_DIR / "dataset" / "download_log.json"
+DL_SETTINGS_FILE = BASE_DIR / "dataset" / "download_settings.json"
+
+
+def _robots_get(url: str):
+    r = _requests.get(url, headers=FETCH_HEADERS, timeout=10, allow_redirects=True)
+    return r.status_code, r.text
+
+
+from webrulebench.pipeline.fetch_policy import FetchPolicy   # noqa: E402
+FETCH_POLICY = FetchPolicy(DL_SETTINGS_FILE, _robots_get)
 
 TEMPLATES_FILE  = BASE_DIR / "layout_templates.json"
 TEMPLATE_PROMPTS_FILE = BASE_DIR / "template_prompts.json"
