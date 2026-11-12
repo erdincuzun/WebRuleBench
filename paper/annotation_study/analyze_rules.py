@@ -182,31 +182,39 @@ def extraction_speed(runs: dict, repeats: int = 3) -> dict:
 
 
 def write_table(runs: list, speed: dict, path: Path):
-    """Makaledeki sonuç tablosu: model, kural dili, skorlar (0–100), LLM süresi, çıkarım süresi (medyan ms/sayfa).
-    a: düşünme kapalı (think = false); b: bir layout'un yanıtı çıktı sınırında kesildi (kural yok)."""
+    """Results table of the paper: model, rule language, scores (0–100), range of the sample-page difference over
+    the layouts, LLM time and extraction time (median ms/page); below it the reference points (annotators' own
+    rules, generic rules) and the runs with a random sample page.
+    a: thinking disabled; b: one response cut off at the output limit; c: regex written from the skeleton."""
     lang = {"css": "CSS", "xpath": "XPath", "regex": "regex"}
-    # ortak ayarlar kayıtlardan okunur (bütün deneylerde aynı olmalı)
+    # settings shared by all experiments are read from the records
     common = {(json.dumps(e["config"]["sample"], sort_keys=True), e["config"]["strategy"],
-               *(e["config"]["backend_snapshot"]["params"].get(k) for k in ("temperature", "seed", "max_tokens")))
-              for e in runs}
+               *(e["config"]["backend_snapshot"]["params"].get(k) for k in ("temperature", "seed", "max_tokens")),
+               e["config"]["backend_snapshot"]["model_info"]["quantization"]) for e in runs}
     assert len(common) == 1, f"experiments differ in settings: {common}"
-    sample, strategy, temp, seed, max_tokens = next(iter(common))
-    sample = json.loads(sample)
-    sample = ("the first ground-truth page of each layout as the sample" if sample["mode"] == "first"
-              else f"a random ground-truth page of each layout as sample (seed {sample.get('seed')})")
+    sample, strategy, temp, seed, max_tokens, quant = next(iter(common))
+    assert json.loads(sample)["mode"] == "first"
+    res = HERE / "results"
+    ref = json.loads((res / "ceiling_baseline.json").read_text(encoding="utf-8"))
+    rnd = [e for e in (json.loads(p.read_text(encoding="utf-8")) for p in sorted((res / "experiments_sample_pages").glob("*.json")))
+           if e["config"]["sample"]["mode"] == "random"]
+    rng = lambda xs: f"{min(xs):.1f}--{max(xs):.1f}"
     lines = [r"\begin{table}[!htb]", r"  \centering", r"  \footnotesize", r"  \setlength{\tabcolsep}{2.5pt}", r"  \setlength{\abovetopsep}{3pt}",
-             r"  \caption{LLM experiments on the ten layouts of the annotation study. Ollama; temperature "
-             f"{temp:g}, seed {seed}, at most {max_tokens} output tokens; {strategy.replace('_', ' ')} cleaning; {sample}. "
-             r"Mean scores (0--100) over all ground-truth pages, the sample page and the remaining pages. "
-             r"\textbf{LLM:} time for the ten calls on a laptop (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median "
-             r"over pages of the best of three runs from the raw HTML, including parsing.}",
+             r"  \caption{LLM experiments on the ten layouts of the annotation study, scored against the reviewed reference. "
+             + f"Ollama, 4-bit quantized models ({quant.replace('_', chr(92) + '_')}); temperature {temp:g}, seed {seed}, at most {max_tokens} output tokens; "
+             + f"{strategy.replace('_', ' ')} cleaning; the first ground-truth page of each layout as the sample. "
+             + r"\textbf{Mean:} mean score (0--100) over all ground-truth pages. \textbf{Sample:} score on the sample pages (ten pages, "
+             r"one per layout). \textbf{Gap:} smallest and largest difference, over the ten layouts, between the sample page and "
+             r"the other pages of the layout. \textbf{LLM:} time for the ten calls on a laptop (Apple M1 Pro, 16 GB RAM). "
+             r"\textbf{ms/page:} median over pages of the best of three runs from the raw HTML, including parsing.}",
              r"  \label{tab:llm}", r"  \begin{tabular}{@{}lrlrrrrr@{}}", r"    \toprule",
-             r"    Model (Ollama) & Params & Rules & Mean & Sample & Others & LLM (s) & ms/page \\", r"    \midrule"]
-    used = set()
+             r"    Model (Ollama) & Params & Rules & Mean & Sample & Gap & LLM (s) & ms/page \\", r"    \midrule"]
+    used, digests = set(), {}
     for i, e in enumerate(runs):
         c, s = e["config"], e["summary"]
         snap = c.get("backend_snapshot") or {}
         info, params = snap.get("model_info") or {}, snap.get("params") or {}
+        digests[c["model"]] = info.get("digest", "")[:12]
         rules = "CSS$\\rightarrow$REGEXN" if c.get("rule_source") == "llm_css_regexn" else lang[c["rule_type"]]
         marks = ""
         if (snap.get("model_overrides") or {}).get("think") is False:
@@ -215,15 +223,30 @@ def write_table(runs: list, speed: dict, path: Path):
                for lay in e["layouts"]):
             marks += "b"
         used |= set(marks)
+        rmark = ""
+        if c["rule_type"] == "regex" and c.get("rule_source", "llm") == "llm":
+            rmark, used = "$^{c}$", used | {"c"}
+        gaps = [100 * (lay["summary"]["sample_mean"] - lay["summary"]["others_mean"]) for lay in e["layouts"] if not lay.get("error")]
         if i and c["rule_type"] != runs[i - 1]["config"]["rule_type"] and c["rule_type"] == "xpath":
             lines.append(r"    \midrule")
         lines.append(f"    \\texttt{{{c['model']}}}{'$^{' + ','.join(marks) + '}$' if marks else ''} & "
-                     f"{info.get('parameter_size', '')} & {rules} & {100 * s['mean']:.1f} & {100 * s['sample_mean']:.1f} & "
-                     f"{100 * s['others_mean']:.1f} & {s['llm_ms'] / 1000:.0f} & {speed[label(e)]['median_ms']:.1f} \\\\")
-    notes = {"a": r"$^a$ thinking disabled", "b": r"$^b$ one response cut off at the output limit"}
-    lines += [r"    \bottomrule"]
-    if used:      # dipnot tablonun sol kenarında, tablonun bir satırı olarak
-        lines += [r"    \multicolumn{8}{@{}l}{\rule{0pt}{2.4ex}" + "; ".join(notes[k] for k in sorted(used)) + r".} \\"]
+                     f"{info.get('parameter_size', '')} & {rules}{rmark} & {100 * s['mean']:.1f} & {100 * s['sample_mean']:.1f} & "
+                     f"${min(gaps):+.1f}$ to ${max(gaps):+.1f}$ & {s['llm_ms'] / 1000:.0f} & {speed[label(e)]['median_ms']:.1f} \\\\")
+    ann = [ref[a]["summary"] for a in ("A1", "A2", "A3")]
+    base = ref["baseline"]["summary"]
+    lines += [r"    \midrule",
+              f"    Annotators' own rules (A1--A3)$^{{d}}$ & & CSS & {rng([a['mean'] for a in ann])} & {rng([a['sample_mean'] for a in ann])} & & & \\\\",
+              f"    Generic rules, the same for every site$^{{e}}$ & & CSS & {base['mean']:.1f} & {base['sample_mean']:.1f} & & & \\\\",
+              f"    \\texttt{{qwen2.5-coder:14b}}, random sample page$^{{f}}$ & 14.8B & CSS & {rng([100 * e['summary']['mean'] for e in rnd])} & "
+              f"{rng([100 * e['summary']['sample_mean'] for e in rnd])} & & & \\\\",
+              r"    \bottomrule"]
+    notes = {"a": r"$^a$ thinking disabled", "b": r"$^b$ one response cut off at the output limit",
+             "c": r"$^c$ written from the skeleton, which omits attributes"}
+    note = lambda s: r"    \multicolumn{8}{@{}p{\linewidth}@{}}{\rule{0pt}{2.4ex}" + s + r"} \\"
+    lines += [note("; ".join(notes[k] for k in sorted(used)) + r"; $^d$ scored like an LLM configuration; an optimistic upper reference, because "
+                   r"the reference was built from these rules; $^e$ e.g.\ \texttt{h1}, \texttt{article}, \texttt{time}, written without "
+                   + f"looking at a page; $^f$ {len(rnd)} runs, each with a randomly chosen ground-truth page per layout."),
+              note("Model digests: " + "; ".join(f"\\texttt{{{m}}} \\texttt{{{d}}}" for m, d in digests.items()) + ".")]
     lines += [r"  \end{tabular}", r"\end{table}"]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

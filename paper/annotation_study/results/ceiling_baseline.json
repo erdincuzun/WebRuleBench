@@ -1,0 +1,90 @@
+{
+ "A1": {
+  "summary": {
+   "mean": 85.4,
+   "sample_mean": 89.9,
+   "others_mean": 85.3
+  },
+  "per_field": {
+   "title": 99.6,
+   "body": 89.5,
+   "author": 95.0,
+   "date": 94.0,
+   "category": 71.1,
+   "images": 97.0,
+   "images_caption": 81.3,
+   "related_links": 90.3,
+   "summary": 100.0,
+   "tags": 0.0
+  }
+ },
+ "A2": {
+  "summary": {
+   "mean": 84.5,
+   "sample_mean": 89.5,
+   "others_mean": 84.3
+  },
+  "per_field": {
+   "title": 99.6,
+   "body": 92.1,
+   "author": 94.9,
+   "date": 92.2,
+   "category": 70.4,
+   "images": 99.8,
+   "images_caption": 81.5,
+   "related_links": 41.9,
+   "summary": 0.0,
+   "tags": 60.0
+  }
+ },
+ "A3": {
+  "summary": {
+   "mean": 84.4,
+   "sample_mean": 88.3,
+   "others_mean": 84.4
+  },
+  "per_field": {
+   "title": 95.8,
+   "body": 98.2,
+   "author": 72.3,
+   "date": 92.2,
+   "category": 71.3,
+   "images": 94.2,
+   "images_caption": 93.6,
+   "related_links": 41.9,
+   "summary": 0.0,
+   "tags": 60.0
+  }
+ },
+ "baseline": {
+  "summary": {
+   "mean": 36.9,
+   "sample_mean": 36.5,
+   "others_mean": 37.0
+  },
+  "per_field": {
+   "title": 90.0,
+   "body": 38.2,
+   "author": 11.0,
+   "date": 32.6,
+   "category": 38.5,
+   "images": 15.7,
+   "images_caption": 73.0,
+   "related_links": 0.0,
+   "summary": 0.0,
+   "tags": 20.0
+  }
+ },
+ "baseline_rules": {
+  "title": "h1",
+  "body": "article",
+  "author": "[rel=author]",
+  "date": "time",
+  "category": "[class*=breadcrumb] a",
+  "images": "article img",
+  "images_caption": "figcaption",
+  "related_links": "",
+  "summary": "",
+  "tags": "[rel=tag]"
+ }
+}
