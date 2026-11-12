@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-11
+
+Changes made in response to the review of the SoftwareX submission, and changes to the LLM calls.
 
 - Documentation: `docs/custom_template.md`, a worked example of a template for another page type (shop product
   pages with discount and shipping): planning the fields, creating the template in the interface or through the

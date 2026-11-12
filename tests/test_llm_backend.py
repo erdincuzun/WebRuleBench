@@ -147,7 +147,6 @@ def stalled_headers_server():
     """Durum satırını yollayıp başlıkları ara ara bir bayt yazan, başlıkları hiç bitirmeyen sunucu."""
     import socket
     import threading
-    import time
 
     srv = socket.socket()
     srv.bind(("127.0.0.1", 0))
