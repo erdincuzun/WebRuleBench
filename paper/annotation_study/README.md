@@ -13,9 +13,14 @@ LLM experiments with five local models.
 | `analyze_rules.py` | analysis of the LLM rules (Section 3.2): lost points by label, XPath class tests, regex on skeleton vs. raw page, extraction time per page; writes the results table |
 | `results/agreement.json`, `results/per_*.csv` | agreement results |
 | `results/fig_agreement.*`, `results/table_agreement.tex` | figure and table |
-| `results/experiments/*.json` | the eight LLM experiment records, one comparison group run with WebRuleBench 1.0.4: configuration, prompts, generated rules, per-page scores, tokens and model digest |
-| `results/llm_experiments.csv` | one row per experiment: mean, sample-page and other-page scores, tokens, time, per-field means |
-| `results/manifest_llm_experiments.json` | reproducibility manifest of the experiments, as exported by the reports section |
+| `results/experiments_submitted/*.json` | the eight LLM experiment records as run with WebRuleBench 1.0.4 (one comparison group): configuration, prompts, generated rules, tokens, model digest, and the per-page scores against the first reference |
+| `rescore.py` | rescores the saved rules of these records against the reviewed reference (no LLM call) |
+| `results/experiments/*.json` | the same records with the rescored per-page scores and summaries; `rescored.submitted_summary` keeps the first summary |
+| `results/llm_experiments.csv` | one row per experiment: mean, sample-page and other-page scores, tokens, time, per-field means (rescored) |
+| `results/coverage.csv` | scored page–field pairs by layout and field; for the others the reason (no rule by any annotator, left out by the administrator, rule returns no value on the page) and the source of each approved rule |
+| `results/sample_gap.csv` | sample page vs. the other pages, per experiment and layout |
+| `results/rescore.json` | summary of the rescoring: first vs. rescored means, coverage, distribution of the sample-page differences |
+| `results/manifest_llm_experiments.json` | reproducibility manifest of the original run, as exported by the reports section |
 | `results/rule_analysis.json`, `results/table_llm.tex` | output of `analyze_rules.py` and the results table |
 
 ## Data
@@ -32,8 +37,20 @@ pip install -e .                                   # from the repository root
 export WRB_DATA_DIR=<folder with the open record and the extracted html.zip>
 python paper/annotation_study/analyze.py --annotators A1 A2 A3   # agreement (Table 3)
 python paper/annotation_study/make_figures.py                    # figure and LaTeX table (needs .[figures])
-python paper/annotation_study/analyze_rules.py                   # rule analysis (Section 3.2)
+python paper/annotation_study/rescore.py                         # rescore the saved LLM rules (Table 4 scores, coverage)
+python paper/annotation_study/analyze_rules.py                   # rule analysis (Section 3.2), writes the results table
 ```
+
+`rescore.py` and `analyze_rules.py` need the HTML pages (available on request); the agreement analysis and the
+published tables can be recomputed from the open record and the saved results.
+
+## Reference used for the scores
+
+The first reference had been approved from the rules of one annotator before the other two annotated. The study
+and a page-by-page comparison of the output of the three annotators' rules showed fields that were missing from
+it, two category rules that selected the tag list, and rules that returned more than the field. The administrator
+reviewed these cases; every change and its reason is listed in `paper/softwarex/gt_review.md`. The saved LLM rules
+were then rescored. The order of the eight configurations did not change; the means changed by −2.8 to +2.2 points.
 
 The experiment records can also be copied into `$WRB_DATA_DIR/experiments/` and opened in the web application
 (LLM Evaluation and Reports); re-running an experiment needs a local Ollama server with the model of the record.

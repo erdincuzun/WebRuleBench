@@ -1,0 +1,101 @@
+domain,layout_id,field,pages,scored,not_scored,status,annotators_with_rule,source
+20minutos.es,layout-2,title,41,41,0,reference rule,A1 A2 A3,A1
+20minutos.es,layout-2,body,41,41,0,reference rule,A1 A2 A3,A1 A3
+20minutos.es,layout-2,author,41,41,0,reference rule,A1 A2 A3,A1 A2 A3
+20minutos.es,layout-2,date,41,41,0,reference rule,A1 A2 A3,A1 A2 A3
+20minutos.es,layout-2,category,41,41,0,reference rule,A1 A2 A3,A1
+20minutos.es,layout-2,images,41,41,0,reference rule,A1 A2 A3,A1 A2
+20minutos.es,layout-2,images_caption,41,41,0,reference rule,A1 A2 A3,A1
+20minutos.es,layout-2,related_links,41,34,7,reference rule,A1 A2,A1
+20minutos.es,layout-2,summary,41,0,41,no rule by any annotator,,
+20minutos.es,layout-2,tags,41,41,0,reference rule,A2 A3,A2
+24chasa.bg,layout-1,title,40,40,0,reference rule,A1 A2 A3,A1 A2
+24chasa.bg,layout-1,body,40,40,0,reference rule,A1 A2 A3,A1 A2 A3
+24chasa.bg,layout-1,author,40,9,31,reference rule,A1 A2,A2
+24chasa.bg,layout-1,date,40,40,0,reference rule,A1 A2 A3,A1 A2 A3
+24chasa.bg,layout-1,category,40,40,0,reference rule,A1,A1
+24chasa.bg,layout-1,images,40,40,0,reference rule,A1 A2 A3,A1
+24chasa.bg,layout-1,images_caption,40,33,7,reference rule,A3,administrator
+24chasa.bg,layout-1,related_links,40,37,3,reference rule,A1 A2 A3,A1
+24chasa.bg,layout-1,summary,40,0,40,no rule by any annotator,,
+24chasa.bg,layout-1,tags,40,0,40,no rule by any annotator,,
+525.az,layout-1,title,49,49,0,reference rule,A1 A2 A3,A1 A2 A3
+525.az,layout-1,body,49,49,0,reference rule,A1 A2 A3,A1 A2
+525.az,layout-1,author,49,0,49,no rule by any annotator,,
+525.az,layout-1,date,49,49,0,reference rule,A1 A2 A3,A1
+525.az,layout-1,category,49,49,0,reference rule,A1 A2 A3,A1
+525.az,layout-1,images,49,49,0,reference rule,A1 A2 A3,A1
+525.az,layout-1,images_caption,49,0,49,no rule by any annotator,,
+525.az,layout-1,related_links,49,0,49,no rule by any annotator,,
+525.az,layout-1,summary,49,0,49,no rule by any annotator,,
+525.az,layout-1,tags,49,0,49,no rule by any annotator,,
+abante.com.ph,layout-1,title,45,45,0,reference rule,A1 A2 A3,A1
+abante.com.ph,layout-1,body,45,45,0,reference rule,A1 A2 A3,A1
+abante.com.ph,layout-1,author,45,0,45,left out by the administrator,A3,
+abante.com.ph,layout-1,date,45,45,0,reference rule,A1 A2 A3,A1 A2 A3
+abante.com.ph,layout-1,category,45,45,0,reference rule,A3,A3
+abante.com.ph,layout-1,images,45,45,0,reference rule,A1 A2 A3,A2 A3
+abante.com.ph,layout-1,images_caption,45,0,45,no rule by any annotator,,
+abante.com.ph,layout-1,related_links,45,45,0,reference rule,A1 A2 A3,administrator
+abante.com.ph,layout-1,summary,45,0,45,no rule by any annotator,,
+abante.com.ph,layout-1,tags,45,30,15,reference rule,,administrator
+abendzeitung.de,layout-1,title,41,41,0,reference rule,A1 A2 A3,A1
+abendzeitung.de,layout-1,body,41,41,0,reference rule,A1 A2 A3,A1 A3
+abendzeitung.de,layout-1,author,41,36,5,reference rule,A1 A2 A3,A2 A3
+abendzeitung.de,layout-1,date,41,41,0,reference rule,A1 A2 A3,A2 A3
+abendzeitung.de,layout-1,category,41,41,0,reference rule,A1 A2 A3,A2 A3
+abendzeitung.de,layout-1,images,41,40,1,reference rule,A1 A2 A3,A2
+abendzeitung.de,layout-1,images_caption,41,40,1,reference rule,A1 A2 A3,A2 A3
+abendzeitung.de,layout-1,related_links,41,0,41,no rule by any annotator,,
+abendzeitung.de,layout-1,summary,41,0,41,no rule by any annotator,,
+abendzeitung.de,layout-1,tags,41,34,7,reference rule,A3,A3
+adevarul.ro,layout-1,title,40,40,0,reference rule,A1 A2 A3,A1
+adevarul.ro,layout-1,body,40,40,0,reference rule,A1 A2 A3,A3
+adevarul.ro,layout-1,author,40,40,0,reference rule,A1 A2 A3,administrator
+adevarul.ro,layout-1,date,40,40,0,reference rule,A1 A2 A3,A1
+adevarul.ro,layout-1,category,40,40,0,reference rule,A1 A2 A3,A1
+adevarul.ro,layout-1,images,40,40,0,reference rule,A1 A2 A3,A1
+adevarul.ro,layout-1,images_caption,40,35,5,reference rule,A1 A2 A3,A1 A2
+adevarul.ro,layout-1,related_links,40,34,6,reference rule,A1 A2 A3,A1
+adevarul.ro,layout-1,summary,40,0,40,no rule by any annotator,,
+adevarul.ro,layout-1,tags,40,37,3,reference rule,A2 A3,A2
+agenciabrasil.ebc.com.br,layout-2,title,40,40,0,reference rule,A1 A2 A3,A1
+agenciabrasil.ebc.com.br,layout-2,body,40,40,0,reference rule,A1 A2 A3,A1
+agenciabrasil.ebc.com.br,layout-2,author,40,40,0,reference rule,A1 A2 A3,A1
+agenciabrasil.ebc.com.br,layout-2,date,40,40,0,reference rule,A1 A2 A3,A1
+agenciabrasil.ebc.com.br,layout-2,category,40,40,0,reference rule,A1 A2 A3,A2
+agenciabrasil.ebc.com.br,layout-2,images,40,40,0,reference rule,A1 A2 A3,A1
+agenciabrasil.ebc.com.br,layout-2,images_caption,40,40,0,reference rule,A1 A2 A3,A1
+agenciabrasil.ebc.com.br,layout-2,related_links,40,40,0,reference rule,A1 A2 A3,A1
+agenciabrasil.ebc.com.br,layout-2,summary,40,0,40,no rule by any annotator,,
+agenciabrasil.ebc.com.br,layout-2,tags,40,40,0,reference rule,A2 A3,A2
+akipress.com,layout-1,title,44,44,0,reference rule,A1 A2 A3,administrator
+akipress.com,layout-1,body,44,44,0,reference rule,A1 A2 A3,A3
+akipress.com,layout-1,author,44,0,44,no rule by any annotator,,
+akipress.com,layout-1,date,44,44,0,reference rule,A1 A2 A3,administrator
+akipress.com,layout-1,category,44,44,0,reference rule,A1 A2 A3,A1
+akipress.com,layout-1,images,44,44,0,reference rule,A1 A2 A3,A1
+akipress.com,layout-1,images_caption,44,0,44,no rule by any annotator,,
+akipress.com,layout-1,related_links,44,23,21,reference rule,A1 A2,A1
+akipress.com,layout-1,summary,44,0,44,no rule by any annotator,,
+akipress.com,layout-1,tags,44,0,44,no rule by any annotator,,
+alayam.com,layout-1,title,42,42,0,reference rule,A1 A2 A3,A1 A2
+alayam.com,layout-1,body,42,41,1,reference rule,A1 A2 A3,A1
+alayam.com,layout-1,author,42,0,42,left out by the administrator,,
+alayam.com,layout-1,date,42,41,1,reference rule,A1 A2 A3,A1
+alayam.com,layout-1,category,42,41,1,reference rule,A1 A2 A3,A1
+alayam.com,layout-1,images,42,35,7,reference rule,A1 A2 A3,A1
+alayam.com,layout-1,images_caption,42,0,42,no rule by any annotator,,
+alayam.com,layout-1,related_links,42,2,40,reference rule,A1,A1
+alayam.com,layout-1,summary,42,0,42,no rule by any annotator,,
+alayam.com,layout-1,tags,42,0,42,no rule by any annotator,,
+aljazeera.com,layout-2,title,41,41,0,reference rule,A1 A2 A3,A1
+aljazeera.com,layout-2,body,41,41,0,reference rule,A1 A2 A3,A1
+aljazeera.com,layout-2,author,41,40,1,reference rule,A1 A2 A3,A1 A2
+aljazeera.com,layout-2,date,41,41,0,reference rule,A1 A2 A3,administrator
+aljazeera.com,layout-2,category,41,41,0,reference rule,A1 A2 A3,A1
+aljazeera.com,layout-2,images,41,41,0,reference rule,A1 A2 A3,A1
+aljazeera.com,layout-2,images_caption,41,41,0,reference rule,A1 A2 A3,A1
+aljazeera.com,layout-2,related_links,41,13,28,reference rule,A1 A2 A3,A1
+aljazeera.com,layout-2,summary,41,41,0,reference rule,A1,A1
+aljazeera.com,layout-2,tags,41,0,41,no rule by any annotator,,

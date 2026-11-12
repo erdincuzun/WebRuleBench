@@ -140,8 +140,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_002.html": {
@@ -182,8 +182,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_003.html": {
@@ -224,8 +224,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_004.html": {
@@ -266,8 +266,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_005.html": {
@@ -308,8 +308,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_006.html": {
@@ -350,8 +350,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_007.html": {
@@ -392,8 +392,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_008.html": {
@@ -434,8 +434,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_009.html": {
@@ -476,8 +476,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_010.html": {
@@ -518,8 +518,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_011.html": {
@@ -560,8 +560,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_012.html": {
@@ -602,8 +602,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_013.html": {
@@ -644,8 +644,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_014.html": {
@@ -686,8 +686,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_015.html": {
@@ -728,8 +728,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_016.html": {
@@ -770,8 +770,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_017.html": {
@@ -812,8 +812,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_018.html": {
@@ -854,8 +854,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_019.html": {
@@ -896,8 +896,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_020.html": {
@@ -938,8 +938,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_021.html": {
@@ -980,8 +980,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_022.html": {
@@ -1022,8 +1022,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_023.html": {
@@ -1064,8 +1064,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_024.html": {
@@ -1106,8 +1106,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_025.html": {
@@ -1148,8 +1148,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_026.html": {
@@ -1190,8 +1190,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_027.html": {
@@ -1232,8 +1232,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_028.html": {
@@ -1274,8 +1274,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_029.html": {
@@ -1316,8 +1316,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_030.html": {
@@ -1358,8 +1358,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_031.html": {
@@ -1400,8 +1400,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_032.html": {
@@ -1442,8 +1442,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_033.html": {
@@ -1484,8 +1484,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_034.html": {
@@ -1526,8 +1526,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_035.html": {
@@ -1568,8 +1568,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_036.html": {
@@ -1610,8 +1610,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_037.html": {
@@ -1652,8 +1652,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_038.html": {
@@ -1694,8 +1694,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_039.html": {
@@ -1736,8 +1736,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_040.html": {
@@ -1778,8 +1778,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_041.html": {
@@ -1820,8 +1820,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     }
    },
@@ -1863,7 +1863,7 @@
      "images_caption": 0.0,
      "related_links": 0.0,
      "summary": null,
-     "tags": null
+     "tags": 0.0
     }
    }
   },
@@ -1942,8 +1942,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -1984,8 +1984,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2026,8 +2026,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2068,8 +2068,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2110,8 +2110,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2194,8 +2194,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2236,8 +2236,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2278,8 +2278,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2320,8 +2320,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2362,8 +2362,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2446,8 +2446,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2488,8 +2488,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2530,8 +2530,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2572,8 +2572,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2614,8 +2614,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2656,8 +2656,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2740,8 +2740,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2782,8 +2782,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2824,8 +2824,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2866,8 +2866,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2908,8 +2908,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2950,8 +2950,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -2992,8 +2992,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3034,8 +3034,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": null,
@@ -3076,8 +3076,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3118,8 +3118,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3202,8 +3202,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3244,8 +3244,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3286,8 +3286,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3328,8 +3328,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3370,8 +3370,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3454,8 +3454,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3496,8 +3496,8 @@
       "label": "MISS"
      },
      "images_caption": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "related_links": {
       "score": 0.0,
@@ -3590,7 +3590,7 @@
      "date": 0.0,
      "category": 0.0,
      "images": 0.0,
-     "images_caption": null,
+     "images_caption": 0.0,
      "related_links": 0.0,
      "summary": null,
      "tags": null
@@ -5730,8 +5730,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -5772,8 +5772,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -5814,8 +5814,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -5856,8 +5856,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -5868,16 +5868,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_005.html": {
@@ -5898,8 +5898,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -5910,16 +5910,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_006.html": {
@@ -5940,8 +5940,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -5952,16 +5952,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_007.html": {
@@ -5982,8 +5982,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6024,8 +6024,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6036,16 +6036,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_009.html": {
@@ -6066,8 +6066,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6108,8 +6108,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6120,8 +6120,8 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
@@ -6150,8 +6150,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6162,16 +6162,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_012.html": {
@@ -6192,8 +6192,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6204,16 +6204,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_013.html": {
@@ -6234,8 +6234,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6276,8 +6276,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6288,16 +6288,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_015.html": {
@@ -6318,8 +6318,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6330,16 +6330,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_016.html": {
@@ -6360,8 +6360,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6372,16 +6372,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_017.html": {
@@ -6402,8 +6402,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6414,16 +6414,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_018.html": {
@@ -6444,8 +6444,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6456,16 +6456,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_019.html": {
@@ -6486,8 +6486,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6498,16 +6498,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_020.html": {
@@ -6528,8 +6528,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6570,8 +6570,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6612,8 +6612,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6624,8 +6624,8 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
@@ -6654,8 +6654,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6666,16 +6666,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_024.html": {
@@ -6696,8 +6696,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6708,16 +6708,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_025.html": {
@@ -6738,8 +6738,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6750,16 +6750,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_026.html": {
@@ -6780,8 +6780,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6792,16 +6792,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_027.html": {
@@ -6822,8 +6822,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6834,16 +6834,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_028.html": {
@@ -6864,8 +6864,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6876,16 +6876,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_029.html": {
@@ -6906,8 +6906,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6918,16 +6918,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_030.html": {
@@ -6948,8 +6948,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -6960,16 +6960,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_031.html": {
@@ -6990,8 +6990,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7032,8 +7032,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7044,8 +7044,8 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
@@ -7074,8 +7074,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7086,8 +7086,8 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
@@ -7116,8 +7116,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7128,16 +7128,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_035.html": {
@@ -7158,8 +7158,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7170,16 +7170,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_036.html": {
@@ -7200,8 +7200,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7212,16 +7212,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_037.html": {
@@ -7242,8 +7242,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7254,16 +7254,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_038.html": {
@@ -7284,8 +7284,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7326,8 +7326,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7338,16 +7338,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_040.html": {
@@ -7368,8 +7368,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7380,16 +7380,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_041.html": {
@@ -7410,8 +7410,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7422,16 +7422,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_042.html": {
@@ -7452,8 +7452,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7464,16 +7464,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_043.html": {
@@ -7494,8 +7494,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7506,16 +7506,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_044.html": {
@@ -7536,8 +7536,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7548,16 +7548,16 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      }
     },
     "article_045.html": {
@@ -7578,8 +7578,8 @@
       "label": "MATCH"
      },
      "category": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "images": {
       "score": 0.0,
@@ -7590,8 +7590,8 @@
       "label": "NO_GT"
      },
      "related_links": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "summary": {
       "score": null,
@@ -7628,20 +7628,20 @@
     "skeleton_chars": 4414
    },
    "summary": {
-    "mean": 0.7105,
-    "sample_mean": 0.6,
-    "others_mean": 0.7135,
+    "mean": 0.6,
+    "sample_mean": 0.6667,
+    "others_mean": 0.5986,
     "per_field": {
      "title": 1.0,
      "body": 1.0,
      "author": null,
      "date": 1.0,
-     "category": null,
+     "category": 1.0,
      "images": 0.0,
      "images_caption": null,
      "related_links": 0.0,
      "summary": null,
-     "tags": null
+     "tags": 0.0
     }
    }
   },
@@ -7678,8 +7678,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8966,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -7720,7 +7720,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9091,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -7732,8 +7732,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_003.html": {
@@ -7758,12 +7758,12 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.75,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -7774,8 +7774,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.6667,
+      "label": "PARTIAL"
      }
     },
     "article_004.html": {
@@ -7804,8 +7804,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8889,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -7816,8 +7816,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.6667,
+      "label": "PARTIAL"
      }
     },
     "article_005.html": {
@@ -7842,11 +7842,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      },
      "images_caption": {
-      "score": 0.9176,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -7858,8 +7858,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_006.html": {
@@ -7888,8 +7888,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8571,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -7900,8 +7900,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_007.html": {
@@ -7930,8 +7930,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8571,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -7942,8 +7942,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8,
+      "label": "PARTIAL"
      }
     },
     "article_008.html": {
@@ -7968,11 +7968,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9118,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -7984,8 +7984,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_009.html": {
@@ -8010,11 +8010,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      },
      "images_caption": {
-      "score": 0.9556,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8026,8 +8026,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8333,
+      "label": "PARTIAL"
      }
     },
     "article_010.html": {
@@ -8056,8 +8056,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8571,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8068,8 +8068,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.875,
+      "label": "PARTIAL"
      }
     },
     "article_011.html": {
@@ -8098,8 +8098,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8421,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8110,8 +8110,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8333,
+      "label": "PARTIAL"
      }
     },
     "article_012.html": {
@@ -8140,7 +8140,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9302,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8178,11 +8178,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9487,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8194,8 +8194,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.75,
+      "label": "PARTIAL"
      }
     },
     "article_014.html": {
@@ -8236,8 +8236,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.6667,
+      "label": "PARTIAL"
      }
     },
     "article_015.html": {
@@ -8266,7 +8266,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9143,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8278,8 +8278,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.6667,
+      "label": "PARTIAL"
      }
     },
     "article_016.html": {
@@ -8308,8 +8308,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8696,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8320,8 +8320,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8571,
+      "label": "PARTIAL"
      }
     },
     "article_017.html": {
@@ -8350,7 +8350,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9589,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8362,8 +8362,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.75,
+      "label": "PARTIAL"
      }
     },
     "article_018.html": {
@@ -8388,12 +8388,12 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.88,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8404,8 +8404,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_019.html": {
@@ -8434,8 +8434,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8421,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8446,8 +8446,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8,
+      "label": "PARTIAL"
      }
     },
     "article_020.html": {
@@ -8476,7 +8476,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9143,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8488,8 +8488,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_021.html": {
@@ -8518,7 +8518,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9189,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8530,8 +8530,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8,
+      "label": "PARTIAL"
      }
     },
     "article_022.html": {
@@ -8560,8 +8560,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8602,8 +8602,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.875,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8640,11 +8640,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "WRONG"
      },
      "images_caption": {
-      "score": 0.9231,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8656,8 +8656,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_025.html": {
@@ -8686,7 +8686,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9032,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8698,8 +8698,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8571,
+      "label": "PARTIAL"
      }
     },
     "article_026.html": {
@@ -8728,7 +8728,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9032,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8740,8 +8740,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.6667,
+      "label": "PARTIAL"
      }
     },
     "article_027.html": {
@@ -8770,8 +8770,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.8,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8808,11 +8808,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8824,8 +8824,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_029.html": {
@@ -8854,8 +8854,8 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.7778,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8866,8 +8866,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.75,
+      "label": "PARTIAL"
      }
     },
     "article_030.html": {
@@ -8892,12 +8892,12 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.2,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.8571,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -8934,11 +8934,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "images_caption": {
-      "score": 0.9143,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8950,8 +8950,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.9,
+      "label": "MATCH"
      }
     },
     "article_032.html": {
@@ -8976,11 +8976,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.25,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9143,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -8992,8 +8992,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_033.html": {
@@ -9018,11 +9018,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3333,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9016,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -9034,8 +9034,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_034.html": {
@@ -9060,11 +9060,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.3333,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9091,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -9076,8 +9076,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_035.html": {
@@ -9106,7 +9106,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9189,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -9118,8 +9118,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8333,
+      "label": "PARTIAL"
      }
     },
     "article_036.html": {
@@ -9148,7 +9148,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9032,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -9160,8 +9160,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     },
     "article_037.html": {
@@ -9190,7 +9190,7 @@
       "label": "MATCH"
      },
      "images_caption": {
-      "score": 0.9268,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -9202,8 +9202,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.6667,
+      "label": "PARTIAL"
      }
     },
     "article_038.html": {
@@ -9228,12 +9228,12 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.125,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.5745,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -9244,8 +9244,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8,
+      "label": "PARTIAL"
      }
     },
     "article_039.html": {
@@ -9270,12 +9270,12 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.1111,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.8649,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "related_links": {
       "score": null,
@@ -9312,11 +9312,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9268,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -9328,8 +9328,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.8,
+      "label": "PARTIAL"
      }
     },
     "article_041.html": {
@@ -9354,11 +9354,11 @@
       "label": "MISS"
      },
      "images": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.5,
+      "label": "PARTIAL"
      },
      "images_caption": {
-      "score": 0.9394,
+      "score": 1.0,
       "label": "MATCH"
      },
      "related_links": {
@@ -9370,8 +9370,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.5,
+      "label": "PARTIAL"
      }
     }
    },
@@ -9400,20 +9400,20 @@
     "skeleton_chars": 5333
    },
    "summary": {
-    "mean": 0.8251,
-    "sample_mean": 0.8421,
-    "others_mean": 0.8246,
+    "mean": 0.7868,
+    "sample_mean": 0.8569,
+    "others_mean": 0.7852,
     "per_field": {
      "title": 1.0,
      "body": 0.9382,
      "author": 1.0,
      "date": 1.0,
      "category": 0.0,
-     "images": 1.0,
-     "images_caption": 0.8813,
+     "images": 0.6963,
+     "images_caption": 1.0,
      "related_links": null,
      "summary": null,
-     "tags": null
+     "tags": 0.6688
     }
    }
   },
@@ -9430,8 +9430,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.3222,
-      "label": "PARTIAL"
+      "score": 0.9906,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9462,8 +9462,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_002.html": {
@@ -9472,7 +9472,7 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.4664,
+      "score": 0.8043,
       "label": "PARTIAL"
      },
      "author": {
@@ -9514,12 +9514,12 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.5839,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "author": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "date": {
       "score": 1.0,
@@ -9546,8 +9546,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_004.html": {
@@ -9556,8 +9556,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2989,
-      "label": "PARTIAL"
+      "score": 0.9818,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9588,8 +9588,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_005.html": {
@@ -9598,8 +9598,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.4099,
-      "label": "PARTIAL"
+      "score": 0.9898,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9640,8 +9640,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2016,
-      "label": "PARTIAL"
+      "score": 0.9781,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9672,8 +9672,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_007.html": {
@@ -9682,8 +9682,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.3775,
-      "label": "PARTIAL"
+      "score": 0.9486,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9714,8 +9714,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_008.html": {
@@ -9724,7 +9724,7 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2227,
+      "score": 0.8762,
       "label": "PARTIAL"
      },
      "author": {
@@ -9756,8 +9756,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_009.html": {
@@ -9766,8 +9766,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2943,
-      "label": "PARTIAL"
+      "score": 0.9977,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9808,8 +9808,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2195,
-      "label": "PARTIAL"
+      "score": 0.9909,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9840,8 +9840,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_011.html": {
@@ -9850,8 +9850,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.1715,
-      "label": "PARTIAL"
+      "score": 0.9949,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9882,8 +9882,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_012.html": {
@@ -9892,8 +9892,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.3385,
-      "label": "PARTIAL"
+      "score": 0.9725,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -9924,8 +9924,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_013.html": {
@@ -9934,12 +9934,12 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.4715,
-      "label": "PARTIAL"
+      "score": 0.9628,
+      "label": "MATCH"
      },
      "author": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "date": {
       "score": 1.0,
@@ -9966,8 +9966,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_014.html": {
@@ -9976,8 +9976,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2046,
-      "label": "PARTIAL"
+      "score": 0.9822,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10008,8 +10008,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_015.html": {
@@ -10018,8 +10018,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2351,
-      "label": "PARTIAL"
+      "score": 0.9731,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10050,8 +10050,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_016.html": {
@@ -10060,8 +10060,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2713,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10092,8 +10092,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_017.html": {
@@ -10102,8 +10102,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2114,
-      "label": "PARTIAL"
+      "score": 0.9924,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10134,8 +10134,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_018.html": {
@@ -10144,8 +10144,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2798,
-      "label": "PARTIAL"
+      "score": 0.9868,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10176,8 +10176,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_019.html": {
@@ -10186,8 +10186,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.246,
-      "label": "PARTIAL"
+      "score": 0.9658,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10218,8 +10218,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_020.html": {
@@ -10228,8 +10228,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.1708,
-      "label": "PARTIAL"
+      "score": 0.9701,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10260,8 +10260,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_021.html": {
@@ -10270,8 +10270,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2484,
-      "label": "PARTIAL"
+      "score": 0.9796,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10302,8 +10302,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_022.html": {
@@ -10312,8 +10312,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2386,
-      "label": "PARTIAL"
+      "score": 0.974,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10344,8 +10344,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_023.html": {
@@ -10354,8 +10354,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.218,
-      "label": "PARTIAL"
+      "score": 0.9819,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10386,8 +10386,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_024.html": {
@@ -10396,8 +10396,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2976,
-      "label": "PARTIAL"
+      "score": 0.9924,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10428,8 +10428,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_025.html": {
@@ -10438,8 +10438,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.304,
-      "label": "PARTIAL"
+      "score": 0.9579,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10470,8 +10470,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_026.html": {
@@ -10480,7 +10480,7 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.3162,
+      "score": 0.8296,
       "label": "PARTIAL"
      },
      "author": {
@@ -10512,8 +10512,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_027.html": {
@@ -10522,8 +10522,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.3361,
-      "label": "PARTIAL"
+      "score": 0.9889,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10554,8 +10554,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_028.html": {
@@ -10564,8 +10564,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2965,
-      "label": "PARTIAL"
+      "score": 0.9709,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10596,8 +10596,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_029.html": {
@@ -10606,12 +10606,12 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.38,
-      "label": "PARTIAL"
+      "score": 0.9986,
+      "label": "MATCH"
      },
      "author": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      },
      "date": {
       "score": 1.0,
@@ -10638,8 +10638,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_030.html": {
@@ -10648,8 +10648,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2477,
-      "label": "PARTIAL"
+      "score": 0.9925,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10680,8 +10680,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_031.html": {
@@ -10690,8 +10690,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.413,
-      "label": "PARTIAL"
+      "score": 0.9723,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10722,8 +10722,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_032.html": {
@@ -10732,8 +10732,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2345,
-      "label": "PARTIAL"
+      "score": 0.9646,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10764,8 +10764,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_033.html": {
@@ -10774,8 +10774,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.3748,
-      "label": "PARTIAL"
+      "score": 0.9932,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10806,8 +10806,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_034.html": {
@@ -10816,8 +10816,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.1926,
-      "label": "PARTIAL"
+      "score": 0.9913,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10848,8 +10848,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_035.html": {
@@ -10858,8 +10858,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2259,
-      "label": "PARTIAL"
+      "score": 0.9767,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10890,8 +10890,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_036.html": {
@@ -10900,8 +10900,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.1784,
-      "label": "PARTIAL"
+      "score": 0.9537,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -10932,8 +10932,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_037.html": {
@@ -10942,7 +10942,7 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.1543,
+      "score": 0.8105,
       "label": "PARTIAL"
      },
      "author": {
@@ -10974,8 +10974,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_038.html": {
@@ -10984,8 +10984,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.2138,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -11016,8 +11016,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_039.html": {
@@ -11026,8 +11026,8 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.3178,
-      "label": "PARTIAL"
+      "score": 0.9546,
+      "label": "MATCH"
      },
      "author": {
       "score": 1.0,
@@ -11058,8 +11058,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     },
     "article_040.html": {
@@ -11068,7 +11068,7 @@
       "label": "MATCH"
      },
      "body": {
-      "score": 0.4123,
+      "score": 0.7095,
       "label": "PARTIAL"
      },
      "author": {
@@ -11100,8 +11100,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 1.0,
+      "label": "MATCH"
      }
     }
    },
@@ -11130,20 +11130,20 @@
     "skeleton_chars": 19250
    },
    "summary": {
-    "mean": 0.6843,
-    "sample_mean": 0.6772,
-    "others_mean": 0.6845,
+    "mean": 0.7895,
+    "sample_mean": 0.7873,
+    "others_mean": 0.7895,
     "per_field": {
      "title": 1.0,
-     "body": 0.2899,
-     "author": 1.0,
+     "body": 0.9588,
+     "author": 0.925,
      "date": 1.0,
      "category": 0.1452,
      "images": 1.0,
      "images_caption": 1.0,
      "related_links": 0.0,
      "summary": null,
-     "tags": null
+     "tags": 1.0
     }
    }
   },
@@ -11192,8 +11192,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_002.html": {
@@ -11234,8 +11234,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_003.html": {
@@ -11276,8 +11276,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_004.html": {
@@ -11318,8 +11318,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_005.html": {
@@ -11360,8 +11360,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_006.html": {
@@ -11402,8 +11402,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_007.html": {
@@ -11444,8 +11444,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_008.html": {
@@ -11486,8 +11486,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_009.html": {
@@ -11528,8 +11528,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_010.html": {
@@ -11570,8 +11570,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_011.html": {
@@ -11612,8 +11612,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_012.html": {
@@ -11654,8 +11654,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_013.html": {
@@ -11696,8 +11696,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_014.html": {
@@ -11738,8 +11738,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_015.html": {
@@ -11780,8 +11780,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_016.html": {
@@ -11822,8 +11822,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_017.html": {
@@ -11864,8 +11864,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_018.html": {
@@ -11906,8 +11906,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_019.html": {
@@ -11948,8 +11948,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_020.html": {
@@ -11990,8 +11990,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_021.html": {
@@ -12032,8 +12032,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_022.html": {
@@ -12074,8 +12074,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_023.html": {
@@ -12116,8 +12116,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_024.html": {
@@ -12158,8 +12158,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_025.html": {
@@ -12200,8 +12200,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_026.html": {
@@ -12242,8 +12242,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_027.html": {
@@ -12284,8 +12284,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_028.html": {
@@ -12326,8 +12326,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_029.html": {
@@ -12368,8 +12368,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_030.html": {
@@ -12410,8 +12410,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_031.html": {
@@ -12452,8 +12452,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_032.html": {
@@ -12494,8 +12494,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_033.html": {
@@ -12536,8 +12536,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_034.html": {
@@ -12578,8 +12578,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_035.html": {
@@ -12620,8 +12620,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_036.html": {
@@ -12662,8 +12662,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_037.html": {
@@ -12704,8 +12704,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_038.html": {
@@ -12746,8 +12746,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_039.html": {
@@ -12788,8 +12788,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     },
     "article_040.html": {
@@ -12830,8 +12830,8 @@
       "label": "NO_GT"
      },
      "tags": {
-      "score": null,
-      "label": "NO_GT"
+      "score": 0.0,
+      "label": "MISS"
      }
     }
    },
@@ -12873,7 +12873,7 @@
      "images_caption": 0.0,
      "related_links": 0.0,
      "summary": null,
-     "tags": null
+     "tags": 0.0
     }
    }
   },
@@ -12970,7 +12970,7 @@
     },
     "article_003.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9333,
       "label": "MATCH"
      },
      "body": {
@@ -13054,7 +13054,7 @@
     },
     "article_005.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9231,
       "label": "MATCH"
      },
      "body": {
@@ -13096,7 +13096,7 @@
     },
     "article_006.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -13222,7 +13222,7 @@
     },
     "article_009.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -13264,8 +13264,8 @@
     },
     "article_010.html": {
      "title": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.875,
+      "label": "PARTIAL"
      },
      "body": {
       "score": 0.0,
@@ -13306,7 +13306,7 @@
     },
     "article_011.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9231,
       "label": "MATCH"
      },
      "body": {
@@ -13348,7 +13348,7 @@
     },
     "article_012.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -13390,7 +13390,7 @@
     },
     "article_013.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -13432,7 +13432,7 @@
     },
     "article_014.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9231,
       "label": "MATCH"
      },
      "body": {
@@ -13558,7 +13558,7 @@
     },
     "article_017.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9474,
       "label": "MATCH"
      },
      "body": {
@@ -13600,7 +13600,7 @@
     },
     "article_018.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9231,
       "label": "MATCH"
      },
      "body": {
@@ -13684,7 +13684,7 @@
     },
     "article_020.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9167,
       "label": "MATCH"
      },
      "body": {
@@ -13726,7 +13726,7 @@
     },
     "article_021.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -13768,7 +13768,7 @@
     },
     "article_022.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -13810,7 +13810,7 @@
     },
     "article_023.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9333,
       "label": "MATCH"
      },
      "body": {
@@ -13852,7 +13852,7 @@
     },
     "article_024.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9231,
       "label": "MATCH"
      },
      "body": {
@@ -14020,7 +14020,7 @@
     },
     "article_028.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9231,
       "label": "MATCH"
      },
      "body": {
@@ -14146,7 +14146,7 @@
     },
     "article_031.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -14230,7 +14230,7 @@
     },
     "article_033.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9333,
       "label": "MATCH"
      },
      "body": {
@@ -14398,8 +14398,8 @@
     },
     "article_037.html": {
      "title": {
-      "score": 1.0,
-      "label": "MATCH"
+      "score": 0.8889,
+      "label": "PARTIAL"
      },
      "body": {
       "score": 0.0,
@@ -14524,7 +14524,7 @@
     },
     "article_040.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9091,
       "label": "MATCH"
      },
      "body": {
@@ -14608,7 +14608,7 @@
     },
     "article_042.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9167,
       "label": "MATCH"
      },
      "body": {
@@ -14650,7 +14650,7 @@
     },
     "article_043.html": {
      "title": {
-      "score": 1.0,
+      "score": 0.9286,
       "label": "MATCH"
      },
      "body": {
@@ -14758,11 +14758,11 @@
     "skeleton_chars": 2766
    },
    "summary": {
-    "mean": 0.1811,
+    "mean": 0.1732,
     "sample_mean": 0.2,
-    "others_mean": 0.1807,
+    "others_mean": 0.1726,
     "per_field": {
-     "title": 1.0,
+     "title": 0.9565,
      "body": 0.0,
      "author": null,
      "date": 0.0,
@@ -16610,8 +16610,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.6667,
@@ -16652,8 +16652,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.3333,
@@ -16694,8 +16694,8 @@
       "label": "MISS"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -16736,8 +16736,8 @@
       "label": "MISS"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -16778,8 +16778,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -16820,8 +16820,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.3333,
@@ -16862,8 +16862,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -16904,8 +16904,8 @@
       "label": "NO_GT"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -16946,8 +16946,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -16988,8 +16988,8 @@
       "label": "MISS"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17030,8 +17030,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17072,8 +17072,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17114,8 +17114,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17156,8 +17156,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17198,8 +17198,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.3333,
@@ -17240,8 +17240,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.3333,
@@ -17282,8 +17282,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17324,8 +17324,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.3333,
@@ -17366,8 +17366,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.4,
@@ -17408,8 +17408,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.3333,
@@ -17450,8 +17450,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17492,8 +17492,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17534,8 +17534,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17576,8 +17576,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17618,8 +17618,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17660,8 +17660,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17702,8 +17702,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17744,8 +17744,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17786,8 +17786,8 @@
       "label": "MISS"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17828,8 +17828,8 @@
       "label": "MISS"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17870,8 +17870,8 @@
       "label": "MISS"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17912,8 +17912,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17954,8 +17954,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -17996,8 +17996,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.6667,
@@ -18038,8 +18038,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -18080,8 +18080,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -18122,8 +18122,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.3333,
@@ -18164,8 +18164,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -18206,8 +18206,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -18248,8 +18248,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -18290,8 +18290,8 @@
       "label": "PARTIAL"
      },
      "date": {
-      "score": 0.5455,
-      "label": "PARTIAL"
+      "score": 1.0,
+      "label": "MATCH"
      },
      "category": {
       "score": 0.0,
@@ -18344,14 +18344,14 @@
     "skeleton_chars": 11465
    },
    "summary": {
-    "mean": 0.6035,
-    "sample_mean": 0.6574,
-    "others_mean": 0.602,
+    "mean": 0.6583,
+    "sample_mean": 0.7079,
+    "others_mean": 0.657,
     "per_field": {
      "title": 1.0,
      "body": 0.8381,
      "author": 0.6444,
-     "date": 0.5455,
+     "date": 1.0,
      "category": 0.0992,
      "images": 0.0,
      "images_caption": 0.8932,
@@ -18365,29 +18365,30 @@
  "summary": {
   "layouts": 10,
   "failed": 0,
-  "mean": 0.4268,
-  "sample_mean": 0.4277,
-  "others_mean": 0.4268,
+  "mean": 0.4271,
+  "sample_mean": 0.4519,
+  "others_mean": 0.4266,
   "per_field": {
-   "title": 0.6643,
-   "body": 0.5052,
-   "author": 0.4407,
-   "date": 0.4392,
-   "category": 0.0272,
-   "images": 0.3912,
-   "images_caption": 0.5549,
+   "title": 0.6599,
+   "body": 0.5721,
+   "author": 0.4282,
+   "date": 0.4846,
+   "category": 0.1244,
+   "images": 0.3608,
+   "images_caption": 0.4822,
    "related_links": 0.0,
    "summary": 1.0,
-   "tags": null
+   "tags": 0.3338
   },
   "per_template": {
-   "article": 0.4268
+   "article": 0.4271
   },
   "labels": {
-   "MISS": 1422,
-   "NO_GT": 1541,
-   "MATCH": 984,
-   "PARTIAL": 283
+   "MISS": 1591,
+   "NO_GT": 1239,
+   "MATCH": 1145,
+   "PARTIAL": 238,
+   "WRONG": 17
   },
   "llm_calls": 10,
   "prompt_tokens": 23512,
@@ -18400,5 +18401,33 @@
   "name": "Annotation study · 10 layouts · five local models (CSS) and rule languages · v1.0.4"
  },
  "started_at": "2026-10-06T08:47:07.995518+00:00",
- "finished_at": "2026-10-06T08:49:27.698369+00:00"
+ "finished_at": "2026-10-06T08:49:27.698369+00:00",
+ "rescored": {
+  "at": "2026-11-12T09:31:13+00:00",
+  "reference": "reviewed reference (paper/softwarex/gt_review.md)",
+  "note": "Rules, prompts, tokens and times are those of the original run; only the scores were recomputed.",
+  "submitted_summary": {
+   "mean": 0.4268,
+   "sample_mean": 0.4277,
+   "others_mean": 0.4268,
+   "per_field": {
+    "title": 0.6643,
+    "body": 0.5052,
+    "author": 0.4407,
+    "date": 0.4392,
+    "category": 0.0272,
+    "images": 0.3912,
+    "images_caption": 0.5549,
+    "related_links": 0.0,
+    "summary": 1.0,
+    "tags": null
+   },
+   "labels": {
+    "MISS": 1422,
+    "NO_GT": 1541,
+    "MATCH": 984,
+    "PARTIAL": 283
+   }
+  }
+ }
 }

@@ -1,0 +1,282 @@
+{
+ "rescored_at": "2026-11-12T09:31:13+00:00",
+ "experiments": [
+  {
+   "id": "20261006-113509-01df",
+   "name": "ollama · qwen2.5-coder:14b · regex",
+   "submitted": {
+    "mean": 0.2186,
+    "sample_mean": 0.2163,
+    "others_mean": 0.2187
+   },
+   "rescored": {
+    "mean": 0.2023,
+    "sample_mean": 0.2023,
+    "others_mean": 0.2024
+   },
+   "labels": {
+    "MATCH": 567,
+    "PARTIAL": 274,
+    "MISS": 2048,
+    "NO_GT": 1239,
+    "WRONG": 102
+   }
+  },
+  {
+   "id": "20261006-113509-0663",
+   "name": "ollama · qwen2.5-coder:14b · xpath",
+   "submitted": {
+    "mean": 0.549,
+    "sample_mean": 0.5533,
+    "others_mean": 0.549
+   },
+   "rescored": {
+    "mean": 0.5452,
+    "sample_mean": 0.5654,
+    "others_mean": 0.5448
+   },
+   "labels": {
+    "MATCH": 1335,
+    "MISS": 978,
+    "PARTIAL": 564,
+    "NO_GT": 1239,
+    "WRONG": 114
+   }
+  },
+  {
+   "id": "20261006-113509-3d8b",
+   "name": "ollama · phi4:14b · css",
+   "submitted": {
+    "mean": 0.3742,
+    "sample_mean": 0.3715,
+    "others_mean": 0.3743
+   },
+   "rescored": {
+    "mean": 0.3596,
+    "sample_mean": 0.3745,
+    "others_mean": 0.3593
+   },
+   "labels": {
+    "MISS": 1710,
+    "NO_GT": 1239,
+    "PARTIAL": 298,
+    "MATCH": 980,
+    "WRONG": 3
+   }
+  },
+  {
+   "id": "20261006-113509-789f",
+   "name": "ollama · qwen2.5-coder:7b · css",
+   "submitted": {
+    "mean": 0.63,
+    "sample_mean": 0.6419,
+    "others_mean": 0.6298
+   },
+   "rescored": {
+    "mean": 0.6426,
+    "sample_mean": 0.6791,
+    "others_mean": 0.6417
+   },
+   "labels": {
+    "MATCH": 1801,
+    "MISS": 714,
+    "NO_GT": 1239,
+    "PARTIAL": 360,
+    "WRONG": 116
+   }
+  },
+  {
+   "id": "20261006-113509-7ce9",
+   "name": "ollama · ministral-3:8b · css",
+   "submitted": {
+    "mean": 0.5036,
+    "sample_mean": 0.5292,
+    "others_mean": 0.5029
+   },
+   "rescored": {
+    "mean": 0.5252,
+    "sample_mean": 0.5645,
+    "others_mean": 0.5243
+   },
+   "labels": {
+    "MATCH": 1521,
+    "MISS": 1193,
+    "WRONG": 68,
+    "NO_GT": 1239,
+    "PARTIAL": 209
+   }
+  },
+  {
+   "id": "20261006-113509-a59e",
+   "name": "ollama · qwen2.5-coder:14b · CSS→REGEXN",
+   "submitted": {
+    "mean": 0.6842,
+    "sample_mean": 0.6882,
+    "others_mean": 0.6841
+   },
+   "rescored": {
+    "mean": 0.6562,
+    "sample_mean": 0.6818,
+    "others_mean": 0.6556
+   },
+   "labels": {
+    "MATCH": 1885,
+    "PARTIAL": 302,
+    "WRONG": 208,
+    "NO_GT": 1239,
+    "MISS": 596
+   }
+  },
+  {
+   "id": "20261006-113509-dfd5",
+   "name": "ollama · gemma4:latest · css",
+   "submitted": {
+    "mean": 0.4268,
+    "sample_mean": 0.4277,
+    "others_mean": 0.4268
+   },
+   "rescored": {
+    "mean": 0.4271,
+    "sample_mean": 0.4519,
+    "others_mean": 0.4266
+   },
+   "labels": {
+    "MISS": 1591,
+    "NO_GT": 1239,
+    "MATCH": 1145,
+    "PARTIAL": 238,
+    "WRONG": 17
+   }
+  },
+  {
+   "id": "20261006-113509-f53a",
+   "name": "ollama · qwen2.5-coder:14b · css",
+   "submitted": {
+    "mean": 0.7135,
+    "sample_mean": 0.6993,
+    "others_mean": 0.7139
+   },
+   "rescored": {
+    "mean": 0.7104,
+    "sample_mean": 0.7295,
+    "others_mean": 0.71
+   },
+   "labels": {
+    "MATCH": 2015,
+    "PARTIAL": 399,
+    "WRONG": 115,
+    "NO_GT": 1239,
+    "MISS": 462
+   }
+  }
+ ],
+ "coverage": {
+  "pairs": 4230,
+  "scored": 2991,
+  "not_scored": 1239,
+  "not_scored_by_reason": {
+   "reference rule returns no value on the page": 191,
+   "no rule by any annotator": 961,
+   "left out by the administrator": 87
+  },
+  "by_field": {
+   "title": {
+    "scored": 423,
+    "layouts_with_rule": 10
+   },
+   "body": {
+    "scored": 422,
+    "layouts_with_rule": 10
+   },
+   "author": {
+    "scored": 206,
+    "layouts_with_rule": 6
+   },
+   "date": {
+    "scored": 422,
+    "layouts_with_rule": 10
+   },
+   "category": {
+    "scored": 422,
+    "layouts_with_rule": 10
+   },
+   "images": {
+    "scored": 415,
+    "layouts_with_rule": 10
+   },
+   "images_caption": {
+    "scored": 230,
+    "layouts_with_rule": 6
+   },
+   "related_links": {
+    "scored": 228,
+    "layouts_with_rule": 8
+   },
+   "summary": {
+    "scored": 41,
+    "layouts_with_rule": 1
+   },
+   "tags": {
+    "scored": 182,
+    "layouts_with_rule": 5
+   }
+  },
+  "rules": {
+   "approved": 76,
+   "written_or_edited_by_administrator": 7
+  }
+ },
+ "sample_vs_others": {
+  "unit": "points (0–100), sample page minus the other pages of the layout",
+  "pairs": 80,
+  "min": -12.13,
+  "q1": -0.57,
+  "median": 0.75,
+  "q3": 4.67,
+  "max": 17.71,
+  "mean_absolute": 3.53,
+  "largest_aggregate_difference": 4.02,
+  "per_experiment": {
+   "ollama · qwen2.5-coder:14b · regex": {
+    "min": -12.13,
+    "median": 0.36,
+    "max": 6.8
+   },
+   "ollama · qwen2.5-coder:14b · xpath": {
+    "min": -10.09,
+    "median": 0.12,
+    "max": 13.81
+   },
+   "ollama · phi4:14b · css": {
+    "min": -1.25,
+    "median": 0.0,
+    "max": 9.33
+   },
+   "ollama · qwen2.5-coder:7b · css": {
+    "min": -1.44,
+    "median": 1.97,
+    "max": 14.36
+   },
+   "ollama · ministral-3:8b · css": {
+    "min": -0.63,
+    "median": 1.26,
+    "max": 17.71
+   },
+   "ollama · qwen2.5-coder:14b · CSS→REGEXN": {
+    "min": -1.07,
+    "median": 2.27,
+    "max": 8.24
+   },
+   "ollama · gemma4:latest · css": {
+    "min": -0.22,
+    "median": 1.37,
+    "max": 7.17
+   },
+   "ollama · qwen2.5-coder:14b · css": {
+    "min": -1.94,
+    "median": 0.25,
+    "max": 8.5
+   }
+  }
+ }
+}

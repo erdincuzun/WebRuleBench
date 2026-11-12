@@ -1,40 +1,41 @@
 {
  "lost_points_by_label": {
   "qwen2.5-coder:14b css": {
-   "MISS": 0.519,
-   "PARTIAL": 0.309,
-   "WRONG": 0.163,
-   "MATCH": 0.008
+   "MISS": 0.57,
+   "PARTIAL": 0.28,
+   "WRONG": 0.142,
+   "MATCH": 0.009
   },
   "qwen2.5-coder:7b css": {
-   "MISS": 0.614,
-   "PARTIAL": 0.229,
-   "WRONG": 0.151,
-   "MATCH": 0.007
+   "MISS": 0.686,
+   "PARTIAL": 0.191,
+   "WRONG": 0.111,
+   "MATCH": 0.012
   },
   "ministral-3:8b css": {
-   "MISS": 0.798,
-   "PARTIAL": 0.123,
-   "WRONG": 0.073,
-   "MATCH": 0.006
+   "MISS": 0.868,
+   "PARTIAL": 0.076,
+   "WRONG": 0.049,
+   "MATCH": 0.007
   },
   "gemma4:latest css": {
-   "MISS": 0.896,
-   "PARTIAL": 0.101,
+   "MISS": 0.912,
+   "PARTIAL": 0.075,
+   "WRONG": 0.01,
    "MATCH": 0.003
   },
   "phi4:14b css": {
-   "MISS": 0.918,
-   "PARTIAL": 0.057,
-   "WRONG": 0.023,
-   "MATCH": 0.002
+   "MISS": 0.939,
+   "PARTIAL": 0.056,
+   "MATCH": 0.003,
+   "WRONG": 0.002
   }
  },
  "xpath": {
   "rules": 100,
   "whole_class_attribute_tests": 67,
-  "score": 0.5491,
-  "score_with_class_token_tests": 0.6784
+  "score": 0.5452,
+  "score_with_class_token_tests": 0.6816
  },
  "regex_matches_on_sample_page": {
   "raw / skeleton": 29,
@@ -46,51 +47,51 @@
  "extraction_ms_per_page": {
   "qwen2.5-coder:14b css": {
    "pages": 423,
-   "mean_ms": 30.4,
-   "median_ms": 28.45,
-   "max_ms": 94.8,
+   "mean_ms": 30.0,
+   "median_ms": 28.31,
+   "max_ms": 94.1,
    "slowest_layout": "24chasa.bg"
   },
   "qwen2.5-coder:7b css": {
    "pages": 423,
-   "mean_ms": 31.44,
-   "median_ms": 29.24,
-   "max_ms": 88.9,
+   "mean_ms": 30.79,
+   "median_ms": 28.57,
+   "max_ms": 87.0,
    "slowest_layout": "24chasa.bg"
   },
   "ministral-3:8b css": {
    "pages": 423,
-   "mean_ms": 30.3,
-   "median_ms": 30.0,
-   "max_ms": 87.4,
+   "mean_ms": 29.82,
+   "median_ms": 29.56,
+   "max_ms": 87.1,
    "slowest_layout": "adevarul.ro"
   },
   "gemma4:latest css": {
    "pages": 423,
-   "mean_ms": 25.33,
-   "median_ms": 26.58,
-   "max_ms": 65.4,
+   "mean_ms": 25.05,
+   "median_ms": 26.33,
+   "max_ms": 64.8,
    "slowest_layout": "adevarul.ro"
   },
   "phi4:14b css": {
    "pages": 423,
-   "mean_ms": 25.41,
-   "median_ms": 25.55,
+   "mean_ms": 25.16,
+   "median_ms": 26.1,
    "max_ms": 65.4,
    "slowest_layout": "24chasa.bg"
   },
   "qwen2.5-coder:14b xpath": {
    "pages": 423,
-   "mean_ms": 3.0,
-   "median_ms": 2.94,
-   "max_ms": 8.4,
-   "slowest_layout": "abante.com.ph"
+   "mean_ms": 2.82,
+   "median_ms": 2.78,
+   "max_ms": 7.4,
+   "slowest_layout": "24chasa.bg"
   },
   "qwen2.5-coder:14b regex": {
    "pages": 423,
-   "mean_ms": 2.79,
-   "median_ms": 0.97,
-   "max_ms": 25.6,
+   "mean_ms": 2.76,
+   "median_ms": 0.96,
+   "max_ms": 25.8,
    "slowest_layout": "abante.com.ph"
   },
   "qwen2.5-coder:14b css→regexn": {

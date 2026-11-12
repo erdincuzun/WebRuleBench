@@ -30,6 +30,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from bs4 import BeautifulSoup  # noqa: E402
 
 from webrulebench.evaluation import experiments as X  # noqa: E402
+from webrulebench.rules.rule_utils import split_selector_list  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 EXPS = HERE / "results" / "experiments"
@@ -131,7 +132,7 @@ def extraction_speed(runs: dict, repeats: int = 3) -> dict:
     def css(html, rules):
         soup = BS(html, "html.parser")
         for r in rules:
-            for part in (p.strip() for p in r.split(",") if p.strip()):
+            for part in split_selector_list(r):
                 try:
                     if soup.select(part):
                         break
@@ -191,14 +192,14 @@ def write_table(runs: list, speed: dict, path: Path):
     assert len(common) == 1, f"experiments differ in settings: {common}"
     sample, strategy, temp, seed, max_tokens = next(iter(common))
     sample = json.loads(sample)
-    sample = ("each layout's first ground-truth page as sample" if sample["mode"] == "first"
+    sample = ("the first ground-truth page of each layout as the sample" if sample["mode"] == "first"
               else f"a random ground-truth page of each layout as sample (seed {sample.get('seed')})")
     lines = [r"\begin{table}[!htb]", r"  \centering", r"  \footnotesize", r"  \setlength{\tabcolsep}{2.5pt}", r"  \setlength{\abovetopsep}{3pt}",
-             r"  \caption{LLM experiments on the ten layouts of the annotation study (Ollama; temperature "
-             f"{temp:g}, seed {seed}, at most {max_tokens} output tokens; {strategy.replace('_', ' ')} cleaning; {sample}). "
-             r"Mean scores (0--100) on all ground-truth pages, the sample page and the other pages; LLM: time of the "
-             r"ten calls on a laptop (Apple M1 Pro, 16 GB RAM); ms/page: median over pages of the best of three runs "
-             r"from the raw HTML, parsing included.}",
+             r"  \caption{LLM experiments on the ten layouts of the annotation study. Ollama; temperature "
+             f"{temp:g}, seed {seed}, at most {max_tokens} output tokens; {strategy.replace('_', ' ')} cleaning; {sample}. "
+             r"Mean scores (0--100) over all ground-truth pages, the sample page and the remaining pages. "
+             r"\textbf{LLM:} time for the ten calls on a laptop (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median "
+             r"over pages of the best of three runs from the raw HTML, including parsing.}",
              r"  \label{tab:llm}", r"  \begin{tabular}{@{}lrlrrrrr@{}}", r"    \toprule",
              r"    Model (Ollama) & Params & Rules & Mean & Sample & Others & LLM (s) & ms/page \\", r"    \midrule"]
     used = set()
