@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.2 — 2026-11
+
+The version cited by the revised SoftwareX manuscript; the behavior of the tool is unchanged.
+
+- Comments, docstrings and help texts of the tests and of the annotation study scripts are in English (test data in
+  Turkish is kept); `README.md` gives the current number of tests (202).
+- Annotation study: `make_figures.py` writes Table 3 in the layout of the revised paper (share of identical rules
+  and κ, mean similarity and α); `analyze_rules.py` writes Table 4 in a narrower layout and defines its mean; the
+  rescored experiment records point to `paper/annotation_study/reference_review.md`.
+
 ## 1.1.1 — 2026-11
 
 Documentation release in response to the review of the SoftwareX submission; the behavior of the tool is unchanged.

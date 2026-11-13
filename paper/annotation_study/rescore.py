@@ -7,7 +7,7 @@ the rules each model generated are in the experiment records and only the compar
 Why: the reference used for the submitted results had been approved from one annotator's rules. The
 three-annotator study and a page-by-page comparison of the rules' output showed fields missing from it and
 rules that selected the wrong element or more than the field; the administrator reviewed them (see
-paper/softwarex/gt_review.md). The records as submitted are kept in results/experiments_submitted/.
+paper/annotation_study/reference_review.md). The records as submitted are kept in results/experiments_submitted/.
 
 Reads   results/experiments_submitted/*.json   and the data folder (WRB_DATA_DIR): reference, annotator rules, pages
 Writes  results/experiments/*.json             the records with the new per-page scores and summaries
@@ -146,7 +146,7 @@ def main():
         if e.get("group"):
             # run with v1.0.4; the scores are against the reviewed reference
             e["group"] = {**e["group"], "name": "Annotation study · 10 layouts · rescored"}
-        e["rescored"] = {"at": now, "reference": "reviewed reference (paper/softwarex/gt_review.md)",
+        e["rescored"] = {"at": now, "reference": "reviewed reference (paper/annotation_study/reference_review.md)",
                          "note": "Rules, prompts, tokens and times are those of the original run; only the scores were recomputed.",
                          "submitted_summary": before}
         (OUT / path.name).write_text(json.dumps(e, ensure_ascii=False, indent=1), encoding="utf-8")

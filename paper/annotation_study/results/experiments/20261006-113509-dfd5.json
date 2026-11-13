@@ -18404,7 +18404,7 @@
  "finished_at": "2026-10-06T08:49:27.698369+00:00",
  "rescored": {
   "at": "2026-11-12T19:56:02+00:00",
-  "reference": "reviewed reference (paper/softwarex/gt_review.md)",
+  "reference": "reviewed reference (paper/annotation_study/reference_review.md)",
   "note": "Rules, prompts, tokens and times are those of the original run; only the scores were recomputed.",
   "submitted_summary": {
    "mean": 0.4268,

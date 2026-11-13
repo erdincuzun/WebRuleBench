@@ -10,4 +10,4 @@ against human-annotated ground truth (one or more annotators).
   cli.py        `webrulebench serve | demo | users`
 """
 
-__version__ = "1.1.1"   # single source of the version: pyproject.toml, --version and the manifest read it
+__version__ = "1.1.2"   # single source of the version: pyproject.toml, --version and the manifest read it

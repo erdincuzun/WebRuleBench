@@ -59,19 +59,23 @@ def main():
     for ext in ("pdf", "png"):
         fig.savefig(OUT / f"fig_agreement.{ext}", bbox_inches="tight")
 
-    # booktabs table (best = highest in the column; the table includes all fields)
+    # booktabs table of the paper (Table 3): plain measure next to the chance-corrected one at both levels
     tab = sorted(rows, key=lambda r: -r["content_alpha"])
-    lines = [r"% \usepackage{booktabs}", r"\begin{table}[t]", r"  \centering", r"  \small",
-             r"  \caption{Inter-annotator agreement on " + str(len(res['sample']['sites'])) + r" layouts ("
-             + str(len(res["annotators"])) + r" annotators). Rule level: Fleiss' $\kappa$ over layouts on normalized CSS rules and the "
-             r"share of identical rules; content level: Krippendorff's $\alpha$ on the values each annotator's rule extracts from all "
-             r"ground-truth pages (distance $= 1 -$ field metric).}",
-             r"  \label{tab:agreement}", r"  \begin{tabular}{llrrrr}", r"    \toprule",
-             r"    Field & Metric & Layouts & Rule $\kappa$ & Identical rules & Content $\alpha$ \\", r"    \midrule"]
+    lines = [r"\begin{table}[!htb]", r"  \centering", r"  \small",
+             r"  \caption{Inter-annotator agreement across " + str(len(res["sample"]["sites"])) + r" layouts ("
+             + str(len(res["annotators"])) + r" annotators). Layouts: layouts in which at least two annotators wrote a rule; "
+             r"values from fewer than six layouts are less reliable. Rule level: share of annotator pairs with the same normalized "
+             r"CSS rule, and Fleiss' $\kappa$. Content level: mean similarity (field metric) of the values extracted from all "
+             r"ground-truth pages, and Krippendorff's $\alpha$ (distance $= 1 -$ similarity).}",
+             r"  \label{tab:agreement}", r"  \begin{tabular}{llrrrrr}", r"    \toprule",
+             r"          &        &         & \multicolumn{2}{c}{Rule level} & \multicolumn{2}{c}{Content level} \\",
+             r"    \cmidrule(lr){4-5}\cmidrule(lr){6-7}",
+             r"    Field & Metric & Layouts & Same rule & $\kappa$ & Similarity & $\alpha$ \\", r"    \midrule"]
+    num = lambda x: f"{x:.2f}".replace("-", "$-$")
     for r in tab:
         f = r["field"].replace("_", r"\_")
-        lines.append(f"    \\texttt{{{f}}} & {r['metric'].replace('_', ' ')} & {r['layouts']} & {r['rule_kappa']:.2f} & "
-                     f"{100 * r['rule_exact_share']:.0f}\\% & {r['content_alpha']:.2f} \\\\")
+        lines.append(f"    \\texttt{{{f}}} & {r['metric'].replace('_', ' ')} & {r['layouts']} & {100 * r['rule_exact_share']:.0f}\\% & "
+                     f"{num(r['rule_kappa'])} & {num(r['content_similarity'])} & {num(r['content_alpha'])} \\\\")
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
     (OUT / "table_agreement.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("written:", *(p.name for p in sorted(OUT.glob("fig_agreement.*"))), "table_agreement.tex")

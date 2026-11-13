@@ -62,7 +62,7 @@ Re-running an LLM experiment itself needs a local Ollama server with the model o
 The first reference had been approved from the rules of one annotator before the other two annotated. The study
 and a page-by-page comparison of the output of the three annotators' rules showed fields that were missing from
 it, two category rules that selected the tag list, and rules that returned more than the field. The administrator
-reviewed these cases; every change and its reason is listed in `paper/softwarex/gt_review.md`. The saved LLM rules
+reviewed these cases; every change and its reason is listed in `paper/annotation_study/reference_review.md`. The saved LLM rules
 were then rescored. The order of the eight configurations did not change; the means changed by −2.8 to +2.2 points.
 
 The experiment records can also be copied into `$WRB_DATA_DIR/experiments/` and opened in the web application

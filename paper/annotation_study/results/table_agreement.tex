@@ -1,22 +1,23 @@
-% \usepackage{booktabs}
-\begin{table}[t]
+\begin{table}[!htb]
   \centering
   \small
-  \caption{Inter-annotator agreement on 10 layouts (3 annotators). Rule level: Fleiss' $\kappa$ over layouts on normalized CSS rules and the share of identical rules; content level: Krippendorff's $\alpha$ on the values each annotator's rule extracts from all ground-truth pages (distance $= 1 -$ field metric).}
+  \caption{Inter-annotator agreement across 10 layouts (3 annotators). Layouts: layouts in which at least two annotators wrote a rule; values from fewer than six layouts are less reliable. Rule level: share of annotator pairs with the same normalized CSS rule, and Fleiss' $\kappa$. Content level: mean similarity (field metric) of the values extracted from all ground-truth pages, and Krippendorff's $\alpha$ (distance $= 1 -$ similarity).}
   \label{tab:agreement}
-  \begin{tabular}{llrrrr}
+  \begin{tabular}{llrrrrr}
     \toprule
-    Field & Metric & Layouts & Rule $\kappa$ & Identical rules & Content $\alpha$ \\
+          &        &         & \multicolumn{2}{c}{Rule level} & \multicolumn{2}{c}{Content level} \\
+    \cmidrule(lr){4-5}\cmidrule(lr){6-7}
+    Field & Metric & Layouts & Same rule & $\kappa$ & Similarity & $\alpha$ \\
     \midrule
-    \texttt{date} & rouge & 10 & 0.44 & 50\% & 0.99 \\
-    \texttt{title} & rouge & 10 & 0.02 & 20\% & 0.97 \\
-    \texttt{images\_caption} & rouge & 5 & 0.05 & 13\% & 0.96 \\
-    \texttt{images} & jaccard & 10 & 0.23 & 27\% & 0.94 \\
-    \texttt{body} & rouge & 10 & 0.26 & 30\% & 0.90 \\
-    \texttt{author} & rouge & 6 & 0.32 & 44\% & 0.90 \\
-    \texttt{tags} & jaccard & 3 & -0.20 & 0\% & 0.66 \\
-    \texttt{category} & rouge & 8 & 0.12 & 17\% & 0.65 \\
-    \texttt{related\_links} & jaccard & 7 & 0.03 & 12\% & 0.56 \\
+    \texttt{date} & rouge & 10 & 50\% & 0.44 & 0.99 & 0.99 \\
+    \texttt{title} & rouge & 10 & 20\% & 0.02 & 0.97 & 0.97 \\
+    \texttt{images\_caption} & rouge & 5 & 13\% & 0.05 & 0.96 & 0.96 \\
+    \texttt{images} & jaccard & 10 & 27\% & 0.23 & 0.94 & 0.94 \\
+    \texttt{body} & rouge & 10 & 30\% & 0.26 & 0.91 & 0.90 \\
+    \texttt{author} & rouge & 6 & 44\% & 0.32 & 0.91 & 0.90 \\
+    \texttt{tags} & jaccard & 3 & 0\% & $-$0.20 & 0.67 & 0.66 \\
+    \texttt{category} & rouge & 8 & 17\% & 0.12 & 0.66 & 0.65 \\
+    \texttt{related\_links} & jaccard & 7 & 12\% & 0.03 & 0.64 & 0.56 \\
     \bottomrule
   \end{tabular}
 \end{table}
