@@ -3,7 +3,7 @@
   \scriptsize
   \setlength{\tabcolsep}{3pt}
   \setlength{\abovetopsep}{3pt}
-  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. Ollama, 4-bit quantized models (Q4\_K\_M); temperature 0, seed 42, at most 512 output tokens; whitelist cleaning; first ground-truth page of each layout as the sample. \textbf{Mean:} score (0--100) over all ground-truth pages. \textbf{Sample:} score on the ten sample pages. \textbf{Gap:} smallest/largest difference between the sample page and the other pages of a layout. \textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from the raw HTML, including parsing.}
+  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. Ollama, 4-bit quantized models (Q4\_K\_M); temperature 0, seed 42, at most 512 output tokens; whitelist cleaning; first ground-truth page of each layout as the sample. \textbf{Mean:} score (0--100) of the scored page--field pairs, averaged per layout, then over the ten layouts. \textbf{Sample:} score on the ten sample pages. \textbf{Gap:} smallest/largest difference between the sample page and the other pages of a layout. \textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from the raw HTML, including parsing.}
   \label{tab:llm}
   \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.75cm}rlrrrrr@{}}
     \toprule

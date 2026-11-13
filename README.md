@@ -213,7 +213,7 @@ experiments, users, settings, API keys) lives in `data/`, which is not part of t
 
 ```bash
 pip install -e ".[dev]"
-pytest -q          # 174 tests, incl. an end-to-end build of the demo
+pytest -q          # 202 tests, incl. an end-to-end build of the demo
 ruff check .       # lint (configured in pyproject.toml)
 ```
 
