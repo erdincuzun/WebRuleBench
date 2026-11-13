@@ -32,6 +32,17 @@ since their content is copyrighted by the publishers. Both use the WebRuleBench 
 
 ## Reproducing
 
+There are three levels:
+
+1. **Demo, no data and no LLM.** `webrulebench demo` builds a synthetic study (three sites, three annotators,
+   recorded LLM responses) in which every step of the workflow can be run; see the main README.
+2. **The published numbers, without the HTML pages.** The records and results in `results/` (and in the open data
+   record) contain every number of Tables 3 and 4 and of Section 3: per-page scores and summaries of each experiment,
+   `coverage.csv`, `sample_gap.csv`, `rescore.json`, `ceiling_baseline.json`, `agreement.json`. They can be read and
+   aggregated without the pages; the experiment records can also be opened in the web application.
+3. **Recomputing them, with the HTML pages** (available on request): the scripts below run the rules on the pages
+   again and rewrite `results/` with identical values.
+
 ```bash
 pip install -e .                                   # from the repository root
 export WRB_DATA_DIR=<folder with the open record and the extracted html.zip>
@@ -41,8 +52,7 @@ python paper/annotation_study/rescore.py                         # rescore the s
 python paper/annotation_study/analyze_rules.py                   # rule analysis (Section 3.2), writes the results table
 ```
 
-`rescore.py` and `analyze_rules.py` need the HTML pages (available on request); the agreement analysis and the
-published tables can be recomputed from the open record and the saved results.
+Re-running an LLM experiment itself needs a local Ollama server with the model of the record (digests in the records).
 
 ## Reference used for the scores
 
