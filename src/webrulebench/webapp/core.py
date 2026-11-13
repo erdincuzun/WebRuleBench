@@ -1,12 +1,12 @@
 """
 webrulebench/webapp/core.py
 ==============
-WebRuleBench web uygulamasının çekirdeği: Flask uygulama nesnesi, veri yolları, oturum ve
-yetki kontrolleri (require_login / require_admin, /api/* giriş kapısı), arayüz dili, bölüm
-tanımları ve route'ların paylaştığı yardımcılar (siteler, sayfalar, GT, annotation, kural
-çalıştırma, GT özeti ve κ, dışa aktarma satırları, denetim kaydı).
+Core of the WebRuleBench web application: Flask application object, data paths, session and
+authorization checks (require_login / require_admin, the /api/* login gate), interface language, section
+definitions and the helpers shared by the routes (sites, pages, GT, annotation, rule
+execution, GT summary and κ, export rows, audit log).
 
-Route'lar webrulebench/webapp/routes/ altındaki blueprint'lerdedir; uygulama webapp/app.py'de kurulur:
+The routes are in the blueprints under webrulebench/webapp/routes/; the application is set up in webapp/app.py:
     webrulebench serve
 """
 
@@ -67,7 +67,7 @@ def _fetch_html(url: str) -> tuple[str | None, str, str | None]:
         resp = _requests.get(url, headers=FETCH_HEADERS, timeout=20, allow_redirects=True)
         if resp.status_code == 200 and len(resp.text) >= 1000:
             return resp.text, "requests", None
-        # 403 ama içerik varsa kabul et
+        # accept a 403 if it has content
         if resp.status_code == 403 and len(resp.text) >= 3000:
             from bs4 import BeautifulSoup as _BS
             _soup = _BS(resp.text, "html.parser")
@@ -96,8 +96,8 @@ def _fetch_html(url: str) -> tuple[str | None, str, str | None]:
 # ---------------------------------------------------------------------------
 # PATHS
 # ---------------------------------------------------------------------------
-from webrulebench.paths import CODE_DIR             # paket klasörü
-BASE_DIR        = _DATA_DIR                          # veri: proje kökü ya da WRB_DATA_DIR (paths.py)
+from webrulebench.paths import CODE_DIR             # package folder
+BASE_DIR        = _DATA_DIR                          # data: project root or WRB_DATA_DIR (paths.py)
 DATASET_DIR     = BASE_DIR / "dataset" / "raw"
 GROUND_TRUTH    = BASE_DIR / "ground_truth"
 ANNOTATIONS_DIR = BASE_DIR / "annotations"
@@ -142,8 +142,8 @@ def save_templates(data: dict):
 def get_template(template_id: str) -> dict | None:
     return load_templates()["templates"].get(template_id)
 
-# Şablona eklenen deneme prompt'ları: {"prompts": {pid: {...}}}.
-# Herkes görür; yalnızca sahibi veya admin düzenler/siler. Sürüm tutulmaz.
+# Trial prompts added to a template: {"prompts": {pid: {...}}}.
+# Visible to everyone; only the owner or an admin edits/deletes them. No versions are kept.
 def load_template_prompts() -> dict:
     if TEMPLATE_PROMPTS_FILE.exists():
         return json.loads(TEMPLATE_PROMPTS_FILE.read_text(encoding="utf-8"))
@@ -153,7 +153,7 @@ def save_template_prompts(data: dict):
     TEMPLATE_PROMPTS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 def page_type_for_layout(layout: dict) -> str:
-    """template_id varsa oradan, yoksa layout.page_type, yoksa 'article'."""
+    """From template_id if set, otherwise layout.page_type, otherwise 'article'."""
     tid = layout.get("template_id", "")
     if tid:
         t = get_template(tid)
@@ -164,7 +164,7 @@ def page_type_for_layout(layout: dict) -> str:
 # ---------------------------------------------------------------------------
 # USERS
 # ---------------------------------------------------------------------------
-# Kullanıcı kayıtları users_store.py'de (token özetleri, token sürümü, etkin/pasif).
+# User records live in users_store.py (token hashes, token version, active/inactive).
 from webrulebench import users_store
 from webrulebench.rules import rule_agreement as RA
 from webrulebench.rules.rule_utils import split_selector_list
@@ -172,23 +172,23 @@ from webrulebench.webapp import i18n as I18N
 
 
 def get_lang() -> str:
-    """İstek dili: 'lang' çerezi (en | tr); yoksa İngilizce."""
+    """Request language: the 'lang' cookie (en | tr); English if missing."""
     try:
         return I18N.norm(request.cookies.get("lang"))
-    except RuntimeError:                       # istek bağlamı dışında
+    except RuntimeError:                       # outside a request context
         return I18N.DEFAULT
 
 
 def _t(text: str, **params) -> str:
-    """Arayüz metni: İngilizce kaynak → istek dilindeki çeviri (bkz. i18n.py)."""
+    """Interface text: English source → translation in the request language (see i18n.py)."""
     return I18N.translate(text, get_lang(), **params)
 
 
 def _ex_text(ex: Exception) -> str:
-    """Bir modülün fırlattığı hata mesajı → istek dili. users_store.UserError ve
-    experiments.ExperimentError İngilizce şablonu ve parametreleri ayrı taşır
-    (i18n_msg / i18n_params) — böylece değişken içeren mesajlar da sözlükte bulunur.
-    Diğer istisnalar (ör. float() ValueError) str(ex) ile aranır; yoksa İngilizce kalır."""
+    """Error message raised by a module → request language. users_store.UserError and
+    experiments.ExperimentError carry the English template and the parameters separately
+    (i18n_msg / i18n_params) — so messages with variables are also found in the dictionary.
+    Other exceptions (e.g. float() ValueError) are looked up by str(ex); otherwise they stay in English."""
     msg = getattr(ex, "i18n_msg", None)
     if isinstance(msg, str):
         return _t(msg, **(getattr(ex, "i18n_params", None) or {}))
@@ -202,8 +202,8 @@ def save_users(users: dict):
     users_store.save(users)
 
 def current_user() -> str | None:
-    """Oturumdaki kullanıcı — hesap etkin ve token sürümü değişmemişse (token yenilenince
-    ya da hesap pasifleştirilince diğer cihazlardaki oturumlar burada kapanır)."""
+    """The user of the session — if the account is active and the token version has not changed (when the token
+    is renewed or the account is deactivated, sessions on other devices are closed here)."""
     u = session.get("username")
     if not u:
         return None
@@ -219,8 +219,8 @@ def require_login():
         return None, (jsonify({"error": _t("Login required")}), 401)
     return u, None
 
-# /api/* uçlarının hepsi giriş ister (yalnızca oturum durumu sorgusu açık). Uç bazında
-# require_login/require_admin kontrolleri bunun üstüne yetkiyi ayrıca daraltır.
+# All /api/* endpoints require login (only the session status query is open). Per-endpoint
+# require_login/require_admin checks narrow the authorization further on top of this.
 _PUBLIC_API = {"/api/me"}
 
 
@@ -244,7 +244,7 @@ def require_admin():
 # HELPERS
 # ---------------------------------------------------------------------------
 def load_sites() -> list[dict]:
-    # sites.json'dan bilgi al (varsa)
+    # get information from sites.json (if present)
     meta = {}
     if SITES_FILE.exists():
         data = json.loads(SITES_FILE.read_text(encoding="utf-8"))
@@ -257,13 +257,13 @@ def load_sites() -> list[dict]:
                     "country":  country["country"],
                     "code":     country.get("code", ""),
                     "continent": country.get("continent", ""),
-                    # sitenin yayın dili ülkenin birincil dilinden farklıysa (ör. İngilizce baskı) site kaydında tutulur
+                    # if the site's publishing language differs from the country's primary one (e.g. English edition), it is kept in the site record
                     "language": site.get("language") or country.get("language", ""),
                     "notes":    site.get("notes", ""),
                     "has_meta": True,
                 }
 
-    # dataset/raw/ altındaki tüm klasörler = siteler
+    # all folders under dataset/raw/ = sites
     sites = []
     if DATASET_DIR.exists():
         for site_dir in sorted(DATASET_DIR.iterdir()):
@@ -287,7 +287,7 @@ def load_sites() -> list[dict]:
     return sites
 
 
-# sites.json ülkelere göre gruplu: {"countries": [{country, code, continent, language, sites: [...]}]}
+# sites.json is grouped by country: {"countries": [{country, code, continent, language, sites: [...]}]}
 def _load_sites_file() -> dict:
     if SITES_FILE.exists():
         return json.loads(SITES_FILE.read_text(encoding="utf-8"))
@@ -303,10 +303,10 @@ def _save_sites_file(data: dict):
 
 def _upsert_site_meta(domain: str, name: str, country: str, notes: str = "",
                       url: str | None = None, new_country: dict | None = None) -> str | None:
-    """Sitenin sites.json kaydını oluştur/güncelle; ülke değiştiyse doğru gruba taşı.
-    Kayıttaki diğer anahtarlar (playwright, listing_urls, ...) korunur.
-    new_country: listede olmayan bir ülke için {code, continent, language}.
-    Hata varsa mesaj, yoksa None döner."""
+    """Create/update the site's sites.json record; move it to the right group if the country changed.
+    The other keys in the record (playwright, listing_urls, ...) are kept.
+    new_country: {code, continent, language} for a country not in the list.
+    Returns a message on error, otherwise None."""
     country = (country or "").strip() or "Other"
     data    = _load_sites_file()
     groups  = data["countries"]
@@ -342,14 +342,14 @@ def _upsert_site_meta(domain: str, name: str, country: str, notes: str = "",
             target = {"country": "Other", "sites": []}
         groups.append(target)
     target.setdefault("sites", []).append(entry)
-    # boşalan grup kalmasın
+    # drop groups that became empty
     data["countries"] = [g for g in groups if g.get("sites")]
     _save_sites_file(data)
     return None
 
 
 def load_ground_truth(domain: str) -> dict:
-    """Ground truth verisi ground_truth/approved/<domain>.json içinde."""
+    """Ground truth data is in ground_truth/approved/<domain>.json."""
     approved = load_approved_gt(domain)
     if approved:
         return approved
@@ -391,7 +391,7 @@ def save_user_annotation(domain: str, username: str, data: dict):
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 def user_assigned_count(domain: str, username: str) -> int:
-    """Kullanıcının annotation dosyasındaki toplam atanmış sayfa sayısı."""
+    """Total number of assigned pages in the user's annotation file."""
     ann = load_user_annotation(domain, username)
     pa  = ann.get("page_assignments", {})
     return sum(1 for v in pa.values() if isinstance(v, dict) and not v.get("skipped"))
@@ -415,7 +415,7 @@ def get_progress(username: str | None = None) -> dict:
 
 
 def _validate_template_prompt(body: dict):
-    """(clean_dict, error_str) — kullanıcı prompt'u .format(domain, skeleton) ile çalışabilmeli."""
+    """(clean_dict, error_str) — the user prompt must work with .format(domain, skeleton)."""
     from webrulebench.pipeline.prompt_builder import RULE_TYPES
     name      = (body.get("name") or "").strip()
     rule_type = body.get("rule_type", "css")
@@ -439,7 +439,7 @@ def _validate_template_prompt(body: dict):
 
 
 def _prompt_for_edit(pid):
-    """(data, prompt, error_response) — sahibi veya admin değilse 403."""
+    """(data, prompt, error_response) — 403 if not the owner or an admin."""
     username, err = require_login()
     if err: return None, None, err
     data = load_template_prompts()
@@ -452,7 +452,7 @@ def _prompt_for_edit(pid):
 
 
 def _user_activity() -> dict:
-    """Kullanıcı başına: annotation'ı olan site sayısı, son annotation, başlatılan deney sayısı."""
+    """Per user: number of sites with annotations, last annotation, number of experiments started."""
     out = {}
     if ANNOTATIONS_DIR.exists():
         for f in ANNOTATIONS_DIR.glob("*/*.json"):
@@ -492,13 +492,13 @@ def save_approved_gt(domain: str, data: dict):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 # ---------------------------------------------------------------------------
-# GT ONAYI — ÖZET (site listesi, layout listesi)
+# GT APPROVAL — SUMMARY (site list, layout list)
 # ---------------------------------------------------------------------------
 RULE_LANGS = ("css", "xpath", "regex")
 
 
 def _rule_of(val, lang: str) -> str:
-    """Alan değerinden bir kural dilinin metni: düz string = CSS, dict = {css, xpath, regex}, list = CSS listesi."""
+    """Text of one rule language from a field value: plain string = CSS, dict = {css, xpath, regex}, list = CSS list."""
     if isinstance(val, dict):
         return val.get(lang) or ""
     if lang != "css":
@@ -567,12 +567,12 @@ def layout_user_selectors(domain: str, layout_id: str) -> dict:
 
 
 def _rule_ratings(users: dict, field: str, lang: str, merge: bool = False) -> list:
-    """Annotatörlerin bir alan için normalize edilmiş kuralları (boşlar None)."""
+    """The annotators' normalized rules for a field (empty ones are None)."""
     return [RA.normalize_rule(_rule_of(d["selectors"].get(field), lang), lang, merge) for d in users.values()]
 
 
 def _audit_compile_times() -> dict:
-    """Eski derlemelerin zamanı: layout'ta 'compiled' bilgisi yoksa denetim kaydındaki son COMPILE satırı.
+    """Time of old compilations: if the layout has no 'compiled' info, the last COMPILE line in the audit log.
     {(domain, layout_id): datetime(UTC)}"""
     out = {}
     if not _audit_log_path.exists():
@@ -599,7 +599,7 @@ def _parse_iso(v):
 
 
 def _gt_layout_summaries(domain: str, audit_times: dict) -> list:
-    """Bir sitenin layout'ları için GT Onayı özeti (CSS; XPath/Regex durumu da ayrıca)."""
+    """GT Approval summary for the layouts of a site (CSS; XPath/Regex status separately as well)."""
     gt       = load_ground_truth(domain)
     layouts  = gt.get("layouts", {})
     gt_pa    = gt.get("page_assignments", {})
@@ -617,7 +617,7 @@ def _gt_layout_summaries(domain: str, audit_times: dict) -> list:
         tmpl   = get_template(layout.get("template_id", "")) or {}
         fields = list((tmpl.get("fields") or {}).keys()) or list((layout.get("selectors") or {}).keys())
 
-        # derleme ekranıyla aynı kullanıcı kümesi: bu layout'a sayfa atamış ya da kural girmiş olanlar
+        # same user set as the compile view: those who assigned pages to this layout or entered rules
         users, union_pages = {}, set()
         for uname, ann in anns.items():
             al    = ann.get("layouts", {}).get(lid, {})
@@ -637,7 +637,7 @@ def _gt_layout_summaries(domain: str, audit_times: dict) -> list:
             has_gt     = any(_rule_of(v, lang) for v in gt_sels.values())
             at = _parse_iso((compiled.get(lang) or {}).get("at"))
             if at is None and lang == "css" and has_gt:
-                at = audit_times.get((domain, lid))        # eski derleme: zamanı denetim kaydından
+                at = audit_times.get((domain, lid))        # old compilation: time from the audit log
             last = max((_parse_iso(users[u]["updated_at"]) for u in annotators
                         if _parse_iso(users[u]["updated_at"])), default=None)
             if not has_gt:
@@ -646,7 +646,7 @@ def _gt_layout_summaries(domain: str, audit_times: dict) -> list:
                 status = "stale"
             else:
                 status = "approved"
-            # layout × alan: gözlenen ikili kural uyumu (normalize); Fleiss κ raporda, layout'lar konu sayılarak
+            # layout × field: observed pairwise rule agreement (normalized); Fleiss κ in the report, layouts as subjects
             ratings = {f: _rule_ratings(users, f, lang, bool(((tmpl.get("fields") or {}).get(f) or {}).get("merge")))
                        for f in fields}
             kfields = {f: RA.observed_agreement(r) for f, r in ratings.items()}
@@ -680,7 +680,7 @@ def _gt_layout_summaries(domain: str, audit_times: dict) -> list:
 
 
 def _strip_ratings(lsums: list) -> list:
-    """Ham kurallar (annotatör bağımsızlığı için) API yanıtına konmaz."""
+    """Raw rules are not put into the API response (for annotator independence)."""
     for l in lsums:
         for d in l.get("langs", {}).values():
             d.pop("_ratings", None)
@@ -688,7 +688,7 @@ def _strip_ratings(lsums: list) -> list:
 
 
 def _pooled_kappa(lsums: list) -> dict:
-    """{dil: {alan: {kappa, po, pe, n_subjects}}} — layout'lar konu, annotatörler puanlayıcı (Fleiss)."""
+    """{lang: {field: {kappa, po, pe, n_subjects}}} — layouts as subjects, annotators as raters (Fleiss)."""
     out = {}
     for lang in RULE_LANGS:
         by_field = {}
@@ -702,7 +702,7 @@ def _pooled_kappa(lsums: list) -> dict:
 
 
 def _is_pending(lsum: dict) -> bool:
-    """Derleme bekleyen: annotatörü olan ama GT'si olmayan ya da derlemeden sonra değişmiş bir kural dili."""
+    """Awaiting compilation: a rule language with annotators but no GT, or changed after the compilation."""
     return any(l["annotators"] and l["status"] in ("none", "stale") for l in lsum["langs"].values())
 
 
@@ -712,7 +712,7 @@ def _site_meta_map() -> dict:
 
 
 def _dataset_report() -> dict:
-    """Site başına sayfa / GT sayfası / layout sayısı ve şablon × alan kapsamı (GT kuralı olan layout)."""
+    """Per site: number of pages / GT pages / layouts, and template × field coverage (layouts with a GT rule)."""
     from webrulebench.evaluation import experiments as X
     tmpls = X._templates()
     sites, templates, layout_pages = [], {}, []
@@ -761,7 +761,7 @@ def _gt_compiled_map() -> dict:
     out = {}
     for f in sorted(APPROVED_DIR.glob("*.json")):
         gt = json.loads(f.read_text(encoding="utf-8"))
-        dom = f.stem                     # dosya adı esastır
+        dom = f.stem                     # the file name is authoritative
         for lid, l in (gt.get("layouts") or {}).items():
             c = dict(l.get("compiled") or {})
             if "css" not in c and audit.get((dom, lid)):
@@ -771,10 +771,10 @@ def _gt_compiled_map() -> dict:
     return out
 
 
-# Yönlendirme sayfaları: ana sayfa (hub) + iş akışının her bölümü için ayrı
-# sayfa. Bölüm sayfaları şimdilik mevcut annotation ekranındaki modalları
-# /annotate?open=... derin linkleriyle açar; her bölüm zamanla kendi sayfasına
-# taşınabilir. Sıra = makaledeki iş akışı sırası.
+# Navigation pages: home page (hub) + a separate page for each section of the
+# workflow. For now, section pages open the modals of the existing annotation screen
+# with /annotate?open=... deep links; each section can move to its own page
+# over time. Order = workflow order in the paper.
 SECTIONS = [
     {"key": "data",         "path": "/data",         "icon": "🌐", "title": "Data Collection",
      "desc": "Add sites, download pages and bulk-add pages from a listing page."},
@@ -810,7 +810,7 @@ def _run_selector(soup, selector: str, merge: bool, rule_type: str = "css", raw_
     """
     if rule_type != "css":
         from webrulebench.rules.rule_utils import run_rule
-        # run_rule sözdizimi hatalarını yutup [] döner; "eşleşme yok" ile karışmasın diye önce derle
+        # run_rule swallows syntax errors and returns []; compile first so they are not confused with "no match"
         try:
             if rule_type == "xpath":
                 from lxml import etree
@@ -831,7 +831,7 @@ def _run_selector(soup, selector: str, merge: bool, rule_type: str = "css", raw_
         texts = []
         for el in elems:
             if isinstance(el, str):
-                texts.append(html_to_text(el))      # regex: iç HTML → düz metin
+                texts.append(html_to_text(el))      # regex: inner HTML → plain text
             elif hasattr(el, "text_content"):
                 texts.append(el.text_content())
             else:
@@ -876,7 +876,7 @@ def _run_selector(soup, selector: str, merge: bool, rule_type: str = "css", raw_
         text = el.get_text(strip=True)[:100]
         if text:
             previews.append(text)
-    # XPath/Regex sonucuyla karşılaştırma için (api_validate compare_css)
+    # for comparison with the XPath/Regex result (api_validate compare_css)
     texts = [" ".join(el.get_text(" ").split()) for el in elems] if with_texts else []
 
     if not elems:
@@ -897,7 +897,7 @@ def _run_selector(soup, selector: str, merge: bool, rule_type: str = "css", raw_
 
 
 def _field_kind(domain: str, filename: str, field: str) -> str:
-    """Alanın karşılaştırma biçimi: 'image' / 'url' (nitelik değeri) ya da 'text'."""
+    """How the field is compared: 'image' / 'url' (attribute value) or 'text'."""
     from webrulebench.rules.regex_generator import KIND_OF_TYPE
     gt  = load_ground_truth(domain)
     lid = gt.get("page_assignments", {}).get(filename, {}).get("layout_id")
@@ -907,14 +907,14 @@ def _field_kind(domain: str, filename: str, field: str) -> str:
 
 
 def _same_texts(a: list, b: list) -> bool:
-    # boşluklar yok sayılır: get_text(" ") etiketler arasına boşluk koyar, lxml text_content koymaz.
-    # Sıra yok sayılır: CSS merge parça sırasıyla, XPath '|' belge sırasıyla döndürür.
+    # whitespace is ignored: get_text(" ") puts spaces between tags, lxml text_content does not.
+    # Order is ignored: CSS merge returns in part order, XPath '|' in document order.
     return sorted("".join(t.split()) for t in a) == sorted("".join(t.split()) for t in b)
 
 
 def _compare_texts(css_texts: list, other_texts: list) -> dict:
-    """CSS ile XPath/Regex çıktısını metin üzerinden karşılaştır (ayrıştırıcılar farklı
-    olduğu için — CSS: html.parser, XPath: lxml — eleman kimliği karşılaştırılamaz)."""
+    """Compare CSS and XPath/Regex output by text (the parsers differ
+    — CSS: html.parser, XPath: lxml — so element identity cannot be compared)."""
     return {
         "css_count":   len(css_texts),
         "same":        _same_texts(css_texts, other_texts),
@@ -927,7 +927,7 @@ def _exp_can_edit(e: dict, username: str) -> bool:
 
 
 def _backend_has_key(cfg: dict) -> bool:
-    """API anahtarı ortamda ya da proje kökündeki .env'de tanımlı mı (değer okunmaz)."""
+    """Is the API key defined in the environment or in .env at the project root (the value is not read)."""
     key = cfg.get("env_key")
     if not key:
         return True
@@ -941,7 +941,7 @@ ENV_FILE = BASE_DIR / ".env"
 
 
 def _env_value(key: str) -> str:
-    """Anahtarın değeri (ortam değişkeni önce, sonra .env) — yalnızca sunucu içinde kullanılır."""
+    """Value of the key (environment variable first, then .env) — used only inside the server."""
     from webrulebench.pipeline.llm_extractor import _api_key
     return _api_key(key) if key else ""
 
@@ -952,7 +952,7 @@ def _key_hint(key: str) -> str | None:
 
 
 def _set_env_key(key: str, value: str):
-    """.env'de KEY=değer satırını ekle/değiştir; diğer satırlar korunur. Dosya yalnızca sahibine okunur (600)."""
+    """Add/replace the KEY=value line in .env; other lines are kept. The file is readable only by its owner (600)."""
     lines = ENV_FILE.read_text(encoding="utf-8").splitlines() if ENV_FILE.exists() else []
     out, done = [], False
     for line in lines:
@@ -994,10 +994,10 @@ def _extract_with_selector(soup, selector: str, field: str, merge: bool = False)
     merge=False → break-after-success (first matching part wins).
     merge=True  → continue-after-success (all parts run, results unioned).
     """
-    # {css, xpath, regex} biçimindeki alanlar (GT ve kullanıcı annotation'ları) → CSS kısmı
+    # fields in {css, xpath, regex} form (GT and user annotations) → the CSS part
     if isinstance(selector, dict):
         selector = selector.get("css") or ""
-    if isinstance(selector, list):  # eski kayıtlarda liste olarak saklanmış kurallar
+    if isinstance(selector, list):  # rules stored as lists in old records
         selector = ", ".join(s for s in selector if isinstance(s, str))
     if not selector:
         return "" if field != "images" else []
@@ -1039,13 +1039,13 @@ def _extract_with_selector(soup, selector: str, field: str, merge: bool = False)
 
 def _build_export_rows() -> list[dict]:
     """
-    Her approved domain için layout başına (domain, layout_id, page_type,
-    template_id, field, selector, metric) satırı döndür.
+    For each approved domain, return (domain, layout_id, page_type,
+    template_id, field, selector, metric) rows per layout.
     """
     rows = []
     for domain_file in sorted(APPROVED_DIR.glob("*.json")):
         approved = json.loads(domain_file.read_text(encoding="utf-8"))
-        domain   = domain_file.stem      # dosya adı esastır
+        domain   = domain_file.stem      # the file name is authoritative
         layouts  = approved.get("layouts", {})
         pa       = approved.get("page_assignments", {})  # {filename: {layout_id, skipped}}
 
@@ -1095,5 +1095,5 @@ MCP_CONFIG_FILE = BASE_DIR / "mcp_config.json"
 # MAIN
 # ---------------------------------------------------------------------------
 
-# Blueprint modülleri bu modülün bütün adlarını (alt çizgili yardımcılar dahil) kullanır
+# The blueprint modules use all names of this module (including underscore helpers)
 __all__ = [n for n in dir() if not n.startswith("__")]

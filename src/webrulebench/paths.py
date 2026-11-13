@@ -1,23 +1,24 @@
 """
 paths.py
 ========
-Kod ile veriyi ayırır.
+Separates code from data.
 
-  webrulebench/defaults/   pakette gelen varsayılanlar (şablonlar, prompt varyantları, LLM kayıt defteri, ...)
-  data/                    kullanıcının verisi (sayfalar, annotation'lar, GT, deneyler, kullanıcılar, .env);
-                           git'e girmez. Eksik ayar dosyaları ilk kullanımda defaults/'tan kopyalanır.
+  webrulebench/defaults/   defaults shipped with the package (templates, prompt variants, LLM registry, ...)
+  data/                    the user's data (pages, annotations, GT, experiments, users, .env);
+                           not tracked by git. Missing settings files are copied from defaults/ on first use.
 
-Depo klonundan çalışırken veri klasörü <depo>/data, hakem demosu <depo>/demo/data'dır; paket depo
-dışında kuruluysa çalışma klasöründeki webrulebench-data/ ve webrulebench-demo/ kullanılır.
-WRB_DATA_DIR ile başka bir veri klasörü verilebilir:
+When running from a repository clone, the data folder is <repo>/data and the reviewer demo is <repo>/demo/data;
+if the package is installed outside the repository, webrulebench-data/ and webrulebench-demo/ in the working
+folder are used.
+Another data folder can be given with WRB_DATA_DIR:
 
     WRB_DATA_DIR=~/my-study webrulebench serve
 
-Ortam değişkenleri (eski LLMWB_* adları da geçerlidir):
-    WRB_DATA_DIR   veri klasörü               (varsayılan: <depo>/data)
-    WRB_PORT       sunucu portu               (5001)
-    WRB_HOST       dinlenecek adres           (127.0.0.1; Docker'da 0.0.0.0)
-    WRB_DEBUG      0 → Flask debug kapalı     (1)
+Environment variables (the old LLMWB_* names are also accepted):
+    WRB_DATA_DIR   data folder                (default: <repo>/data)
+    WRB_PORT       server port                (5001)
+    WRB_HOST       address to listen on       (127.0.0.1; 0.0.0.0 in Docker)
+    WRB_DEBUG      0 → Flask debug off        (1)
 """
 
 import os
@@ -26,12 +27,12 @@ from pathlib import Path
 
 
 def env(name: str, default: str | None = None) -> str | None:
-    """WRB_<name>; yoksa eski ad LLMWB_<name>; yoksa default."""
+    """WRB_<name>; otherwise the old name LLMWB_<name>; otherwise default."""
     return os.environ.get(f"WRB_{name}") or os.environ.get(f"LLMWB_{name}") or default
 
 
-CODE_DIR     = Path(__file__).resolve().parent              # webrulebench/ paketi
-PROJECT_DIR  = CODE_DIR.parents[1]                          # depo kökü (klondan çalışırken: src/webrulebench → kök)
+CODE_DIR     = Path(__file__).resolve().parent              # the webrulebench/ package
+PROJECT_DIR  = CODE_DIR.parents[1]                          # repository root (when running from a clone: src/webrulebench → root)
 IN_CHECKOUT  = (PROJECT_DIR / "pyproject.toml").exists()
 DEFAULTS_DIR = CODE_DIR / "defaults"
 
@@ -46,7 +47,7 @@ def default_demo_dir() -> Path:
 
 DATA_DIR = Path(env("DATA_DIR") or default_data_dir()).expanduser().resolve()
 
-# defaults/'taki dosyalar veri klasöründe yoksa kopyalanır (var olanlara dokunulmaz)
+# files in defaults/ are copied if missing from the data folder (existing ones are not touched)
 DEFAULT_FILES = ("layout_templates.json", "template_prompts.json", "llm_models.json", "mcp_config.json", "sites.json")
 
 

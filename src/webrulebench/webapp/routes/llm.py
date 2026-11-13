@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/llm.py — LLM Modelleri (backend kayıt defteri, .env anahtarları, bağlantı testi) ve MCP ayarı.
+webrulebench/webapp/routes/llm.py — LLM Models (backend registry, .env keys, connection test) and MCP settings.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("llm", __name__)
 
@@ -21,7 +21,7 @@ def api_llm_models():
 
 @bp.route("/api/llm-models/<name>", methods=["PUT"])
 def api_llm_models_save(name):
-    """Backend ekle/düzenle (admin). Body: {api, url, default_model, models, env_key, notes, params, api_key?, rename?}"""
+    """Add/edit a backend (admin). Body: {api, url, default_model, models, env_key, notes, params, api_key?, rename?}"""
     username, err = require_admin()
     if err: return err
     import re as _re
@@ -34,7 +34,7 @@ def api_llm_models_save(name):
     if api not in LM.API_TYPES:
         return jsonify({"success": False, "error": _t("Invalid API type")}), 400
     url = (body.get("url") or "").strip()
-    if api == "replay":                      # kayıt dosyası (veri klasöründe), ağ adresi değil
+    if api == "replay":                      # recording file (in the data folder), not a network address
         if not _re.fullmatch(r"[\w./-]+\.json", url) or ".." in url:
             return jsonify({"success": False, "error": _t("A replay backend needs a JSON file name in the data folder")}), 400
     elif not _re.match(r"https?://", url):
@@ -99,13 +99,13 @@ def api_llm_models_delete(name):
         return jsonify({"success": False, "error": _t("The last backend cannot be deleted")}), 400
     del backends[name]
     LM.save(backends)
-    _audit(f"LLM_MODEL_DELETE  backend={name}  user={username}")   # .env'deki anahtar silinmez
+    _audit(f"LLM_MODEL_DELETE  backend={name}  user={username}")   # the key in .env is not deleted
     return jsonify({"success": True})
 
 
 @bp.route("/api/llm-models/<name>/test", methods=["POST"])
 def api_llm_models_test(name):
-    """Bağlantı testi: küçük bir istek (herkes). Body: {model?}"""
+    """Connection test: a small request (everyone). Body: {model?}"""
     _, err = require_login()
     if err: return err
     import time as _time
@@ -127,8 +127,8 @@ def api_llm_models_test(name):
 
 @bp.route("/api/llm-models/<name>/model", methods=["POST"])
 def api_llm_models_model(name):
-    """Tek model işlemi (admin): {model, action: default | hide | show | params, params?}.
-    params: modele özel üretim parametreleri (boş değer = backend'inkini kullan; hepsi boş = sıfırla)."""
+    """Single-model operation (admin): {model, action: default | hide | show | params, params?}.
+    params: model-specific generation parameters (empty value = use the backend's; all empty = reset)."""
     username, err = require_admin()
     if err: return err
     from webrulebench.pipeline import llm_models as LM
@@ -174,7 +174,7 @@ def api_llm_models_model(name):
 
 @bp.route("/api/mcp_config", methods=["GET"])
 def api_get_mcp_config():
-    """MCP config'i döndür (backend, model, strategy)."""
+    """Return the MCP config (backend, model, strategy)."""
     from webrulebench.pipeline.llm_models import BACKENDS
     if MCP_CONFIG_FILE.exists():
         cfg = json.loads(MCP_CONFIG_FILE.read_text(encoding="utf-8"))
@@ -185,7 +185,7 @@ def api_get_mcp_config():
 
 @bp.route("/api/mcp_config/save", methods=["POST"])
 def api_save_mcp_config():
-    """MCP config'i kaydet (admin only)."""
+    """Save the MCP config (admin only)."""
     _, err = require_admin()
     if err: return err
     from webrulebench.pipeline.llm_models import BACKENDS

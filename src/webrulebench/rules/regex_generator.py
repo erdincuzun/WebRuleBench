@@ -1,35 +1,35 @@
 """
 regex_generator.py
 ==================
-CSS selector → regular expression üretici.
+CSS selector → regular expression generator.
 
 Uzun, E. (2020). "A regular expression generator based on CSS selectors for
 efficient extraction from HTML pages". Turkish Journal of Electrical
 Engineering & Computer Sciences 28(6): 3389-3401. doi:10.3906/elk-2004-67
-(REGEXN) yaklaşımının sıfırdan yazılmış, genişletilmiş hali.
+(REGEXN): an extended version of that approach, written from scratch.
 
-REGEXN'e göre genişletmeler
+Extensions over REGEXN
 ---------------------------
-1. Açılış etiketi nitelik sırasından bağımsızdır: her koşul (id, class token'ı,
-   [attr] operatörleri) ayrı bir lookahead'tir; class tam token olarak eşlenir
-   (".content1", "content10"u yakalamaz).
-2. Kapanış etiketi için üç strateji (Algoritma 1 / 2-3 karşılığı ve ek):
-     simple    — ( .*? )</tag>                       (REGEXN adım 1)
-     balanced  — derinlik sınırlı iç içe aynı etiket  (örnek sayfadan bağımsız)
-     anchored  — kapanıştan sonraki etiket dizisiyle bitiş çıpası
-                 (REGEXN adım 2-3; metin değil yalnızca etiketler kullanılır
-                 ki aynı layout'un diğer sayfalarına genellenebilsin)
-3. Birleştiriciler (boşluk, >): hedef bileşik tek başına ya da ata bağlamıyla
-   ("A .*? B") denenir.
-4. image / url alanlarında içerik yerine src / href değeri yakalanır.
-5. Virgüllü alternatifler "|" ile birleştirilir.
-6. Aday seçimi tek örnek sayfaya değil, verilen sayfaların tümünde CSS ile
-   karşılaştırmaya göre yapılır (bkz. generate()).
+1. The opening tag is independent of attribute order: every condition (id, class token,
+   [attr] operators) is a separate lookahead; a class is matched as a whole token
+   (".content1" does not match "content10").
+2. Three strategies for the closing tag (counterparts of Algorithm 1 / 2-3, plus one more):
+     simple    — ( .*? )</tag>                       (REGEXN step 1)
+     balanced  — depth-limited nesting of the same tag (independent of the sample page)
+     anchored  — end anchor made of the tag sequence after the closing tag
+                 (REGEXN steps 2-3; only tags are used, not text,
+                 so that it generalizes to the other pages of the same layout)
+3. Combinators (space, >): the target compound is tried alone or with its ancestor context
+   ("A .*? B").
+4. For image / url fields the src / href value is captured instead of the content.
+5. Comma-separated alternatives are joined with "|".
+6. The candidate is chosen not on a single sample page but by comparison with CSS on all the
+   given pages (see generate()).
 
-Desteklenmeyenler (None döner): pseudo-class (:first-child…), kardeş
-birleştiricileri (+, ~), CSS kaçışları (\\:), void etiketin içeriği.
+Not supported (returns None): pseudo-classes (:first-child…), sibling
+combinators (+, ~), CSS escapes (\\:), content of void tags.
 
-Kullanım:
+Usage:
     from webrulebench.rules.regex_generator import generate
     r = generate("div.article-body", pages=[html1, html2], kind="text")
     r["regex"], r["strategy"], r["passed"], r["total"]
@@ -40,7 +40,7 @@ import re
 
 from webrulebench.rules.rule_utils import run_regex, split_selector_list
 
-# CSS kaçışları da tanımlayıcıya dahil: Tailwind ".text-\[40px\]", ".sm\:flex"
+# CSS escapes are part of the identifier too: Tailwind ".text-\[40px\]", ".sm\:flex"
 _IDENT = re.compile(r"-?(?:[A-Za-z_]|\\.)(?:[\w-]|\\.)*")
 _UNESC = re.compile(r"\\(.)")
 _ATTR  = re.compile(r"\[\s*([\w:-]+)\s*(?:([*^$~|]?=)\s*(\"[^\"]*\"|'[^']*'|[^\]\s]+)\s*)?\]")
@@ -48,19 +48,19 @@ _VOID  = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "m
 _FLAGS = re.IGNORECASE | re.DOTALL
 BALANCE_DEPTH = 10
 
-# alan tipi → yakalama biçimi
+# field type → capture form
 KIND_OF_TYPE = {"image": "image", "url": "url"}
 
 
 # ---------------------------------------------------------------------------
-# Metin normalleştirme (regex sonucu iç HTML'dir; karşılaştırma için metne çevrilir)
+# Text normalization (the regex result is inner HTML; it is converted to text for comparison)
 # ---------------------------------------------------------------------------
 _SCRIPT_RE = re.compile(r"<(script|style|noscript)\b.*?</\1\s*>|<!--.*?-->", _FLAGS)
 _TAG_RE    = re.compile(r"<[^>]+>")
 
 
 def html_to_text(s: str) -> str:
-    """İç HTML → düz metin: script/style ve etiketler atılır, entity'ler çözülür, boşluk sadeleşir."""
+    """Inner HTML → plain text: script/style and tags are removed, entities are decoded, whitespace is collapsed."""
     if not s:
         return ""
     s = _SCRIPT_RE.sub(" ", s)
@@ -69,10 +69,10 @@ def html_to_text(s: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# CSS ayrıştırma
+# CSS parsing
 # ---------------------------------------------------------------------------
 def _parse_compound(comp: str) -> dict | None:
-    """'div#a.b.c[x="y"]' → {tag, id, classes, attrs}. Desteklenmeyen sözdizimi → None."""
+    """'div#a.b.c[x="y"]' → {tag, id, classes, attrs}. Unsupported syntax → None."""
     out = {"tag": "*", "id": None, "classes": [], "attrs": []}
     i = 0
     if comp.startswith("*"):
@@ -108,7 +108,7 @@ def _parse_compound(comp: str) -> dict | None:
 
 
 def _parse_chain(part: str) -> list | None:
-    """'div.a > p b' → [compound, compound, compound] (birleştirici türü regex'te önemsizleşir)."""
+    """'div.a > p b' → [compound, compound, compound] (the combinator type does not matter in the regex)."""
     if "+" in part or "~" in part.replace("~=", "") or ":" in _UNESC.sub("", part):
         return None
     tokens, buf, depth = [], "", 0
@@ -127,16 +127,16 @@ def _parse_chain(part: str) -> list | None:
 
 
 # ---------------------------------------------------------------------------
-# Regex parçaları
+# Regex pieces
 # ---------------------------------------------------------------------------
 _VALUE_END = r"""(?=["'\s/>])"""
-# Etiket içi: tırnaklı nitelik değerleri bütün olarak atlanır (değerde '>' olabilir:
-# title="a <b>b</b>"); böylece \sclass= gibi aramalar başka bir değerin içinde eşleşmez.
+# Inside a tag: quoted attribute values are skipped as a whole (a value may contain '>':
+# title="a <b>b</b>"); so searches such as \sclass= do not match inside another value.
 _ATTRS = r"""(?:[^>"']|"[^"]*"|'[^']*')*?"""
 
 
 def _token_look(attr: str, token: str) -> str:
-    # attr="... token ..." — değer başında ya da boşluktan sonra, ardından boşluk/tırnak/>
+    # attr="... token ..." — at the start of the value or after a space, followed by space/quote/>
     return rf"""(?={_ATTRS}\s{attr}\s*=\s*["']?(?:[^"'>]*?\s)?{re.escape(token)}{_VALUE_END})"""
 
 
@@ -164,7 +164,7 @@ def _tag_name(c: dict) -> str:
 
 
 def _open_tag(c: dict, capture_attr: str | None = None) -> str:
-    """Açılış etiketi; capture_attr verilirse o niteliğin değeri yakalanır (src/href)."""
+    """Opening tag; if capture_attr is given, the value of that attribute is captured (src/href)."""
     looks = []
     if c["id"]:
         looks.append(_token_look("id", c["id"]))
@@ -177,7 +177,7 @@ def _open_tag(c: dict, capture_attr: str | None = None) -> str:
 
 
 def _balanced(tag: str, depth: int) -> str:
-    """İç içe aynı etiketi `depth` seviyeye kadar dengeleyen içerik kalıbı (grup yakalamaz)."""
+    """Content pattern that balances nesting of the same tag up to `depth` levels (no capturing group)."""
     inner = rf"(?:[^<]|<(?!/?{tag}[\s/>]))*"
     for _ in range(depth):
         inner = rf"(?:[^<]|<(?!/?{tag}[\s/>])|<{tag}(?:[\s/][^>]*)?>{inner}</{tag}\s*>)*"
@@ -185,10 +185,10 @@ def _balanced(tag: str, depth: int) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Aday üretimi
+# Candidate generation
 # ---------------------------------------------------------------------------
 def _structural_suffix(html: str, pos: int, n_tags: int) -> str | None:
-    """pos'tan sonraki ilk n etiketi (metin yerine [^<]*) içeren bitiş çıpası."""
+    """End anchor containing the first n tags after pos ([^<]* instead of text)."""
     tags = list(re.finditer(r"<[^>]+>", html[pos:pos + 4000]))[:n_tags]
     if len(tags) < n_tags:
         return None
@@ -203,7 +203,7 @@ def _structural_suffix(html: str, pos: int, n_tags: int) -> str | None:
 
 
 def _close_positions(html: str, open_re: str, tag: str, limit: int = 3) -> list:
-    """Algoritma 2 karşılığı: open_re eşleşmelerinin gerçek kapanış etiketi sonları (iç içe sayarak)."""
+    """Counterpart of Algorithm 2: the real closing-tag ends of the open_re matches (counting nesting)."""
     out = []
     tok = re.compile(rf"<(/?){tag}(?=[\s/>]){_ATTRS}>", re.IGNORECASE)
     for m in re.finditer(open_re, html, _FLAGS):
@@ -219,7 +219,7 @@ def _close_positions(html: str, open_re: str, tag: str, limit: int = 3) -> list:
 
 
 def _resolve_tag(c: dict, example_html: str | None) -> dict:
-    """Etiketsiz bileşik ("#id", ".x"): örnek sayfadaki ilk eşleşmenin gerçek etiketi kullanılır."""
+    """Compound without a tag ("#id", ".x"): the real tag of the first match on the sample page is used."""
     if c["tag"] != "*" or not example_html:
         return c
     m = re.search(_open_tag(c), example_html, _FLAGS)
@@ -227,14 +227,14 @@ def _resolve_tag(c: dict, example_html: str | None) -> dict:
 
 
 def _candidates_for_alt(chain: list, kind: str, example_html: str | None, containers: bool = True) -> list:
-    """Bir virgül alternatifi için (strateji, regex) adayları, basitten karmaşığa."""
+    """(strategy, regex) candidates for one comma alternative, from simple to complex."""
     chain  = [_resolve_tag(c, example_html) for c in chain]
     target = chain[-1]
     tag    = target["tag"]
-    # ata bağlamı: her atadan sonra, o atanın kapanışını geçmeden ilerle (tempered token)
-    # → "h2.title a" h2 içinde link yoksa h2'den sonraki ilk linki yakalamaz.
-    # Regex her eşleşmede dıştaki atayı da tüketir (ata başına tek sonuç); çok değerli alanlar
-    # için en yakın atadan başlayarak kademeli ekle: "li a" → "ul li a".
+    # ancestor context: after each ancestor, advance without passing that ancestor's closing tag (tempered token)
+    # → "h2.title a" does not capture the first link after the h2 if there is no link inside the h2.
+    # The regex also consumes the outer ancestor on each match (one result per ancestor); for multi-valued
+    # fields, add ancestors step by step starting from the nearest: "li a" → "ul li a".
     def gap(c):
         if c["tag"] == "*" or c["tag"] in _VOID:
             return _open_tag(c) + r".*?"
@@ -265,9 +265,9 @@ def _candidates_for_alt(chain: list, kind: str, example_html: str | None, contai
                     suf = _structural_suffix(example_html, end, n)
                     if suf:
                         out.append((f"anchored{n}{pname}", prefix + open_re + r"(.*?)" + close + r"[^<]*?" + suf))
-    # metin alanı, niteliksiz çocuklar ("ul.breadcrumbs li"): regex kapsayıcıdaki tüm çocukları
-    # ayrı ayrı sayamaz — birleşik metin karşılaştırıldığı için kapsayıcının içeriği aynı sonucu verir
-    # Her üst seviye denenir ("ul.x li a" → "ul.x li", "ul.x").
+    # text field, children without attributes ("ul.breadcrumbs li"): a regex cannot count all children in the
+    # container separately — since the joined text is compared, the content of the container gives the same result
+    # Every upper level is tried ("ul.x li a" → "ul.x li", "ul.x").
     if containers and kind == "text" and len(chain) > 1:
         for depth in range(len(chain) - 1, 0, -1):
             sub = [(s, rx) for s, rx in _candidates_for_alt(chain[:depth], kind, example_html, containers=False)]
@@ -276,7 +276,7 @@ def _candidates_for_alt(chain: list, kind: str, example_html: str | None, contai
 
 
 def candidates(css: str, kind: str = "text", example_html: str | None = None) -> list:
-    """CSS selector → [(strateji, regex)] adayları. Desteklenmeyen seçicide []."""
+    """CSS selector → [(strategy, regex)] candidates. [] for an unsupported selector."""
     alts = split_selector_list(css or "")
     chains = [_parse_chain(a) for a in alts]
     if not chains or not all(chains):
@@ -286,24 +286,24 @@ def candidates(css: str, kind: str = "text", example_html: str | None = None) ->
         return []
     if len(per_alt) == 1:
         return per_alt[0]
-    # alternatifler: aynı stratejiyi tüm alternatiflere uygula, "|" ile birleştir (merge=True karşılığı)
+    # alternatives: apply the same strategy to all alternatives, join with "|" (counterpart of merge=True)
     out = []
     for strat, _ in per_alt[0]:
         picked = [dict(c).get(strat) for c in per_alt]
         if all(picked):
             out.append((strat, "|".join(f"(?:{p})" for p in picked)))
-    # merge=False'ta CSS yalnızca ilk eşleşen alternatifi kullanır; regex bunu ifade edemez →
-    # alternatifleri tek başına da dene (sayfalarda hep aynı alternatif eşleşiyorsa doğrulanır)
+    # with merge=False, CSS uses only the first matching alternative; a regex cannot express this →
+    # also try the alternatives alone (validated if the same alternative always matches on the pages)
     for i, cands in enumerate(per_alt, 1):
         out += [(f"{strat} (alt{i})", rx) for strat, rx in cands]
     return out
 
 
 # ---------------------------------------------------------------------------
-# Doğrulama ve seçim
+# Validation and selection
 # ---------------------------------------------------------------------------
 def regex_values(html: str, pattern: str, kind: str = "text") -> list:
-    """Regex'i çalıştırıp karşılaştırılabilir değerler: metin alanı → düz metin, image/url → nitelik."""
+    """Run the regex and return comparable values: text field → plain text, image/url → attribute."""
     vals = run_regex(html, pattern)
     if kind in ("image", "url"):
         return [_html.unescape(v).strip() for v in vals if v.strip()]
@@ -311,20 +311,20 @@ def regex_values(html: str, pattern: str, kind: str = "text") -> list:
 
 
 def _norm(vals: list, kind: str = "text"):
-    """Karşılaştırma anahtarı. Metin alanları değerlendirmede birleşik metin olarak skorlanır
-    (metrics._collect_text_generic) → boşluklardan bağımsız birleşik metin; image/url → sıralı liste."""
+    """Comparison key. Text fields are scored as joined text in the evaluation
+    (metrics._collect_text_generic) → whitespace-independent joined text; image/url → ordered list."""
     if kind in ("image", "url"):
         return sorted("".join(v.split()) for v in vals)
     return "".join("".join(vals).split())
 
 
 def generate(css: str, pages: list, expected: list, kind: str = "text") -> dict | None:
-    """Adaylar arasından, sayfaların en çoğunda CSS ile aynı değerleri veren regex'i seç.
+    """Among the candidates, choose the regex that gives the same values as CSS on the most pages.
 
-    pages    : ham HTML listesi (ilki örnek sayfa — 'anchored' adayları ondan türetilir)
-    expected : her sayfa için CSS'in çıkardığı değerler (aynı sıra; metin ya da src/href listesi)
-    Döner    : {regex, strategy, passed, total, tried} ya da aday yoksa None.
-    Eşitlikte daha basit strateji / daha kısa regex tercih edilir.
+    pages    : list of raw HTML (the first is the sample page — 'anchored' candidates are derived from it)
+    expected : the values extracted by CSS for each page (same order; text or a list of src/href)
+    Returns  : {regex, strategy, passed, total, tried}, or None if there is no candidate.
+    On a tie the simpler strategy / shorter regex is preferred.
     """
     cands = candidates(css, kind, pages[0] if pages else None)
     if not cands:
@@ -332,7 +332,7 @@ def generate(css: str, pages: list, expected: list, kind: str = "text") -> dict 
     exp_norm = [_norm(e, kind) for e in expected]
 
     def similarity(html, exp_vals):
-        # tam eşleşme yoksa hangi aday daha yakın: metin → kelime F1, liste → Jaccard
+        # if there is no exact match, which candidate is closer: text → word F1, list → Jaccard
         got = regex_values(html, rx, kind)
         if kind in ("image", "url"):
             a, b = set(_norm(exp_vals, kind)), set(_norm(got, kind))
@@ -353,7 +353,7 @@ def generate(css: str, pages: list, expected: list, kind: str = "text") -> dict 
             else:
                 failed += 1
                 if best and len(pages) - failed < best[3]:
-                    break      # bu aday en iyiyi artık geçemez
+                    break      # this candidate can no longer beat the best
         sim = 0.0
         if passed < len(pages) and (best is None or passed >= best[3]):
             sim = sum(similarity(h, e) for h, e in zip(pages, expected))
@@ -361,7 +361,7 @@ def generate(css: str, pages: list, expected: list, kind: str = "text") -> dict 
         if best is None or key > best[0]:
             best = (key, strat, rx, passed)
         if passed == len(pages):
-            break      # basitten karmaşığa sıralı: ilk tam başarılı aday yeterli
+            break      # ordered from simple to complex: the first fully successful candidate is enough
     if best is None:
         return None
     _, strat, rx, passed = best
@@ -369,8 +369,8 @@ def generate(css: str, pages: list, expected: list, kind: str = "text") -> dict 
 
 
 def css_values(html_or_soup, css: str, kind: str = "text", merge: bool = False) -> list:
-    """CSS'in çıkardığı karşılaştırılabilir değerler (annotator._run_selector ile aynı merge kuralı:
-    merge=False → virgüllü alternatiflerden ilk eşleşen, True → hepsinin birleşimi)."""
+    """Comparable values extracted by CSS (same merge rule as annotator._run_selector:
+    merge=False → the first matching comma alternative, True → the union of all)."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_or_soup, "html.parser") if isinstance(html_or_soup, str) else html_or_soup
     els, seen = [], set()
@@ -390,5 +390,5 @@ def css_values(html_or_soup, css: str, kind: str = "text", merge: bool = False) 
         return [el.get("src").strip() for el in els if el.get("src") and el.get("src").strip()]
     if kind == "url":
         return [el.get("href").strip() for el in els if el.get("href") and el.get("href").strip()]
-    # regex tarafıyla aynı normalleştirme: script/style/noscript metni ve yorumlar hariç
+    # same normalization as on the regex side: script/style/noscript text and comments excluded
     return [t for t in (html_to_text(str(el)) for el in els) if t]

@@ -3,27 +3,27 @@ skeleton.py
 ===========
 Phase 3 — K3: HTML Skeleton Extractor
 
-Temizlenmiş HTML'den sadece yapısal ağaç çıkarır.
-Metin, src, href, style, event handler — hiçbiri kalmaz.
-Sadece tag + class + id + belirli data-* attribute'lar kalır.
+Extracts only the structural tree from cleaned HTML.
+Text, src, href, style, event handlers — none of them remain.
+Only tag + class + id + selected data-* attributes remain.
 
-Class temizleme:
-  ssrcss-8ytrv8-TextContainer  →  TextContainer   (tire ile böl, hash'leri sil)
-  eys6wfo1                     →  (silinir)
-  text-[40px]                  →  text-[40px]     (CSS değeri, korunur)
-  kbqDDU                       →  kbqDDU          (büyük harf var, korunur)
+Class cleaning:
+  ssrcss-8ytrv8-TextContainer  →  TextContainer   (split on hyphens, drop hashes)
+  eys6wfo1                     →  (removed)
+  text-[40px]                  →  text-[40px]     (CSS value, kept)
+  kbqDDU                       →  kbqDDU          (has an uppercase letter, kept)
 
-Token anlamlılık kuralı (B yöntemi):
-  - Büyük harf içeriyorsa       → kalsın
-  - Rakam içeriyorsa            → kalsın  (2xl, 8ytrv8, 40px)
-  - CSS birimi içeriyorsa       → kalsın  (%, rem, vw, vh...)
-  - Sadece küçük harf, ≥5 char  → kalsın  (article, container)
-  - Diğerleri                   → sil
+Token meaningfulness rule (method B):
+  - Contains an uppercase letter  → keep
+  - Contains a digit              → keep  (2xl, 8ytrv8, 40px)
+  - Contains a CSS unit           → keep  (%, rem, vw, vh...)
+  - Lowercase only, ≥5 chars      → keep  (article, container)
+  - Otherwise                     → drop
 
-Girdi  : temizlenmiş HTML string (html_cleaner çıktısı)
-Çıktı  : skeleton HTML string + metrikler
+Input  : cleaned HTML string (html_cleaner output)
+Output : skeleton HTML string + metrics
 
-Kullanım:
+Usage:
   from webrulebench.pipeline.skeleton import Skeleton
   sk     = Skeleton()
   result = sk.extract(cleaned_html)
@@ -61,10 +61,10 @@ REMOVE_CLASS_PATTERNS = {
     "related-articles", "recommended",
 }
 
-# Temel attribute'lar her zaman korunur
+# Core attributes are always kept
 KEEP_ATTRS = {"class", "id"}
 
-# data-* attribute'lardan anlamlı olanlar korunur
+# Meaningful data-* attributes are kept
 KEEP_DATA_ATTRS = {
     "data-testid", "data-trackable", "data-type",
     "data-component", "data-widget", "data-id",
@@ -72,7 +72,7 @@ KEEP_DATA_ATTRS = {
     "data-article",
 }
 
-# Semantic tag'ler boş olsa bile silinmez
+# Semantic tags are not removed even when empty
 KEEP_STRUCTURAL = {
     "h1", "h2", "h3", "h4", "h5", "h6",
     "main", "article", "section", "header",
@@ -83,11 +83,11 @@ KEEP_STRUCTURAL = {
 MAX_DEPTH    = 16
 MAX_SIBLINGS = 2
 
-# CSS birimleri — sayı+birim pattern'i için (40px, 2rem, 100vh)
+# CSS units — for the number+unit pattern (40px, 2rem, 100vh)
 CSS_UNITS = {"px", "rem", "em", "vh", "vw", "%", "pt", "ch", "ex", "fr", "deg"}
 
-# BEM modifier (--) içeren saf utility/style class'ların base kelimeleri
-# Bu prefix'e sahip token'lar (ör: box--margin-none, flex--justify-center) silinir
+# Base words of pure utility/style classes that carry a BEM modifier (--)
+# Tokens with this prefix (e.g. box--margin-none, flex--justify-center) are removed
 UTILITY_BEM_BASES = {
     # Layout / spacing
     "flex", "box", "width", "height", "col", "row", "gap",
@@ -103,7 +103,7 @@ UTILITY_BEM_BASES = {
     "layout",
 }
 
-# Kısa ama anlamlı CSS kelimeleri — eşik altında olsa bile korunur
+# Short but meaningful CSS words — kept even below the length threshold
 SEMANTIC_SHORT = {
     "text", "body", "main", "col", "row", "nav", "tag",
     "date", "img", "btn", "top", "sub", "box", "bar",
@@ -173,29 +173,29 @@ class Skeleton:
 
         soup = BeautifulSoup(html, "html.parser")
 
-        # 1. Gürültü tag'lerini kaldır
+        # 1. Remove noise tags
         self._remove_noise(soup)
 
-        # 2. Tüm attribute'ları temizle (class, id, data-* hariç)
+        # 2. Strip all attributes (except class, id, data-*)
         self._clean_attrs(soup)
 
-        # 3. Class token'larını temizle (hash'leri sil)
+        # 3. Clean class tokens (drop hashes)
         self._clean_classes(soup)
 
-        # 4. Tüm metinleri sil (text_included / enriched / hybrid stratejisinde silme)
+        # 4. Remove all text (not in the text_included / enriched / hybrid strategies)
         if self.strategy not in ("text_included", "enriched", "hybrid"):
             self._remove_text(soup)
 
-        # 5. Derinlik sınırı uygula
+        # 5. Apply the depth limit
         pruned_depth = self._prune_depth(soup, depth=0)
 
-        # 6. Tekrar eden kardeşleri kırp
+        # 6. Prune repeated siblings
         pruned_siblings = self._prune_siblings(soup)
 
-        # 7. Boş tag'leri temizle
+        # 7. Remove empty tags
         self._remove_empty(soup)
 
-        # 8. Güzel formatla
+        # 8. Pretty-print
         skeleton = self._format(soup)
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
@@ -211,7 +211,7 @@ class Skeleton:
             pruned_depth    = pruned_depth,
         )
 
-    # ── Adım 1: Gürültü kaldır ────────────────────────────────────────────
+    # ── Step 1: Remove noise ──────────────────────────────────────────────
     def _remove_noise(self, soup: BeautifulSoup):
         for tag in soup.find_all(REMOVE_TAGS):
             tag.decompose()
@@ -222,23 +222,23 @@ class Skeleton:
             tag_id   = tag.get("id", "")
             combined = (classes + " " + tag_id).lower()
             if any(p in combined for p in REMOVE_CLASS_PATTERNS):
-                # İçinde önemli metin varsa (>500 char) içerik kapsayıcısı olabilir, silme
+                # If it holds substantial text (>500 chars) it may be a content container; do not remove
                 if len(tag.get_text(strip=True)) > 500:
                     continue
                 tag.decompose()
-        # header/footer/aside: article/main içindeyse koru, dışındaysa sil
+        # header/footer/aside: keep if inside article/main, remove if outside
         for tag in soup.find_all(["header", "footer", "aside"]):
             if not tag.find_parent(["article", "main"]):
                 tag.decompose()
 
-        # p içermeyen article → teaser/card, sil (tam haber metninde p zorunlu)
+        # article without p → teaser/card, remove (a full news text always has p)
         for tag in soup.find_all("article"):
             if not tag.find("p"):
                 tag.decompose()
 
-        # CSS position:fixed/sticky → UI chrome (nav, modal, banner), sil
-        # Tailwind "fixed" veya "sticky" class token'u === CSS position değeri
-        # CSS display:none → Tailwind "hidden" class token'u === gizli eleman, sil
+        # CSS position:fixed/sticky → UI chrome (nav, modal, banner), remove
+        # Tailwind "fixed" or "sticky" class token === CSS position value
+        # CSS display:none → Tailwind "hidden" class token === hidden element, remove
         for tag in list(soup.find_all(True)):
             if not tag.parent:
                 continue
@@ -257,9 +257,9 @@ class Skeleton:
             except Exception:
                 pass
 
-        # --- Navigasyon listesi tespiti ---
-        # ul > li > a pattern'i 5+ tekrar eden ul'ler → menü, sil
-        # Ama article/main içindeki tag listelerini koru
+        # --- Navigation list detection ---
+        # ul elements with the ul > li > a pattern repeated 5+ times → menu, remove
+        # But keep tag lists inside article/main
         for ul in list(soup.find_all("ul")):
             if not ul.parent:
                 continue
@@ -272,22 +272,22 @@ class Skeleton:
                     ul.decompose()
 
         # --- Article-focus pruning ---
-        # Eğer tek bir article tag'i varsa, article'ın derinliğindeki
-        # kardeş container'ları (sidebar, related news) tespit edip sil
+        # If there is a single article tag, detect and remove the sibling
+        # containers at the article's depth (sidebar, related news)
         self._prune_non_article_siblings(soup)
 
     def _prune_non_article_siblings(self, soup: BeautifulSoup):
         """
-        Tek bir birincil article varsa, onun üst kapsayıcılarındaki
-        ağır kardeş container'ları (sidebar, haber listeleri) sil.
+        If there is a single primary article, remove the heavy sibling
+        containers (sidebar, news lists) in its parent containers.
         """
         articles = soup.find_all("article")
-        # Birden fazla article varsa (haber listesi sayfası olabilir), dokunma
+        # If there is more than one article (may be a news list page), do nothing
         if len(articles) != 1:
             return
         article = articles[0]
 
-        # article'ın parent zincirini bul
+        # Find the article's parent chain
         parent = article.parent
         if not parent:
             return
@@ -297,26 +297,26 @@ class Skeleton:
                 continue
             if sibling is article:
                 continue
-            # Kardeş container analizi
+            # Sibling container analysis
             sib_nodes = len(sibling.find_all(True))
-            # Küçük kardeşler sorun değil
+            # Small siblings are fine
             if sib_nodes < 20:
                 continue
-            # Ağır kardeşlerde link/heading yoğunluğuna bak
+            # For heavy siblings, check link/heading density
             sib_links    = len(sibling.find_all("a"))
             sib_headings = len(sibling.find_all(["h3", "h4", "h5"]))
-            # Link veya heading yoğunluğu yüksekse sidebar/haber listesi
+            # High link or heading density means sidebar/news list
             if sib_links > 10 or sib_headings > 5:
                 sibling.decompose()
                 continue
-            # Node sayısı article'dan çok fazlaysa gürültü
+            # Noise if it has far more nodes than the article
             art_nodes = len(article.find_all(True))
             if sib_nodes > art_nodes * 2:
                 sibling.decompose()
 
-    # ── Adım 2: Attribute temizle ─────────────────────────────────────────
+    # ── Step 2: Clean attributes ──────────────────────────────────────────
     def _clean_attrs(self, soup: BeautifulSoup):
-        """class, id ve seçili data-* attribute'ları koru, diğerlerini sil."""
+        """Keep class, id and selected data-* attributes; remove the others."""
         for tag in soup.find_all(True):
             attrs_to_keep = {}
             for attr in KEEP_ATTRS:
@@ -324,26 +324,26 @@ class Skeleton:
                 if val:
                     if isinstance(val, list):
                         val = " ".join(val)
-                    # Sayısal/hash ID'leri atla (sayfa-spesifik generated ID'ler)
-                    # Örn: bdf-1363274035, div-gpt-ad-..., wp-block-12345
+                    # Skip numeric/hash IDs (page-specific generated IDs)
+                    # E.g.: bdf-1363274035, div-gpt-ad-..., wp-block-12345
                     if attr == "id" and re.search(r'\d{5,}', val):
                         continue
                     attrs_to_keep[attr] = val
-            # Seçili data-* attribute'ları koru
+            # Keep the selected data-* attributes
             for attr in KEEP_DATA_ATTRS:
                 val = tag.get(attr)
                 if val:
                     attrs_to_keep[attr] = val
-            # Enriched / hybrid: img tag'leri için boyut bilgisi koru
+            # Enriched / hybrid: keep size information for img tags
             if tag.name == "img" and self.strategy in ("enriched", "hybrid"):
                 w = tag.get("width")
                 h = tag.get("height")
-                # width/height doğrudan attribute'da varsa koru
+                # Keep width/height if present directly as attributes
                 if w:
                     attrs_to_keep["width"] = str(w)
                 if h:
                     attrs_to_keep["height"] = str(h)
-                # src URL'den boyut parse et (1170x700 gibi)
+                # Parse the size from the src URL (such as 1170x700)
                 if not w and not h:
                     src_url = tag.get("src", "")
                     m = re.search(r'(\d{3,4})[xX](\d{3,4})(?:[/_.]|$)', src_url)
@@ -352,20 +352,20 @@ class Skeleton:
                         attrs_to_keep["height"] = m.group(2)
             tag.attrs = attrs_to_keep
 
-    # ── Adım 3: Class token temizleme ────────────────────────────────────
+    # ── Step 3: Clean class tokens ───────────────────────────────────────
     def _clean_classes(self, soup: BeautifulSoup):
         """
-        Her tag'in class'ındaki hash benzeri token'ları sil.
+        Remove hash-like tokens from each tag's class.
 
-        Token anlamlılık kuralı (B yöntemi):
-          - Büyük harf içeriyorsa       → kalsın  (TextContainer)
-          - Rakam içeriyorsa            → kalsın  (2xl, text-[40px])
-          - CSS birimi içeriyorsa       → kalsın  (%, rem, vw)
-          - Sadece küçük harf, ≥5 char  → kalsın  (article, wrapper)
-          - Diğerleri                   → sil     (ssrcss, eys6wfo1)
+        Token meaningfulness rule (method B):
+          - Contains an uppercase letter  → keep  (TextContainer)
+          - Contains a digit              → keep  (2xl, text-[40px])
+          - Contains a CSS unit           → keep  (%, rem, vw)
+          - Lowercase only, ≥5 chars      → keep  (article, wrapper)
+          - Otherwise                     → drop  (ssrcss, eys6wfo1)
 
-        Tire önce boşluğa çevrilir ki token'lara ayrılabilsin.
-        Sonra anlamsız token'lar düşürülür.
+        Hyphens are first turned into spaces so the class can be split into tokens.
+        Then the meaningless tokens are dropped.
         """
         for tag in soup.find_all(True):
             raw_class = tag.get("class")
@@ -374,7 +374,7 @@ class Skeleton:
             if isinstance(raw_class, list):
                 raw_class = " ".join(raw_class)
 
-            # Boşlukla ayrılmış class token'larını işle
+            # Process the space-separated class tokens
             tokens = raw_class.split()
             kept = []
             for token in tokens:
@@ -388,30 +388,30 @@ class Skeleton:
                 del tag["class"]
 
     def _is_meaningful_segment(self, seg: str) -> bool:
-        """Tire ile bölünmüş tek segment anlamlı mı?"""
+        """Is a single hyphen-separated segment meaningful?"""
         import re
         if not seg: return False
-        # CSS Modules / CSS-in-JS hash tespiti — 4 kural:
+        # CSS Modules / CSS-in-JS hash detection — 4 rules:
         VOWELS = set('aeiouAEIOU')
         alpha_chars = [c for c in seg if c.isalpha()]
 
-        # Kural 1: alt çizgi ile başlıyor (CSS Modules _abc123 pattern)
+        # Rule 1: starts with an underscore (CSS Modules _abc123 pattern)
         if seg.startswith('_'):
             return False
 
-        # SEMANTIC_SHORT listesinde ise hash kurallarından önce kabul et
+        # Accept before the hash rules if it is in SEMANTIC_SHORT
         if seg in SEMANTIC_SHORT:
             return True
 
         if seg.isalnum() and len(seg) <= 7:
-            # Kural 2: kısa + rakam içeriyor → hash (Hy4HP, P4L6N, z5wPE)
+            # Rule 2: short + contains a digit → hash (Hy4HP, P4L6N, z5wPE)
             if any(c.isdigit() for c in seg):
                 return False
-            # Kural 3: ≥2 baş-dışı büyük harf → hash (WAXFI, ALMCC, xQoVi)
+            # Rule 3: ≥2 non-initial uppercase letters → hash (WAXFI, ALMCC, xQoVi)
             non_initial_upper = sum(1 for i, c in enumerate(seg) if c.isupper() and i > 0)
             if non_initial_upper >= 2:
                 return False
-            # Kural 4: kısa + ünlü yoğunluğu < %25 → hash (wsquJ, Wskuj, cgtzj)
+            # Rule 4: short + vowel ratio < 25% → hash (wsquJ, Wskuj, cgtzj)
             if (len(seg) <= 6 and alpha_chars
                     and sum(1 for c in alpha_chars if c in VOWELS) / len(alpha_chars) < 0.25):
                 return False
@@ -422,53 +422,53 @@ class Skeleton:
         if re.match(pattern, clean): return True
         has_digit = any(c.isdigit() for c in seg)
         has_alpha = any(c.isalpha() for c in seg)
-        # snake_case (alt çizgi + rakam içerse bile) → semantic BEM/naming, hash değil
-        # Örn: n3_meta_posted, article_body_text, post_details_block
+        # snake_case (even with underscore + digits) → semantic BEM/naming, not a hash
+        # E.g.: n3_meta_posted, article_body_text, post_details_block
         if '_' in seg and len(seg) >= 5: return True
         if has_digit and has_alpha: return False
         if seg.isdigit(): return False
         if seg in SEMANTIC_SHORT: return True
         if seg.isalpha() and len(seg) >= 5: return True
-        # alt çizgi içeren BEM element token'ları (article__title, c__body vb.)
+        # BEM element tokens containing underscores (article__title, c__body etc.)
         if re.match(r'^[a-zA-Z_]+$', seg) and len(seg) >= 5: return True
         return False
 
     def _clean_class_token(self, token: str):
         """
-        BEM notasyonunu koruyarak class token'ı temizle.
-          -- içeriyorsa → utility base ise sil, değilse dokunma
-          Hash segment yoksa → dokunma
-          Hash var, anlamlı kısım var → "*TextContainer*"
-          Tümü hash → None (sil)
+        Clean a class token while preserving BEM notation.
+          Contains -- → remove if the base is a utility, otherwise leave as is
+          No hash segment → leave as is
+          Has a hash and a meaningful part → "*TextContainer*"
+          All hash → None (remove)
         """
         import re
         # CSS Modules: ComponentName__hash → ComponentName
-        # Örn: Paragraph_wrapper__6w7GG → Paragraph_wrapper
-        # Sadece hash_part tamamen alphanumeric ise uygula (BEM __element ile karışmasın)
-        # BEM: elementor-post-info__item--type-date → hash_part='item--type-date' (alnum değil, dokunma)
-        # CSS Modules: Paragraph_wrapper__6w7GG → hash_part='6w7GG' (alnum, strip et)
+        # E.g.: Paragraph_wrapper__6w7GG → Paragraph_wrapper
+        # Apply only if hash_part is fully alphanumeric (so it is not confused with BEM __element)
+        # BEM: elementor-post-info__item--type-date → hash_part='item--type-date' (not alnum, leave as is)
+        # CSS Modules: Paragraph_wrapper__6w7GG → hash_part='6w7GG' (alnum, strip it)
         if '__' in token:
             base, hash_part = token.rsplit('__', 1)
             if base and hash_part.isalnum() and not self._is_meaningful_segment(hash_part):
                 token = base
 
-        # BEM modifier (--) içeriyorsa: utility layout/style class mı?
+        # Contains a BEM modifier (--): is it a utility layout/style class?
         if '--' in token:
             base = token.split('--')[0]  # grid__col, flex, box, font, ...
-            # BEM element ayracı (__) varsa en son parçayı al
+            # If there is a BEM element separator (__), take the last part
             base_word = base.rsplit('__', 1)[-1].rsplit('-', 1)[-1]
             if base_word in UTILITY_BEM_BASES or base in UTILITY_BEM_BASES:
-                return None  # saf utility/style class — sil
+                return None  # pure utility/style class — remove
             return token
 
         # Bootstrap/Tailwind utility class pattern: w-100, h-50, col-6, p-3, m-2
-        # Kısa harf prefix + sayı suffix → olduğu gibi koru
+        # Short letter prefix + number suffix → keep as is
         if re.match(r'^[a-z]{1,3}-\d{1,4}$', token):
             return token
 
         segments = token.split('-')
 
-        # Bilinen BEM namespace prefix'leri → dokunma
+        # Known BEM namespace prefixes → leave as is
         BEM_PREFIXES = {"c", "l", "u", "o", "t", "is", "has", "js", "qa"}
         if len(segments) >= 2 and segments[0] in BEM_PREFIXES:
             return token
@@ -480,8 +480,8 @@ class Skeleton:
         if not meaningful:
             return None
 
-        # Kısa yönsel/niteleyici suffix koru: border-b, border-t, border-x vb.
-        # Son segment 1-2 harf ise ve anlamlı segmentler varsa suffix'i dahil et
+        # Keep a short directional/qualifier suffix: border-b, border-t, border-x etc.
+        # If the last segment is 1-2 letters and there are meaningful segments, include the suffix
         last_seg = segments[-1]
         if (not self._is_meaningful_segment(last_seg) and
                 len(last_seg) <= 2 and last_seg.isalpha()):
@@ -493,7 +493,7 @@ class Skeleton:
 
 
     def _clean_bem_part(self, part: str):
-        """Tek BEM parçasını (block, element veya modifier) temizle."""
+        """Clean a single BEM part (block, element or modifier)."""
         segments = part.split('-')
         has_hash = any(not self._is_meaningful_segment(s) for s in segments)
         if not has_hash:
@@ -502,7 +502,7 @@ class Skeleton:
         return '-'.join(meaningful) if meaningful else None
 
 
-    # ── Adım 4: Metin sil ─────────────────────────────────────────────────
+    # ── Step 4: Remove text ───────────────────────────────────────────────
     SHORT_TEXT_TAGS = {"span", "div", "li", "td", "time", "small", "cite", "address", "a",
                        "h1", "h2", "h3", "h4", "h5", "h6", "p", "figcaption", "blockquote"}
     SHORT_TEXT_MAX  = 80
@@ -514,19 +514,19 @@ class Skeleton:
             if self.strategy in ("enriched", "hybrid"):
                 parent = node.parent
                 if parent and isinstance(parent, Tag):
-                    # Başlıklar: her zaman metni koru (uzunluk sınırı yok)
+                    # Headings: always keep the text (no length limit)
                     if parent.name in self.HEADING_TAGS:
                         text = node.strip()
                         if text:
                             continue
-                    # Diğer kısa text tag'leri: 80 char sınırı
+                    # Other short text tags: 80 char limit
                     elif parent.name in self.SHORT_TEXT_TAGS:
                         text = node.strip()
                         if text and len(text) <= self.SHORT_TEXT_MAX:
-                            continue  # kısa text — koru
+                            continue  # short text — keep
             node.extract()
 
-    # ── Adım 5: Derinlik sınırı ───────────────────────────────────────────
+    # ── Step 5: Depth limit ───────────────────────────────────────────────
     def _prune_depth(self, tag, depth: int) -> int:
         pruned = 0
         if not hasattr(tag, 'children'):
@@ -541,12 +541,12 @@ class Skeleton:
                 pruned += self._prune_depth(child, depth + 1)
         return pruned
 
-    # Makale içeriği tag'leri — article/main içindeyken sibling kırpmadan muaf
+    # Article content tags — exempt from sibling pruning inside article/main
     CONTENT_TAGS = {"p", "td", "tr", "dd", "dt", "blockquote", "figcaption"}
-    # li: sadece article/main içindeyse muaf — nav menülerinde pruning uygulanır
+    # li: exempt only inside article/main — pruning applies in nav menus
     LI_CONTENT_ANCESTORS = {"article", "main"}
 
-    # ── Adım 6: Tekrar eden kardeşleri kırp ──────────────────────────────
+    # ── Step 6: Prune repeated siblings ──────────────────────────────────
     def _prune_siblings(self, soup: BeautifulSoup) -> int:
         pruned = 0
         for parent in soup.find_all(True):
@@ -555,10 +555,10 @@ class Skeleton:
             for child in list(parent.children):
                 if not isinstance(child, Tag):
                     continue
-                # İçerik tag'leri (p vb.) sibling kırpmadan muaf
+                # Content tags (p etc.) are exempt from sibling pruning
                 if child.name in self.CONTENT_TAGS:
                     continue
-                # li: sadece article/main içindeyse muaf
+                # li: exempt only inside article/main
                 if child.name == "li":
                     if child.find_parent(self.LI_CONTENT_ANCESTORS):
                         continue
@@ -567,13 +567,13 @@ class Skeleton:
                     cls_list = cls_list.split()
                 classes  = " ".join(sorted(cls_list))
                 child_id = child.get("id", "")
-                # id'si olan elementler her zaman unique — sibling sayımına dahil etme
+                # Elements with an id are always unique — do not count them as siblings
                 if child_id:
                     continue
                 key = f"{child.name}|{classes}"
                 seen[key] = seen.get(key, 0) + 1
                 if seen[key] > self.max_siblings:
-                    # Önemli metin içeriyorsa (>200 char) kırpma — içerik kapsayıcısı olabilir
+                    # Do not prune if it holds substantial text (>200 chars) — may be a content container
                     if len(child.get_text(strip=True)) > 200:
                         continue
                     to_remove.append(child)
@@ -582,12 +582,12 @@ class Skeleton:
                 pruned += 1
         return pruned
 
-    # ── Adım 7: Boş tag temizle ───────────────────────────────────────────
+    # ── Step 7: Remove empty tags ─────────────────────────────────────────
     def _remove_empty(self, soup: BeautifulSoup):
         """
-        İçi boş ve class/id/data-*'si de olmayan tag'leri kaldır.
-        KEEP_STRUCTURAL tag'leri (h1, h2, time vb.) boş olsa bile korunur.
-        Silinen tag'ler parent'a <!-- contains: a, span --> olarak not düşülür.
+        Remove tags that are empty and have no class/id/data-* either.
+        KEEP_STRUCTURAL tags (h1, h2, time etc.) are kept even when empty.
+        Removed tags are noted on the parent as <!-- contains: a, span -->.
         """
         from bs4 import Comment
         changed = True
@@ -598,7 +598,7 @@ class Skeleton:
                     continue
                 if tag.name in KEEP_STRUCTURAL:
                     continue
-                # Enriched / hybrid: img tag'leri boyut bilgisi varsa koru
+                # Enriched / hybrid: keep img tags that have size information
                 if tag.name == "img" and self.strategy in ("enriched", "hybrid"):
                     if tag.get("width") or tag.get("height"):
                         continue
@@ -612,12 +612,12 @@ class Skeleton:
                     parent   = tag.parent
                     tag_name = tag.name
                     tag.decompose()
-                    # Parent'ın contains comment'ını güncelle
+                    # Update the parent's contains comment
                     self._add_contains_comment(parent, tag_name, Comment)
                     changed = True
 
     def _add_contains_comment(self, parent, tag_name: str, Comment):
-        """Parent'a 'contains: tag1, tag2' comment'ı ekle ya da güncelle."""
+        """Add or update a 'contains: tag1, tag2' comment on the parent."""
         from bs4 import Comment as BSComment
         for c in list(parent.children):
             if isinstance(c, BSComment):
@@ -630,7 +630,7 @@ class Skeleton:
                     return
         parent.append(BSComment(f' contains: {tag_name} '))
 
-    # ── Adım 8: Formatla ──────────────────────────────────────────────────
+    # ── Step 8: Format ────────────────────────────────────────────────────
     def _format(self, soup: BeautifulSoup) -> str:
         lines = []
         self._render(soup, lines, indent=0)
@@ -638,7 +638,7 @@ class Skeleton:
 
     def _render(self, node, lines: list, indent: int):
         from bs4 import Comment as BSComment
-        # enriched: parent SHORT_TEXT_TAGS ise direct text node'ları render et
+        # enriched: if the parent is in SHORT_TEXT_TAGS, render the direct text nodes
         node_is_short = (self.strategy in ("text_included", "enriched", "hybrid") and
                          isinstance(node, Tag) and
                          node.name in self.SHORT_TEXT_TAGS)
@@ -662,11 +662,11 @@ class Skeleton:
 
             has_tag_children = any(isinstance(c, Tag) for c in child.children)
             has_text         = any(isinstance(c, str) and c.strip() for c in child.children)
-            # Silinen tag'lerin bıraktığı comment'lar
+            # Comments left by removed tags
             comments = [str(c).strip() for c in child.children if isinstance(c, BSComment)]
             comment_str = ("<!-- " + " ".join(comments) + " -->") if comments else ""
 
-            # img tag'i — enriched / hybrid'da width/height varsa göster
+            # img tag — in enriched / hybrid, show it if it has width/height
             if child.name == "img" and self.strategy in ("enriched", "hybrid"):
                 img_attrs = ""
                 if child.get("width"):
@@ -683,13 +683,13 @@ class Skeleton:
                 lines.append(f"{pad}</{child.name}>")
             elif has_text and self.strategy in ("text_included", "enriched", "hybrid"):
                 text_content = child.get_text(separator=" ", strip=True)
-                # enriched / hybrid: başlıklar her zaman metin göster, diğerleri kısa olanlar
+                # enriched / hybrid: headings always show their text, others only short texts
                 HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
                 is_heading = child.name in HEADING_TAGS
                 if (self.strategy in ("enriched", "hybrid") and
                         not is_heading and
                         (child.name not in self.SHORT_TEXT_TAGS or len(text_content) >= self.SHORT_TEXT_MAX)):
-                    # Limit aşıldıysa tamamen gizleme — ilk 60 char'ı ipucu olarak göster
+                    # If over the limit, do not hide it completely — show the first 60 chars as a hint
                     if child.name in self.SHORT_TEXT_TAGS and len(text_content) >= self.SHORT_TEXT_MAX:
                         preview = text_content[:60].rstrip() + "…"
                         lines.append(f"{pad}<{child.name}{attrs}>{preview}</{child.name}>")
@@ -706,17 +706,17 @@ class Skeleton:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # doğrudan çalıştırma: src/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # direct run: src/
     from webrulebench.pipeline.html_cleaner import HTMLCleaner, CleanerConfig, STRATEGIES
 
     parser = argparse.ArgumentParser(description="Skeleton Extractor — K3")
-    parser.add_argument("html_file",  help="Ham HTML dosyası")
+    parser.add_argument("html_file",  help="Raw HTML file")
     parser.add_argument("--strategy", default="whitelist", choices=STRATEGIES,
-                        help="html_cleaner stratejisi (default: whitelist)")
+                        help="html_cleaner strategy (default: whitelist)")
     parser.add_argument("--mode", default="enriched",
                         choices=["whitelist", "text_included", "enriched", "hybrid"],
-                        help="iskelet modu (default: enriched — deneylerde LLM'e gönderilen biçim; "
-                             "whitelist metinsizdir)")
+                        help="skeleton mode (default: enriched — the format sent to the LLM in experiments; "
+                             "whitelist has no text)")
     parser.add_argument("--max-depth",    type=int, default=MAX_DEPTH)
     parser.add_argument("--max-siblings", type=int, default=MAX_SIBLINGS)
     parser.add_argument("--show",   action="store_true")
@@ -734,20 +734,20 @@ if __name__ == "__main__":
 
     print("=" * 60)
     print("  Skeleton Extractor — K3")
-    print(f"  Strateji : {args.strategy}  ·  iskelet modu: {args.mode}")
+    print(f"  Strategy : {args.strategy}  ·  skeleton mode: {args.mode}")
     print("=" * 60)
-    print(f"  Ham HTML        : {len(html):>10,} chars")
-    print(f"  Cleaner çıktısı : {cleaned.cleaned_chars:>10,} chars  ({cleaned.reduction_pct:.1f}% azaldı)")
-    print(f"  Skeleton çıktısı: {result.output_chars:>10,} chars  ({result.reduction_pct:.1f}% azaldı)")
-    print(f"  Toplam azalma   : {round((1 - result.output_chars/len(html))*100, 1):>9.1f}%")
-    print(f"  Node sayısı     : {result.node_count:>10,}")
-    print(f"  Kırpılan (depth): {result.pruned_depth:>10,}")
-    print(f"  Kırpılan (sibling): {result.pruned_siblings:>8,}")
+    print(f"  Raw HTML        : {len(html):>10,} chars")
+    print(f"  Cleaner output  : {cleaned.cleaned_chars:>10,} chars  ({cleaned.reduction_pct:.1f}% smaller)")
+    print(f"  Skeleton output : {result.output_chars:>10,} chars  ({result.reduction_pct:.1f}% smaller)")
+    print(f"  Total reduction : {round((1 - result.output_chars/len(html))*100, 1):>9.1f}%")
+    print(f"  Nodes           : {result.node_count:>10,}")
+    print(f"  Pruned (depth)  : {result.pruned_depth:>10,}")
+    print(f"  Pruned (sibling):   {result.pruned_siblings:>8,}")
     def fmt_dur(ms: float) -> str:
         if ms < 1:      return f"{ms * 1000:.0f}µs"
         elif ms < 1000: return f"{ms:.1f}ms"
         else:           return f"{ms / 1000:.2f}s"
-    print(f"  Süre            : {fmt_dur(result.elapsed_ms):>12}")
+    print(f"  Time            : {fmt_dur(result.elapsed_ms):>12}")
     print("=" * 60)
 
     if args.show:

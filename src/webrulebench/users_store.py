@@ -1,19 +1,19 @@
 """
 users_store.py
 ==============
-Kullanıcılar (<veri klasörü>/users.json): giriş token'ı, rol, durum.
+Users (<data folder>/users.json): login token, role, status.
 
-- Token'lar düz metin değil, kullanıcı başına tuzlu SHA-256 özeti olarak saklanır
-  ("sha256$<tuz>$<özet>"). Token yalnızca üretildiği anda bir kez gösterilir.
-  Eski biçimdeki düz metin "token" alanları ilk okumada özete çevrilir; aynı token
-  ile giriş çalışmaya devam eder.
-- token_version: token yenilenince artar; oturum çerezinde tutulan sürüm eşleşmezse
-  oturum geçersiz sayılır (başka cihazlardaki oturumlar kapanır).
-- active: pasif kullanıcı giriş yapamaz; annotation'ları ve geçmişi korunur.
-  Kullanıcı silinmez — annotation, derleme ve deney kayıtları kullanıcı adına bağlıdır.
-- Son admin'in rolü düşürülemez, son admin pasifleştirilemez, admin kendini pasifleştiremez.
+- Tokens are not stored as plain text but as a per-user salted SHA-256 digest
+  ("sha256$<salt>$<digest>"). A token is shown only once, at the moment it is generated.
+  Plain-text "token" fields in the old format are converted to a digest on first read; logging in
+  with the same token keeps working.
+- token_version: incremented when the token is renewed; if the version kept in the session cookie does not
+  match, the session is treated as invalid (sessions on other devices are closed).
+- active: an inactive user cannot log in; their annotations and history are kept.
+  Users are not deleted — annotation, compilation and experiment records are tied to the user name.
+- The last admin cannot be demoted, the last admin cannot be deactivated, an admin cannot deactivate themselves.
 
-webapp (web), mcp_server.py (MCP) ve webrulebench/webapp/manage_users.py (komut satırı) kullanır.
+Used by webapp (web), mcp_server.py (MCP) and webrulebench/webapp/manage_users.py (command line).
 """
 
 import hashlib
@@ -59,11 +59,11 @@ def _matches(stored: str, token: str) -> bool:
 
 
 def new_token() -> str:
-    return secrets.token_urlsafe(24)          # ~32 karakter, 192 bit
+    return secrets.token_urlsafe(24)          # ~32 characters, 192 bits
 
 
 def _save(users: dict):
-    USERS_FILE.parent.mkdir(parents=True, exist_ok=True)   # yeni kurulum / ayrı veri klasörü
+    USERS_FILE.parent.mkdir(parents=True, exist_ok=True)   # new installation / separate data folder
     tmp = USERS_FILE.with_suffix(".tmp")
     tmp.write_text(json.dumps(users, ensure_ascii=False, indent=2), encoding="utf-8")
     try:
@@ -74,14 +74,14 @@ def _save(users: dict):
 
 
 def load() -> dict:
-    """Kullanıcıları oku; düz metin token kalmışsa özete çevirip kaydet."""
+    """Read the users; if any plain-text token is left, convert it to a digest and save."""
     with _lock:
         if not USERS_FILE.exists():
             return {}
         users = json.loads(USERS_FILE.read_text(encoding="utf-8"))
         changed = False
         for info in users.values():
-            if "token" in info:                       # eski biçim → özet
+            if "token" in info:                       # old format → digest
                 info["token_hash"] = hash_token(info.pop("token"))
                 changed = True
         if changed:
@@ -95,14 +95,14 @@ def save(users: dict):
 
 
 def public(username: str, info: dict) -> dict:
-    """Dışarı verilebilen alanlar (token özeti hariç)."""
+    """Fields that may be exposed (excluding the token digest)."""
     return {"username": username, "role": info.get("role", "user"), "active": info.get("active", True),
             "created_at": info.get("created_at"), "last_login": info.get("last_login"),
             "token_rotated_at": info.get("token_rotated_at")}
 
 
 def verify(username: str, token: str) -> dict | None:
-    """Kullanıcı adı + token doğruysa ve hesap etkinse kullanıcı kaydı, değilse None."""
+    """The user record if the user name + token are correct and the account is active, otherwise None."""
     info = load().get((username or "").strip().lower())
     if not info or not token or not info.get("active", True):
         return None
@@ -110,7 +110,7 @@ def verify(username: str, token: str) -> dict | None:
 
 
 def verify_any(token: str) -> str | None:
-    """Yalnızca token ile (MCP): eşleşen etkin kullanıcının adı."""
+    """By token only (MCP): the name of the matching active user."""
     if not token:
         return None
     for u, info in load().items():
@@ -120,7 +120,7 @@ def verify_any(token: str) -> str | None:
 
 
 def session_ok(username: str, token_version) -> bool:
-    """Oturum hâlâ geçerli mi: kullanıcı var, etkin ve token sürümü değişmemiş."""
+    """Is the session still valid: the user exists, is active and the token version has not changed."""
     info = load().get(username or "")
     return bool(info and info.get("active", True) and int(token_version or 0) == int(info.get("token_version", 0)))
 
@@ -142,7 +142,7 @@ def _admins(users: dict) -> list:
 
 
 def create(username: str, role: str = "user") -> str:
-    """Yeni kullanıcı; üretilen token'ı döndürür (bir kez gösterilir)."""
+    """New user; returns the generated token (shown once)."""
     username = (username or "").strip().lower()
     if not _NAME_RE.fullmatch(username):
         raise UserError("Username must be 2–32 characters: lowercase letters, digits, . _ - (starting with a letter or digit)")
@@ -159,7 +159,7 @@ def create(username: str, role: str = "user") -> str:
 
 
 def reset_token(username: str) -> str:
-    """Yeni token üret; eski token ve onunla açılmış bütün oturumlar geçersiz olur."""
+    """Generate a new token; the old token and all sessions opened with it become invalid."""
     users = load()
     if username not in users:
         raise UserError("User not found")

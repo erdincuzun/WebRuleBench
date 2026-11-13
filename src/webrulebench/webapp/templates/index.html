@@ -60,23 +60,23 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .site-stat-label { font-size: 9px; color: var(--text3); letter-spacing: .4px; text-transform: uppercase; margin-top: 1px; }
 .site-stat-name { color: var(--accent2); font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Başlık öğeleri satır kırmasın; yer daralınca yalnızca ilerleme çubuğu küçülür */
+/* Header items must not wrap; when space is tight only the progress bar shrinks */
 .header > *, .header-user-area > * { flex-shrink: 0; white-space: nowrap; }
 .header > .progress-bar-wrap { flex-shrink: 1; min-width: 90px; }
 .header { overflow: hidden; }
-/* Genel toplamlar ana sayfada ve Rapor'da da var; yer daralınca önce onlar gizlenir, seçili sitenin sayıları kalır */
+/* Overall totals also appear on the home page and in Reports; when space is tight they are hidden first, the selected site's counts stay */
 @media (max-width: 1520px) { .header > .header-stats { display: none; } }
 @media (max-width: 1300px) { .header > .progress-bar-wrap { display: none; } }
 
-/* ── BÖLÜM MODU ─────────────────────────────────────
-   /annotate?mode=data|annotation — yalnızca o bölümün işlemleri görünür (groundtruth/evaluation kendi sayfalarına yönlendirilir).
-   data-sec="a b" taşıyan öğe yalnızca a veya b modunda görünür; data-sec'siz öğeler her modda görünür. */
+/* ── SECTION MODE ───────────────────────────────────
+   /annotate?mode=data|annotation — only the actions of that section are shown (groundtruth/evaluation redirect to their own pages).
+   An element with data-sec="a b" is shown only in mode a or b; elements without data-sec are shown in every mode. */
 body[data-mode="data"]        [data-sec]:not([data-sec~="data"]),
 body[data-mode="annotation"]  [data-sec]:not([data-sec~="annotation"]),
 body[data-mode="groundtruth"] [data-sec]:not([data-sec~="groundtruth"]) { display: none !important; }
 .mode-badge { font-size: 11px; font-weight: 700; color: var(--accent2); background: rgba(167,139,250,.12); border: 1px solid rgba(167,139,250,.3); border-radius: 6px; padding: 4px 8px; }
 
-/* ── KENDİ ANNOTATION SEKMELERİ ───────────────────── */
+/* ── OWN ANNOTATION TABS ──────────────────────────── */
 .annot-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
 .annot-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 14px; color: var(--text3); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; }
 .annot-tab:hover { color: var(--text); }
@@ -545,8 +545,8 @@ body[data-mode="groundtruth"] [data-sec]:not([data-sec~="groundtruth"]) { displa
 .badd-result-ok { color: var(--green); font-size: 11px; }
 .badd-result-err { color: var(--red); font-size: 11px; }
 
-/* Katman 1 kappa badge */
-/* Katman 2 skor hücreleri */
+/* Layer 1 kappa badge */
+/* Layer 2 score cells */
 /* Layer toolbar */
 
 /* No-site placeholder */
@@ -556,7 +556,7 @@ body[data-mode="groundtruth"] [data-sec]:not([data-sec~="groundtruth"]) { displa
   color: var(--text3);
 }
 
-/* ── DİL SEÇİCİ (hub.css ile aynı) ─────────────────── */
+/* ── LANGUAGE SWITCHER (same as hub.css) ──────────── */
 .lang-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
 .lang-switch button { background: none; border: none; color: var(--text3); font: 600 10px var(--mono); padding: 5px 7px; cursor: pointer; }
 .lang-switch button + button { border-left: 1px solid var(--border); }
@@ -674,7 +674,7 @@ body[data-mode="groundtruth"] [data-sec]:not([data-sec~="groundtruth"]) { displa
 
     </div>
 
-    <!-- TAB: KENDİ ANNOTATION -->
+    <!-- TAB: OWN ANNOTATION -->
     <div class="modal-body" id="tabBodyAnnot" style="display:none">
       <div id="modalAnnotFormBody">
         <div style="color:var(--text3);text-align:center;padding:30px">
@@ -770,15 +770,15 @@ let groundTruth  = {};
 let editingLayout= null;
 let currentType  = 'article';
 
-// ── BÖLÜM MODU ─────────────────────────────────────────
-// Hangi bölümden gelindiyse o bölümün işlemleri gösterilir (CSS: body[data-mode] + data-sec).
+// ── SECTION MODE ───────────────────────────────────────
+// The actions of the section the user came from are shown (CSS: body[data-mode] + data-sec).
 const MODES = {
   data:        { title: '🌐 ' + T('Data Collection'),       back: '/data',         pageTitle: T('Page') },
   annotation:  { title: '✏️ ' + T('Annotation'),            back: '/annotation',   pageTitle: T('Assign Page') },
   groundtruth: { title: '✅ ' + T('Ground Truth Approval'), back: '/ground-truth', pageTitle: T('Page') },
 };
 const MODE = (m => MODES[m] ? m : 'annotation')(new URLSearchParams(location.search).get('mode'));
-// GT Onayı ve LLM Değerlendirme artık kendi sayfalarında; eski linkler oraya gider
+// GT Approval and LLM Evaluation now have their own pages; old links go there
 if (new URLSearchParams(location.search).get('mode') === 'evaluation') location.replace('/evaluation');
 if (MODE === 'groundtruth') {
   const _s = new URLSearchParams(location.search).get('site');
@@ -836,7 +836,7 @@ function updateSiteStats(data) {
   const articles     = _sitePages.article || [];
   const listings     = [...(_sitePages.homepage || []), ...(_sitePages.listing || [])];
   const allPages     = [...articles, ...listings].sort();
-  // page_assignments formatı: {filename: {layout_id, skipped}}
+  // page_assignments format: {filename: {layout_id, skipped}}
   const annotated    = allPages.filter(f => assign[f]?.layout_id && !assign[f]?.skipped).length;
   const artAnnotated = articles.filter(f => assign[f]?.layout_id && !assign[f]?.skipped).length;
   const lstAnnotated = listings.filter(f => assign[f]?.layout_id && !assign[f]?.skipped).length;
@@ -979,10 +979,10 @@ async function selectPage(filename) {
   renderAssignPanel();
   loadPageUrl(filename);
 
-  // Sayfa yüklenince seçili (checked) layout'u otomatik test et
+  // When the page loads, automatically test the selected (checked) layout
   frame.onload = () => {
     const layouts = groundTruth.layouts || {};
-    // Önce seçili radio'ya bak, yoksa assigned layout, yoksa atla
+    // Check the selected radio first, then the assigned layout, otherwise skip
     const checkedRadio = document.querySelector('input[name="layoutPick"]:checked');
     const assignment   = groundTruth.page_assignments?.[filename];
     const testId = checkedRadio?.value || assignment?.layout_id || null;
@@ -1148,10 +1148,10 @@ async function runLayoutTests(layoutId) {
 
   const selectors = layout.selectors || {};
 
-  // Tüm selector'ları düz {key, selector} çiftlerine normalize et
-  // Hem düz string hem array+object formatını destekle
+  // Normalize all selectors into flat {key, selector} pairs
+  // Support both the plain string and the array+object format
   const allFields = [];
-  // Özel işlem gereken alanlar dışındaki tüm string selector'ları dinamik olarak ekle
+  // Dynamically add all string selectors except fields that need special handling
   const specialKeys = new Set(['images', 'related_links', 'links']);
   Object.keys(selectors).forEach(f => {
     if (specialKeys.has(f)) return;
@@ -1199,7 +1199,7 @@ async function runLayoutTests(layoutId) {
     }
   }
 
-  // optional_fields'e göre flag ekle
+  // Add flags according to optional_fields
   const optionalFields = layout.optional_fields || [];
   const fieldsWithOpt = allFields.map(f => ({
     ...f,
@@ -1249,7 +1249,7 @@ async function runLayoutTests(layoutId) {
       : '⚠️ ' + T('{opt} optional fields not found (required fields OK)', {opt: optFailed});
 
   const rows = results
-    .filter(r => !r.skipped)  // selector girilmemiş alanları gizle
+    .filter(r => !r.skipped)  // hide fields with no selector entered
     .map(r => {
       const icon    = r.valid ? '✅' : (r.optional ? '⚠️' : '❌');
       const preview = r.previews?.[0] ? `<div class="test-preview">${r.previews[0]}</div>` : '';
@@ -1303,16 +1303,16 @@ async function deletePage() {
     const deletedFile = activeFile;
     activeFile = null;
 
-    // Sonraki sekmeyi bul (silmeden önce)
+    // Find the next tab (before deleting)
     const tabs = [...document.querySelectorAll('.page-tab')];
     const curr = tabs.findIndex(t => t.textContent.trim() === deletedFile);
     const nextTab = tabs[curr + 1] || tabs[curr - 1];
     const nextFile = nextTab ? nextTab.textContent.trim() : null;
 
-    // Siteyi yeniden yükle (sekme kaybolsun)
+    // Reload the site (so the tab disappears)
     await selectSite(activeDomain);
 
-    // Sonraki sayfaya geç
+    // Go to the next page
     if (nextFile) selectPage(nextFile);
 
     showToast(T('{file} deleted', {file: deletedFile}), 'ok');
@@ -1367,15 +1367,15 @@ function openModal(layoutId = null, startTab = null) {
     renderGTFields(null, {}, []);
   }
 
-  // Tab durumu: admin GT tab'ını düzenleyebilir, diğerleri sadece annot
+  // Tab state: the admin can edit the GT tab, others only annot
   const isAdmin = currentUserRole === 'admin';
   const gtTab   = document.getElementById('tabGT');
   const notice  = document.getElementById('gtReadonlyNotice');
 
-  // GT tab görünürlüğü
+  // GT tab visibility
   gtTab.style.display = isAdmin ? '' : 'none';
 
-  // Bölüm modu: Annotation → yalnızca kendi annotation; GT Onayı → yalnızca GT
+  // Section mode: Annotation → own annotation only; GT Approval → GT only
   if (MODE === 'annotation' || MODE === 'groundtruth') {
     document.getElementById('layoutTabBar').style.display = 'none';
     if (MODE === 'annotation') {
@@ -1394,7 +1394,7 @@ function openModal(layoutId = null, startTab = null) {
     startTab = 'gt';
   }
 
-  // Admin değilse GT alanlarını kilitle
+  // Lock the GT fields if not admin
   document.querySelectorAll('#tabBodyGT input, #tabBodyGT textarea, #tabBodyGT select, #tabBodyGT button:not(#tabGT):not(#tabMyAnnot)')
     .forEach(el => { el.disabled = !isAdmin; });
   notice.style.display = isAdmin ? 'none' : '';
@@ -1423,13 +1423,13 @@ function switchLayoutTab(tab) {
     saveBtn.textContent   = '💾 ' + T('Save GT');
     saveBtn.onclick       = saveLayout;
     saveBtn.style.display = currentUserRole === 'admin' ? '' : 'none';
-    // GT: autoDetect sadece admin için
+    // GT: autoDetect for admin only
     autoGrp.style.display = (currentUserRole === 'admin' && activeFile) ? '' : 'none';
   } else {
     saveBtn.textContent   = '💾 ' + T('Save');
     saveBtn.onclick       = saveModalAnnotForm;
     saveBtn.style.display = '';
-    // Annot: autoDetect herkese açık
+    // Annot: autoDetect open to everyone
     autoGrp.style.display = activeFile ? '' : 'none';
     if (editingLayout) {
       _loadModalAnnotForm(editingLayout);
@@ -1437,16 +1437,16 @@ function switchLayoutTab(tab) {
   }
 }
 
-// ── KENDİ ANNOTATION FORMU: CSS | XPath | Regex sekmeleri ─────────────
-// Alan değeri kayıtta GT ile aynı biçimdedir: yalnızca CSS varsa düz string,
-// XPath/Regex de varsa {css, xpath, regex}. XPath varsayılan olarak CSS'e
-// bağlıdır (🔗): CSS değişince yeniden üretilir; elle düzenlenince bağ kopar.
+// ── OWN ANNOTATION FORM: CSS | XPath | Regex tabs ────────────────────
+// The stored field value has the same format as GT: a plain string if only CSS,
+// {css, xpath, regex} if XPath/Regex are also given. By default XPath is linked
+// to CSS (🔗): regenerated when CSS changes; editing it by hand breaks the link.
 let _annotRules = {};        // field → {css, xpath, regex, linked}
-let _annotLinks = [];        // 'links' alanı: çoklu CSS seçici (yalnızca CSS sekmesinde)
+let _annotLinks = [];        // 'links' field: multiple CSS selectors (CSS tab only)
 let _annotTab   = 'css';
 const _ANNOT_TABS = { css: 'CSS', xpath: 'XPath', regex: 'Regex' };
 
-// {css, xpath, regex} ya da düz CSS string → CSS kısmı
+// {css, xpath, regex} or plain CSS string → the CSS part
 function _cssOf(v) { return (v && typeof v === 'object' && !Array.isArray(v)) ? (v.css || '') : v; }
 
 function _isLinksField(fname) {
@@ -1613,7 +1613,7 @@ function _focusAnnot(f, rule) {
   if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
 }
 
-// CSS'e bağlı XPath'i sunucuda üret (sayfada CSS ile aynı içeriği bulan okunaklı biçim)
+// Generate the CSS-linked XPath on the server (readable form matching the same content as the CSS)
 const _annotXPathTimers = {};
 function _annotScheduleXPath(f) {
   clearTimeout(_annotXPathTimers[f]);
@@ -1630,7 +1630,7 @@ async function _annotRegenXPath(f) {
       body: JSON.stringify({ selector: r.css, domain: _annotDomain, filename: _annotFilename, merge: _fieldMerge(f, _annotTemplate) }),
     });
     const d = await res.json();
-    if (!r.linked) return;          // bu arada elle düzenlendiyse dokunma
+    if (!r.linked) return;          // leave it alone if it was edited by hand meanwhile
     r.xpath = d.success ? d.xpath : '';
   }
   if (_annotTab === 'xpath') {
@@ -1653,7 +1653,7 @@ async function _annotRegenAll() {
   showToast(T('{n} XPaths generated from CSS', {n: fs.length}), 'ok');
 }
 
-// ── Regex üretimi (regex_generator.py — REGEXN'in genişletilmiş hali) ─────
+// ── Regex generation (regex_generator.py — an extended version of REGEXN) ──
 const _REGEX_STRATEGY = s => (s || '')
   .replace(/^container(\d*):/, T('container') + ' $1 · ')
   .replace(/^simple/, T('simple (REGEXN step 1)')).replace(/^balanced/, T('balanced nesting'))
@@ -1688,7 +1688,7 @@ async function _annotSuggestRegexAll() {
   showToast(T('Regex generated for {n} fields — {ok} of them match CSS on all pages', {n: fs.length, ok}), 'ok');
 }
 
-// Picker: CSS'i ', ' ile, XPath'i ' | ' ile ekler (XPath yalnızca bağlıysa ya da XPath sekmesindeyken)
+// Picker: appends CSS with ', ' and XPath with ' | ' (XPath only if linked or on the XPath tab)
 function _annotPick(f, btn) {
   const input = btn.closest('.selector-row').querySelector('.annot-rule-input');
   startPickerForInput(input, _annotTemplate.fields[f]?.label || f, null, {
@@ -1698,7 +1698,7 @@ function _annotPick(f, btn) {
       r.css = prevCss ? `${prevCss}, ${css}` : css;
       if (r.linked || _annotTab === 'xpath') {
         if (r.xpath || !prevCss) r.xpath = r.xpath ? `${r.xpath} | ${xpath}` : xpath;
-        else _annotRegenXPath(f);   // önceki CSS parçalarının XPath'i yoktu → tümünü üret
+        else _annotRegenXPath(f);   // earlier CSS parts had no XPath → generate all of them
       }
       _renderAnnotTabs();
     },
@@ -1752,7 +1752,7 @@ async function saveModalAnnotForm() {
   const selectors = _collectAnnotSelectors();
   if (!Object.keys(selectors).length) { showToast(T('Enter at least one rule'), 'err'); return; }
 
-  // Kurallar her zaman düzenlenen layout'a yazılır (seçili sayfanın atandığı layout'a değil)
+  // Rules are always written to the layout being edited (not the layout the selected page is assigned to)
   const filename = _annotFilename || '_';
   const payload  = { selectors };
   if (editingLayout) payload.layout_id = editingLayout;
@@ -1769,7 +1769,7 @@ async function saveModalAnnotForm() {
   }
 }
 
-// Annotation modunda yeni layout: yalnızca ad + şablon; kurallar sonra kendi annotation'da girilir
+// New layout in annotation mode: name + template only; rules are entered later in own annotation
 function _renderLayoutCreateForm() {
   const opts = Object.values(_templates).map(t => `<option value="${_escAttr(t.id)}">${_escHtml((t.icon || '📄') + ' ' + t.name)}</option>`).join('');
   document.getElementById('modalAnnotFormBody').innerHTML = `
@@ -1824,7 +1824,7 @@ function selectType(type) {
   currentType = type;
   document.getElementById('typeArticle').classList.toggle('selected', type === 'article');
   document.getElementById('typeListing').classList.toggle('selected', type === 'listing');
-  // autoDetect sadece GT tab'ında ve article tipinde admin için
+  // autoDetect only on the GT tab, for the article type, for admin
   const gtTabActive = document.getElementById('tabBodyGT')?.style.display !== 'none';
   document.getElementById('autoDetectGroup').style.display =
     (type === 'article' && gtTabActive && currentUserRole === 'admin') ? '' : 'none';
@@ -1885,11 +1885,11 @@ async function validateField(field, btn) {
 }
 
 // ── XPATH / REGEX EXTRA RULES ──────────────────────────
-// CSS selector girişinin yanına, isteğe bağlı XPath (CSS'ten otomatik önerilebilir)
-// ve Regex (tamamen elle) satırlarını enjekte eder. Ground truth şemasını bozmadan
-// çalışır: bu değerler ayrıca window._extraRules[field] = {xpath, regex} içinde tutulur
-// ve saveLayout/collectGTSelectors bunları "selectors[field + '__xpath']" gibi ek
-// anahtarlarla birleştirir (boşsa hiç eklenmez).
+// Injects optional XPath (can be suggested automatically from CSS) and Regex
+// (entirely manual) rows next to the CSS selector input. Works without breaking
+// the ground truth schema: these values are kept separately in window._extraRules[field] = {xpath, regex}
+// and saveLayout/collectGTSelectors merge them with extra keys such as
+// "selectors[field + '__xpath']" (not added at all if empty).
 window._extraRules = window._extraRules || {};
 
 function injectRuleExtras(container) {
@@ -1901,7 +1901,7 @@ function injectRuleExtras(container) {
 
     const field = input.dataset.field;
 
-    // GT alanlarına da picker: CSS'le birlikte XPath kutusunu da doldurur (bkz. confirmPicker)
+    // Picker for GT fields too: fills the XPath box together with CSS (see confirmPicker)
     if (!row.querySelector('.btn-picker')) {
       const pick = document.createElement('button');
       pick.type = 'button';
@@ -1935,7 +1935,7 @@ function injectRuleExtras(container) {
     const suggestBtn = block.querySelector('.btn-xpath');
     const resultEl   = block.querySelector('.rule-extra-result');
 
-    // Var olan değer varsa geri yükle
+    // Restore the existing value, if any
     const stored = window._extraRules[field] || {};
     if (xpathInput && stored.xpath) xpathInput.value = stored.xpath;
     if (regexInput && stored.regex) regexInput.value = stored.regex;
@@ -2010,9 +2010,9 @@ function injectRuleExtras(container) {
 
 // ── DYNAMIC GT FIELDS ──────────────────────────────────
 
-// selectors[field] düz CSS string olabilir ya da {css, xpath, regex} objesi olabilir.
-// Her iki durumda da input.value'a CSS kısmını yazar, xpath/regex varsa
-// window._extraRules'a koyar (injectRuleExtras bunları DOM'a yansıtır).
+// selectors[field] can be a plain CSS string or a {css, xpath, regex} object.
+// In both cases it writes the CSS part to input.value and, if xpath/regex exist,
+// puts them in window._extraRules (injectRuleExtras reflects them in the DOM).
 function _applyGTFieldValue(field, rawVal, input) {
   if (!rawVal) return;
   if (typeof rawVal === 'object') {
@@ -2039,7 +2039,7 @@ function renderGTFields(templateId, selectors, optionalFields) {
       else _addGTLinkSelector(list);
     } else {
       body.innerHTML = _renderGTArticleFallback(selectors, optionalFields);
-      // Düz input değerlerini DOM'a set et (images ve related_links dahil)
+      // Set plain input values in the DOM (including images and related_links)
       body.querySelectorAll('.gt-sel-input').forEach(input => {
         _applyGTFieldValue(input.dataset.field, selectors[input.dataset.field], input);
       });
@@ -2063,7 +2063,7 @@ function renderGTFields(templateId, selectors, optionalFields) {
 
   body.innerHTML = html;
 
-  // Düz input değerlerini innerHTML sonrası DOM'a set et (image/url non-links dahil)
+  // Set plain input values in the DOM after innerHTML (including image/url non-links)
   Object.keys(fields).forEach(f => {
     const fdef = fields[f];
     if (fdef.type === 'url' && f === 'links') return;
@@ -2308,8 +2308,8 @@ function collectGTSelectors() {
     if (val) selectors[input.dataset.field] = val;
   });
 
-  // XPath/Regex ek kuralları — sadece dolu olanlar için, alanı
-  // {css, xpath, regex} objesine dönüştürür; ikisi de boşsa düz CSS string kalır.
+  // Extra XPath/Regex rules — only for filled ones; turns the field into a
+  // {css, xpath, regex} object; if both are empty it stays a plain CSS string.
   body.querySelectorAll('.gt-sel-input').forEach(input => {
     const field  = input.dataset.field;
     const extras = window._extraRules[field];
@@ -2318,7 +2318,7 @@ function collectGTSelectors() {
     const regex = (extras.regex || '').trim();
     if (!xpath && !regex) return;
     const cssVal = selectors[field];
-    if (typeof cssVal !== 'string') return; // links gibi array alanlarına dokunma
+    if (typeof cssVal !== 'string') return; // do not touch array fields such as links
     selectors[field] = { css: cssVal || null, xpath: xpath || null, regex: regex || null };
   });
 
@@ -2354,7 +2354,7 @@ function collectGTSelectors() {
 function fillAnnotFields(s) {
   const body = document.getElementById('modalAnnotFormBody');
   if (!body) return;
-  // Sekmeli kendi annotation formu: kural durumuna yaz, bağlı XPath'leri yeniden üret
+  // Tabbed own annotation form: write to the rule state, regenerate linked XPaths
   if (document.getElementById('annotTabBar')) {
     Object.keys(_annotRules).forEach(f => {
       const val = _cssOf(s[f] || (f === 'category' ? (s.category || s.tags || '') : ''));
@@ -2368,7 +2368,7 @@ function fillAnnotFields(s) {
     _renderAnnotTabs();
     return;
   }
-  // Düz input'lar
+  // Plain inputs
   body.querySelectorAll('.modal-annot-input').forEach(input => {
     const fname = input.dataset.field;
     const val   = s[fname] || (fname === 'category' ? (s.category || s.tags || '') : '');
@@ -2405,7 +2405,7 @@ async function saveLayout() {
   if (selectors === null) return; // validation failed
 
   const layouts   = groundTruth.layouts || {};
-  const layoutId  = editingLayout || _nextLayoutId();   // silinmiş layout numarasıyla çakışmasın
+  const layoutId  = editingLayout || _nextLayoutId();   // must not clash with the number of a deleted layout
 
   // Collect optional_fields from dynamic checkboxes
   const optionalFields = [];
@@ -2555,7 +2555,7 @@ async function redownloadPage() {
     const data = await res.json();
     if (data.success) {
       document.getElementById('currentPageUrl').textContent = url;
-      // iframe'i yenile
+      // reload the iframe
       const frame = document.getElementById('pageFrame');
       if (frame) frame.src = frame.src;
       showToast('✓ ' + T('Downloaded ({size} KB)', {size: (data.size/1024).toFixed(0)}), 'ok');
@@ -2584,7 +2584,7 @@ async function addPage() {
     if (data.success) {
       document.getElementById('addPageUrl').value = '';
       showToast('✓ ' + T('{file} added ({size} KB)', {file: data.filename, size: (data.size/1024).toFixed(0)}), 'ok');
-      // Sayfa listesini yenile
+      // Refresh the page list
       await selectSite(activeDomain);
     } else {
       showToast(T('Error: {msg}', {msg: data.error}), 'err');
@@ -2880,7 +2880,7 @@ async function checkLogin() {
     _setLoggedIn(data.username, data.role);
     return true;
   }
-  // Otomatik giriş: localStorage'da kayıtlı bilgi varsa dene
+  // Automatic login: try it if credentials are stored in localStorage
   const savedUser  = localStorage.getItem('llmwb_username');
   const savedToken = localStorage.getItem('llmwb_token');
   if (savedUser && savedToken) {
@@ -3002,7 +3002,7 @@ async function openAnnotForm(domain, filename) {
   _annotDomain   = domain;
   _annotFilename = filename;
 
-  // Layout ve template bilgisi
+  // Layout and template info
   const res  = await fetch(`/api/annotate/${domain}/${filename}`);
   const data = await res.json();
 
@@ -3065,7 +3065,7 @@ function _renderAnnotForm(existingSelectors) {
 
   document.getElementById('annotFormBody').innerHTML = html;
 
-  // Düz input değerlerini DOM'a set et
+  // Set plain input values in the DOM
   document.querySelectorAll('#annotFormBody .annot-sel-input').forEach(input => {
     const val = existingSelectors[input.dataset.field];
     if (val) input.value = val;
@@ -3173,7 +3173,7 @@ function closeGetOther() {
   document.getElementById('getOtherOverlay').classList.remove('open');
 }
 
-// Sekmeli kendi annotation formunda: CSS/XPath/Regex'i birlikte al
+// In the tabbed own annotation form: take CSS/XPath/Regex together
 function _adoptIntoAnnotForm(fname, sel) {
   if (!document.getElementById('annotTabBar')) return false;
   if (_isLinksField(fname)) { _annotLinks = (Array.isArray(sel) ? sel : [sel]).filter(v => typeof v === 'string'); return true; }
@@ -3232,8 +3232,8 @@ function startPicker(fname) {
   startPickerForInput(input, fdef.label || fname);
 }
 
-// opts.onConfirm(css, xpath): verilirse input'a yazılmaz, sonuç bu fonksiyona verilir
-// (kendi annotation formu). XPath önizlemesi de gösterilir.
+// opts.onConfirm(css, xpath): if given, nothing is written to the input; the result goes to it
+// (own annotation form). An XPath preview is shown as well.
 function startPickerForInput(inputEl, label, frameOverride, opts = {}) {
   const frame = frameOverride || document.getElementById('pageFrame');
   if (!frameOverride) {
@@ -3350,9 +3350,9 @@ function _segStr(s) {
 }
 
 // ── Picker → XPath ──────────────────────────────────────
-// Aynı segmentlerden okunaklı XPath: 'div.a > h1#t' → //div[contains(@class,'a')]/h1[@id='t'].
-// contains(@class,'a') 'ab' class'ını da yakalayabilir; bu yüzden sayfada CSS ile
-// aynı elemanları bulmuyorsa class testleri tam-token (strict) biçime çevrilir.
+// Readable XPath from the same segments: 'div.a > h1#t' → //div[contains(@class,'a')]/h1[@id='t'].
+// contains(@class,'a') may also match class 'ab'; so if it does not find the same
+// elements as the CSS on the page, class tests are switched to full-token (strict) form.
 function _xpLit(s) {
   if (!s.includes("'")) return `'${s}'`;
   if (!s.includes('"')) return `"${s}"`;
@@ -3392,7 +3392,7 @@ function _xpathNodes(doc, xp) {
   return out;
 }
 
-// {xpath, same} — same: iframe DOM'unda CSS ile birebir aynı elemanlar
+// {xpath, same} — same: exactly the same elements as the CSS in the iframe DOM
 function _buildXPathStr() {
   const css = _buildSelectorStr();
   if (!css) return { xpath: '', same: false };
@@ -3408,7 +3408,7 @@ function _buildXPathStr() {
   return { xpath: _buildXPathRaw(true), same: false };
 }
 
-// Picker'ın hedefi bir GT alanıysa o alanın XPath kutusu; değilse null
+// The XPath box of the field if the picker targets a GT field; otherwise null
 function _pickerXPathInput() {
   const row = _picker.targetInput?.closest('.selector-row');
   const blk = row?.nextElementSibling;
@@ -3673,7 +3673,7 @@ function pickerAttrApply() {
   const seg = _pickerActiveSeg();
   if (!seg._attrSelectors) seg._attrSelectors = [];
   seg._attrSelectors.push(attrSel);
-  // XPath üretimi için yapısal hali (_segXPath)
+  // structured form for XPath generation (_segXPath)
   if (!seg._attrParts) seg._attrParts = [];
   seg._attrParts.push({ name: attrName, op: val ? op : '', val });
 
@@ -3727,7 +3727,7 @@ function confirmPicker() {
     input.style.borderColor = 'var(--green)';
     setTimeout(() => input.style.borderColor = '', 1000);
   }
-  // GT alanıysa XPath kutusunu da doldur (CSS ', ' ile eklenirken XPath ' | ' ile eklenir)
+  // For a GT field also fill the XPath box (CSS is appended with ', ', XPath with ' | ')
   const xpInput = _pickerXPathInput();
   if (xpInput) {
     const { xpath } = _buildXPathStr();
@@ -3784,7 +3784,7 @@ function openBulkTestModal() {
     opt.textContent = `${id} — ${l.name}`;
     sel.appendChild(opt);
   });
-  // kural kaynağı: son seçim hatırlanır; ilk seferde annotatör için kendi kuralları, admin için GT
+  // rule source: the last choice is remembered; the first time, own rules for an annotator, GT for admin
   let src = null;
   try { src = localStorage.getItem('llmwb_bulk_source'); } catch (e) {}
   document.getElementById('bulkRuleSource').value = src || (currentUserRole === 'admin' ? 'gt' : 'mine');
@@ -4032,8 +4032,8 @@ init = async function() {
 };
 
 // ── DEEP LINK ──────────────────────────────────────────
-// Hub/bölüm sayfalarından gelen /annotate?site=&page=&open=&layout= linkleri.
-// Bir kez çalışır; sonra URL'den open/layout silinir ki yenilemede modal tekrar açılmasın.
+// /annotate?site=&page=&open=&layout= links coming from the hub/section pages.
+// Runs once; then open/layout are removed from the URL so a reload does not reopen the modal.
 let _deepLinkDone = false;
 async function _handleDeepLink() {
   if (_deepLinkDone) return;
@@ -4115,7 +4115,7 @@ init();
       <button type="button" class="icon-btn" onclick="closeBulkAddModal()">✕</button>
     </div>
 
-    <!-- STEP 1: Kaynak seç + selector + iframe -->
+    <!-- STEP 1: Select source + selector + iframe -->
     <div class="badd-step active" id="baddStep1">
       <div class="bulk-toolbar" style="flex-wrap:wrap;gap:10px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -4134,7 +4134,7 @@ init();
       </div>
     </div>
 
-    <!-- STEP 2: Link listesi + sayfa tipi seç -->
+    <!-- STEP 2: Link list + select page type -->
     <div class="badd-step" id="baddStep2">
       <div class="bulk-toolbar" style="gap:10px;flex-wrap:wrap">
         <button type="button" class="btn btn-secondary" style="font-size:12px;padding:5px 12px" onclick="baddBackToStep1()">← {{ T("Back") }}</button>
@@ -4158,7 +4158,7 @@ init();
       </div>
     </div>
 
-    <!-- STEP 3: İndirme ilerlemesi -->
+    <!-- STEP 3: Download progress -->
     <div class="badd-step" id="baddStep3">
       <div class="bulk-body" id="baddProgressList" style="overflow-y:auto;padding:12px 20px"></div>
       <div class="bulk-footer">

@@ -1,16 +1,16 @@
 """
-webrulebench/webapp/routes/evaluation.py — LLM Değerlendirme: deneyler, hızlı test, karşılaştırmalı deney grupları, cross-check.
+webrulebench/webapp/routes/evaluation.py — LLM Evaluation: experiments, quick test, comparative experiment groups, cross-check.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("evaluation", __name__)
 
 
 @bp.route("/api/experiments/options")
 def api_experiments_options():
-    """Yeni deney formu: backend/model, kural dili, strateji, şablon prompt'ları, uygun layout'lar."""
+    """New experiment form: backend/model, rule language, strategy, template prompts, eligible layouts."""
     _, err = require_login()
     if err: return err
     from webrulebench.evaluation import experiments as X
@@ -48,7 +48,7 @@ def api_experiments_list():
 
 @bp.route("/api/experiments", methods=["POST"])
 def api_experiments_create():
-    """Deney oluştur ve arka planda başlat (giriş yapan herkes; sahibi kaydedilir)."""
+    """Create an experiment and start it in the background (any logged-in user; the owner is recorded)."""
     username, err = require_login()
     if err: return err
     from webrulebench.evaluation import experiments as X
@@ -57,7 +57,7 @@ def api_experiments_create():
     layouts = [l for l in (body.get("layouts") or []) if (l.get("domain"), l.get("layout_id")) in known]
     configs = body.get("configs") or ([body["config"]] if body.get("config") else [])
     try:
-        if len(configs) > 1:              # birden çok model × kural dili → karşılaştırmalı deney (grup)
+        if len(configs) > 1:              # several models × rule languages → comparative experiment (group)
             gid, ids = X.create_group(body.get("name") or "", configs, layouts, username)
             X.start_group(gid)
             _audit(f"EXPERIMENT_GROUP_START  id={gid}  user={username}  configs={len(configs)}  layouts={len(layouts)}")
@@ -73,7 +73,7 @@ def api_experiments_create():
 
 @bp.route("/api/quick-test", methods=["POST"])
 def api_quick_test():
-    """Hızlı test: tek layout, tek model, kaydedilmez (sonuç 1 saat bellekte; kaydet ile deneye dönüşür)."""
+    """Quick test: one layout, one model, not saved (result kept in memory for 1 hour; saving turns it into an experiment)."""
     username, err = require_login()
     if err: return err
     from webrulebench.evaluation import experiments as X
@@ -102,7 +102,7 @@ def api_quick_test_save(token):
 
 @bp.route("/api/experiment-groups/<gid>")
 def api_experiment_group(gid):
-    """Grup: üyelerin özeti ve layout bazında özetleri (sayfa ayrıntısı hariç)."""
+    """Group: summary of the members and their per-layout summaries (without page details)."""
     _, err = require_login()
     if err: return err
     members = _group_or_404(gid)
@@ -187,7 +187,7 @@ def api_experiments_get(exp_id):
 
 @bp.route("/api/experiments/<exp_id>/<action>", methods=["POST"])
 def api_experiments_action(exp_id, action):
-    """cancel (durdur) / resume (yarıda kalanı sürdür) — sahibi veya admin."""
+    """cancel (stop) / resume (continue an interrupted run) — owner or admin."""
     username, err = require_login()
     if err: return err
     from webrulebench.evaluation import experiments as X

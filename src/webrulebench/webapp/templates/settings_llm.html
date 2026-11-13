@@ -153,8 +153,8 @@
 
 {% block scripts %}
 <script>
-let D = null, _edit = null;       // _edit: düzenlenen backend adı (null = yeni)
-// İngilizce kaynak metinler; görüntülenirken T() ile çevrilir
+let D = null, _edit = null;       // _edit: name of the backend being edited (null = new)
+// English source texts; translated with T() when displayed
 const API_HINT = {
   ollama: 'Local Ollama. URL: http://localhost:11434/api/chat — no key needed.',
   anthropic: 'Anthropic Messages API. URL: https://api.anthropic.com/v1/messages',
@@ -191,7 +191,7 @@ function keyCell(b) {
     : `<span class="pill req">✗ ${T('not set')}</span><div class="muted mono" style="font-size:10px">${Hub.esc(b.env_key)}</div>`;
 }
 
-// Ollama'da liste makineden canlı gelir (catalog); diğer backend'lerde kayıtlı liste
+// For Ollama the list comes live from the machine (catalog); for other backends the stored list
 const visibleModels = b => b.catalog.models.filter(m => !m.hidden && m.installed !== false).map(m => m.name);
 const fmtSize = n => n ? (n / 1e9).toFixed(1) + ' GB' : '—';
 let _openCat = new Set();
@@ -233,7 +233,7 @@ function catTable(b) {
     ${live ? `<div class="muted" style="margin-top:6px;font-size:11px">${T('The list is read live from Ollama on the machine (a model added with {cmd} appears here). Hidden models are not listed in experiment forms.', {cmd: '<span class="mono">ollama pull &lt;model&gt;</span>'})}</div>` : ''}`;
 }
 
-// ── modele özel parametreler ──────────────────────────
+// ── model-specific parameters ─────────────────────────
 let _mp = null;   // {backend, model}
 function openModelParams(backend, model) {
   _mp = {backend, model};
@@ -329,7 +329,7 @@ async function testAll() {
   Hub.toast(T('{ok} / {n} backends working', {ok: res.filter(Boolean).length, n: res.length}));
 }
 
-// ── düzenleme ──────────────────────────────────────────
+// ── editing ────────────────────────────────────────────
 function fill(b) {
   document.getElementById('eName').value    = b.name || '';
   document.getElementById('eApi').value     = b.api || 'openai';
@@ -348,7 +348,7 @@ function fill(b) {
 function apiChanged() {
   const api = document.getElementById('eApi').value;
   document.getElementById('apiHint').textContent = API_HINT[api] ? T(API_HINT[api]) : '';
-  // Ollama: model listesi makineden canlı → elle liste alanı yok
+  // Ollama: model list is live from the machine → no manual list field
   const live = api === 'ollama';
   document.getElementById('eModels').style.display = live ? 'none' : '';
   document.getElementById('modelsLbl').innerHTML = live

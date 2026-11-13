@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/pages.py — HTML sayfaları: ana sayfa, bölüm sayfaları, alt sayfalar, annotate ekranı, tarayıcı sözlüğü.
+webrulebench/webapp/routes/pages.py — HTML pages: home page, section pages, subpages, annotate screen, browser dictionary.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("pages", __name__)
 
@@ -19,7 +19,7 @@ for _s in SECTIONS:
 
 @bp.route("/i18n/<lang>.js")
 def i18n_catalog(lang):
-    """Tarayıcı sözlüğü (giriş gerektirmez; sürüm parametresiyle önbelleklenir)."""
+    """Browser dictionary (no login required; cached with a version parameter)."""
     lang = I18N.norm(lang)
     body = "window.I18N = " + json.dumps(I18N.catalog(lang), ensure_ascii=False) + ";"
     r = Response(body, mimetype="application/javascript")

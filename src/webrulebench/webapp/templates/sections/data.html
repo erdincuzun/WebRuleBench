@@ -132,9 +132,9 @@
 {% block scripts %}
 <script>
 const NEW_COUNTRY = '__new__';
-// Ülke kodundan farklı olan ülke uzantıları
+// Country TLDs that differ from the country code
 const TLD_TO_CODE = {uk: 'GB'};
-// Ülkeye işaret etmeyen iki harfli uzantılar
+// Two-letter TLDs that do not indicate a country
 const GENERIC_TLDS = new Set(['io', 'tv', 'me', 'co', 'ai', 'fm', 'am', 'ly', 'to', 'cc', 'ws', 'eu']);
 
 let _all = [], _countries = [], _form = null;   // _form: {mode:'add'|'edit', domain}
@@ -178,13 +178,13 @@ function render() {
   Hub.applyRoleGates(tb);
 }
 
-// ── Site formu (ekle / düzenle) ─────────────────────────
+// ── Site form (add / edit) ─────────────────────────────
 function domainOf(url) {
   try { return new URL(/^https?:\/\//.test(url) ? url : 'https://' + url).hostname.replace(/^www\./, ''); }
   catch (e) { return ''; }
 }
 
-// Uzantıdan ülke önerisi: {country} (listede var) | {code} (listede yok) | null
+// Country suggestion from the TLD: {country} (in the list) | {code} (not in the list) | null
 function suggestFromTld(domain) {
   const tld = (domain.split('.').pop() || '').toLowerCase();
   if (tld.length !== 2 || GENERIC_TLDS.has(tld)) return null;
@@ -250,7 +250,7 @@ function openSiteForm(domain = null) {
 function closeSiteForm() {
   document.getElementById('siteModal').classList.remove('open');
   _form = null;
-  // ?new=1 / ?edit= deep link'i temizle
+  // clear the ?new=1 / ?edit= deep link
   if (location.search) history.replaceState(null, '', location.pathname);
 }
 

@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/templates.py — Şablon & Prompt: şablonlar ve prompt varyantları.
+webrulebench/webapp/routes/templates.py — Template & Prompt: templates and prompt variants.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("templates", __name__)
 
@@ -27,7 +27,7 @@ def api_get_template(tid):
     t = get_template(tid)
     if not t:
         return jsonify({"error": _t("Template not found")}), 404
-    # jsonify anahtarları sıralar; alan sırası korunmalı
+    # jsonify sorts the keys; the field order must be kept
     return Response(json.dumps(t, ensure_ascii=False), mimetype="application/json")
 
 
@@ -75,7 +75,7 @@ def api_update_template(tid):
     body     = request.json or {}
     template = data["templates"][tid]
 
-    # Temel alanları güncelle
+    # Update the basic fields
     for key in ("name", "description", "page_type", "icon", "fields"):
         if key in body:
             template[key] = body[key]
@@ -102,7 +102,7 @@ def api_delete_template(tid):
 
 @bp.route("/api/templates/<tid>/prompts")
 def api_template_prompts(tid):
-    """Şablonun otomatik prompt'u (her kural dili için) + eklenmiş prompt'lar."""
+    """The template's automatic prompt (for each rule language) + added prompts."""
     from webrulebench.pipeline.prompt_builder import build_prompt, RULE_TYPES
     t = get_template(tid)
     if not t:
@@ -111,7 +111,7 @@ def api_template_prompts(tid):
     prompts.sort(key=lambda p: p.get("created_at", ""))
     return Response(json.dumps({
         "auto":    {rt: build_prompt(t, rt) for rt in RULE_TYPES},
-        "auto_html": {rt: build_prompt(t, rt, skeleton=False) for rt in RULE_TYPES},   # deney ayarı skeleton = none
+        "auto_html": {rt: build_prompt(t, rt, skeleton=False) for rt in RULE_TYPES},   # experiment setting skeleton = none
         "prompts": prompts,
     }, ensure_ascii=False), mimetype="application/json")
 

@@ -1,24 +1,24 @@
 """
 metrics.py
 ==========
-Ortak değerlendirme metrikleri.
+Common evaluation metrics.
 
-Metin alanları : word_f1_similarity  (ROUGE-1 F1)
-Resim alanı   : jaccard              (set-level Jaccard similarity)
+Text fields  : word_f1_similarity  (ROUGE-1 F1)
+Image field  : jaccard             (set-level Jaccard similarity)
 """
 
 from dateutil import parser as dateparser
 
 
 # ---------------------------------------------------------------------------
-# TEMEL METRİKLER
+# BASIC METRICS
 # ---------------------------------------------------------------------------
 
 def word_f1_similarity(a: str, b: str) -> float:
-    """Kelime bazlı F1 skoru (ROUGE-1 F1).
-    Precision = tahmin kelimelerinin GT'de bulunan oranı
-    Recall    = GT kelimelerinin tahminde bulunan oranı
-    F1        = harmonik ortalama
+    """Word-based F1 score (ROUGE-1 F1).
+    Precision = share of predicted words found in the GT
+    Recall    = share of GT words found in the prediction
+    F1        = harmonic mean
     """
     if not a or not b:
         return 0.0
@@ -49,16 +49,16 @@ def jaccard(a: set, b: set) -> float:
 
 
 # ---------------------------------------------------------------------------
-# YARDIMCI
+# HELPERS
 # ---------------------------------------------------------------------------
 
 def collect_text(els) -> str:
-    """BeautifulSoup eleman listesindeki tüm metinleri birleştir."""
+    """Join all texts in a list of BeautifulSoup elements."""
     return " ".join(el.get_text(strip=True) for el in els).strip()
 
 
 def collect_srcs(els) -> set:
-    """Eleman listesindeki tüm img src URL'lerini topla."""
+    """Collect all img src URLs in a list of elements."""
     srcs = set()
     for el in els:
         for img in ([el] if el.name == "img" else []) + el.find_all("img"):
@@ -69,7 +69,7 @@ def collect_srcs(els) -> set:
 
 
 # ---------------------------------------------------------------------------
-# TARİH KARŞILAŞTIRMA
+# DATE COMPARISON
 # ---------------------------------------------------------------------------
 
 def _parse_date_safe(s: str):
@@ -80,7 +80,7 @@ def _parse_date_safe(s: str):
 
 
 def dates_match(a: str, b: str) -> bool:
-    """İki tarih stringinin yıl-ay-gün'ü aynı mı?"""
+    """Do two date strings have the same year-month-day?"""
     d1 = _parse_date_safe(a)
     d2 = _parse_date_safe(b)
     if d1 and d2:
@@ -89,11 +89,11 @@ def dates_match(a: str, b: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# SKOR FONKSİYONLARI
+# SCORE FUNCTIONS
 # ---------------------------------------------------------------------------
 
 def score_text(extracted: str, gt_text: str, field: str = "") -> tuple[float, str]:
-    """Metin alanı skoru. Date için önce tarih parse dener, diğerleri ROUGE-1 F1."""
+    """Text field score. For date, date parsing is tried first; the others use ROUGE-1 F1."""
     if not extracted:
         return 0.0, "NULL"
     if not gt_text:
@@ -110,7 +110,7 @@ def score_text(extracted: str, gt_text: str, field: str = "") -> tuple[float, st
 
 
 def score_images(extracted_urls: set, gt_urls: set) -> tuple[float, str]:
-    """Resim alanı skoru — set-level Jaccard similarity."""
+    """Image field score — set-level Jaccard similarity."""
     if not extracted_urls:
         return 0.0, "NULL"
     if not gt_urls:
@@ -122,12 +122,12 @@ def score_images(extracted_urls: set, gt_urls: set) -> tuple[float, str]:
 
 
 def _collect_text_generic(els) -> str:
-    """CSS (bs4 Tag), XPath (lxml element/string) veya regex (str) sonuçlarından metin topla."""
+    """Collect text from CSS (bs4 Tag), XPath (lxml element/string) or regex (str) results."""
     parts = []
     for el in els:
         if isinstance(el, str):
-            # regex sonucu iç HTML olabilir ("<p>…</p>") → düz metin; aksi halde CSS/XPath
-            # metniyle karşılaştırmada etiketler yüzünden haksız düşük skor alır
+            # a regex result may be inner HTML ("<p>…</p>") → plain text; otherwise, when compared with CSS/XPath
+            # text, it gets an unfairly low score because of the tags
             from webrulebench.rules.regex_generator import html_to_text
             parts.append(html_to_text(el))
         elif hasattr(el, "get_text"):
@@ -140,7 +140,7 @@ def _collect_text_generic(els) -> str:
 
 
 def _collect_srcs_generic(els) -> set:
-    """CSS/XPath sonuçlarından img src kümesi topla (regex sonuçları zaten string kabul edilir)."""
+    """Collect the img src set from CSS/XPath results (regex results are already taken as strings)."""
     srcs = set()
     for el in els:
         if isinstance(el, str):
@@ -171,13 +171,13 @@ def score_selector(soup, gt_selector, llm_selector,
                    similarity_metric: str = "f1",
                    rule_type: str = "css", gt_rule_type: str = None,
                    raw_html: str = None):
-    """Kural bazlı skor (benchmark_llm için) — CSS, XPath veya Regex destekler.
+    """Rule-based score (for benchmark_llm) — supports CSS, XPath or Regex.
 
-    rule_type    : llm_selector'ın tipi ('css', 'xpath', 'regex')
-    gt_rule_type : gt_selector'ın tipi — verilmezse rule_type ile aynı kabul edilir
-    raw_html     : xpath/regex çalıştırmak için ham HTML string (soup'tan re-parse
-                   yerine kullanılır); verilmezse str(soup) ile türetilir
-    similarity_metric: 'f1' (ROUGE-1 F1) veya 'seq' (SequenceMatcher)
+    rule_type    : type of llm_selector ('css', 'xpath', 'regex')
+    gt_rule_type : type of gt_selector — if not given, assumed to be the same as rule_type
+    raw_html     : raw HTML string for running xpath/regex (used instead of re-parsing
+                   from soup); if not given, derived with str(soup)
+    similarity_metric: 'f1' (ROUGE-1 F1) or 'seq' (SequenceMatcher)
     """
     from difflib import SequenceMatcher as _SM
     from webrulebench.rules.rule_utils import run_rule
@@ -254,7 +254,7 @@ def score_selector(soup, gt_selector, llm_selector,
                     ((gt_count == 1 and llm_count > 1) or (llm_count == 1 and gt_count > 1)))
 
     if sim > 0:
-        from webrulebench.evaluation.experiments import MATCH_AT   # deneylerle aynı eşik
+        from webrulebench.evaluation.experiments import MATCH_AT   # same threshold as the experiments
         if sim >= MATCH_AT:
             return sim, "MATCH"
         return sim, "CONTAINER" if is_container else "PARTIAL"

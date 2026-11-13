@@ -55,7 +55,7 @@ const TID = {{ tid|tojson }};
 const TYPES   = ['text', 'date', 'price', 'url', 'image', 'list'];
 const METRICS = ['rouge', 'exact_match', 'jaccard', 'f1'];
 const PAGE_TYPES = ['article', 'listing'];
-let TPL = null;          // düzenlenen şablon (yerel kopya)
+let TPL = null;          // template being edited (local copy)
 let dirty = false;
 
 function setDirty(v = true) {

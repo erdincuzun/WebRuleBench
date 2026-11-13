@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1 — 2026-11
+
+Documentation release in response to the review of the SoftwareX submission; the behavior of the tool is unchanged.
+
+- Comments and docstrings of the source code (Python, JavaScript and templates) are in English, and so are the
+  developer documentation of the web application (`src/webrulebench/webapp/README.md`) and the messages of the
+  command-line scripts and the MCP server. The Turkish texts of the bilingual interface are unchanged.
+- Annotation study: English translation of the annotator guide (`paper/annotation_study/annotator_guide_en.md`;
+  the Turkish original given to the annotators is kept); `reference_check.py` reports the agreement of the
+  reviewed reference with the annotators and the over-extraction of the LLM rules on fields absent from a site.
+
 ## 1.1.0 — 2026-11
 
 Changes made in response to the review of the SoftwareX submission, and changes to the LLM calls.

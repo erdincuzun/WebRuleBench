@@ -74,7 +74,7 @@ function syncUrl() {
   history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : ''));
 }
 
-// Vazgeçilen düzenlemeler PROMPTS içindeki yerel kopyada kalmasın diye yeniden yüklenir
+// Reloaded so that discarded edits do not remain in the local copy inside PROMPTS
 async function discard() {
   if (!confirmLeave()) return false;
   if (dirty) { dirty = false; await reload(); }
@@ -175,7 +175,7 @@ function readForm(p) {
 }
 function current() { return sel.kind === 'new' ? sel.draft : PROMPTS.find(x => x.id === sel.id); }
 
-// Kural dili değişince prompt metni kendiliğinden değişmez; "Otomatik ile doldur" ile yenilenebilir
+// Changing the rule language does not change the prompt text by itself; it can be refreshed with "Fill automatically"
 function draftRt(rt) {
   const p = readForm(current());
   p.rule_type = rt;

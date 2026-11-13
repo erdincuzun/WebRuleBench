@@ -55,7 +55,7 @@
 <script src="{{ url_for('static', filename='report.js') }}"></script>
 <script>
 {% raw %}
-// Etiketler İngilizce kaynak metindir; T() ile çizim anında çevrilir
+// Labels are English source text; translated with T() at draw time
 const TABS = [['dataset', '📦', 'Dataset'], ['quality', '✍', 'Annotation & GT'], ['llm', '🤖', 'LLM results'],
               ['export', '⬇', 'Export'], ['audit', '🧾', 'Audit log']];
 let _tab = TABS.some(([k]) => k === location.hash.slice(1)) ? location.hash.slice(1) : 'llm';
@@ -99,7 +99,7 @@ const sel = (id, opts, cur, on) => `<select id="${id}" onchange="${on}">${Object
   `<option value="${k}" ${k === cur ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
 
 // ═══════════════════════════════════════════════════════
-// 📦 VERİ SETİ
+// 📦 DATASET
 // ═══════════════════════════════════════════════════════
 const D = {dim: 'country', tmpl: null, all: false};
 const missingLabel = () => '⚠ ' + T('missing info');
@@ -111,7 +111,7 @@ async function datasetTab(el) {
   const base = D.all ? d.sites : gs;
   const MISSING = missingLabel();
 
-  // ülke / dil / kıta kırılımı
+  // breakdown by country / language / continent
   const groups = {};
   for (const s of base) {
     const keys = D.dim === 'language' ? (langsOf(s).length ? langsOf(s) : [MISSING]) : [s[D.dim] || MISSING];
@@ -123,7 +123,7 @@ async function datasetTab(el) {
   }
   const grows = Object.values(groups).sort((a, b) => b.gt_pages - a.gt_pages || b.sites - a.sites);
 
-  // layout başına sayfa dağılımı
+  // distribution of pages per layout
   const bins = [['1', 1, 1], ['2–4', 2, 4], ['5–9', 5, 9], ['10–19', 10, 19], ['20–49', 20, 49], ['50+', 50, 1e9]];
   const lp = d.layout_pages.filter(l => l.pages > 0);
   const hist = bins.map(([l, a, b]) => lp.filter(x => x.pages >= a && x.pages <= b).length);
@@ -213,7 +213,7 @@ async function qualityTab(el) {
   const users = Object.values(byUser);
   const role = Object.fromEntries(d.users.map(u => [u.username, u]));
 
-  // kural dili × GT durumu
+  // rule language × GT status
   const st = Object.keys(RLANG).map(l => {
     const ls = lays.map(x => x.langs[l]);
     const ks = ls.map(x => x.kappa).filter(k => k !== null);
@@ -222,8 +222,8 @@ async function qualityTab(el) {
             multi: ls.filter(x => x.annotators >= 2).length, kappa: RT.mean(ks), kn: ks.length};
   });
 
-  // alan bazında κ (seçili dil)
-  // alan bazında Fleiss κ: layout'lar konu, annotatörler puanlayıcı, normalize kurallar kategori (sunucuda)
+  // per-field κ (selected language)
+  // per-field Fleiss κ: layouts are subjects, annotators raters, normalized rules categories (on the server)
   const kf = {};
   for (const x of lays) for (const [f, k] of Object.entries(x.langs[Q.lang].kappa_fields || {})) (kf[f] = kf[f] || []).push(k);
   const pooled = (d.kappa || {})[Q.lang] || {};
@@ -300,7 +300,7 @@ async function qualityTab(el) {
 }
 
 
-// ── içerik düzeyinde uyum (Krippendorff α): istek üzerine hesaplanır, sunucuda dosyalar değişene kadar saklanır ──
+// ── content-level agreement (Krippendorff α): computed on request, cached on the server until the files change ──
 const AG = {busy: false};
 const agKey = () => `agreement_${Q.lang}`;
 
@@ -310,7 +310,7 @@ async function agreementCached() {
     const r = await fetch(`/api/reports/agreement?lang=${Q.lang}&cached=1`);
     const j = await r.json();
     if (r.ok && !j.pending) _cache[agKey()] = j;
-  } catch (e) { /* hazır sonuç yoksa "Hesapla" düğmesi gösterilir */ }
+  } catch (e) { /* if no ready result exists, the "Compute" button is shown */ }
 }
 
 async function computeAgreement() {
@@ -369,7 +369,7 @@ function agreementSection() {
 }
 
 // ═══════════════════════════════════════════════════════
-// 🤖 LLM SONUÇLARI
+// 🤖 LLM RESULTS
 // ═══════════════════════════════════════════════════════
 const L = {sel: null, common: true, quick: false, q: '', dim: 'field', metric: 'mean', x: 'ms'};
 const ruleOf = e => (e.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : (e.rule_type || '').toUpperCase()) + (e.css_repair ? ` + ${T('repair')}` : '');
@@ -413,7 +413,7 @@ function aggregate(e, keys, meta) {
   };
 }
 function breakdown(rows, meta) {
-  // grup → deney başına değer; alan için layout'ların alan skoru, diğerleri için layout ortalaması
+  // group → value per experiment; for a field the layouts' field score, otherwise the layout mean
   const key = (l, f) => L.dim === 'field' ? f : L.dim === 'template' ? (l.t || '—') : L.dim === 'site' ? l.d : ((meta[l.d] || {})[L.dim] || '—');
   const groups = {};
   for (const r of rows) for (const l of r.ls) {
@@ -549,7 +549,7 @@ function llmAll(on) { const d = _cache.llm; llmVisible(d).forEach(e => on ? L.se
 function llmGroup(gid) { L.sel = new Set(_cache.llm.experiments.filter(e => e.group?.id === gid).map(e => e.id)); render(); window.scrollTo({top: 0, behavior: 'smooth'}); }
 
 // ═══════════════════════════════════════════════════════
-// ⬇ DIŞA AKTARMA
+// ⬇ EXPORT
 // ═══════════════════════════════════════════════════════
 function exportTab(el) {
   const ids = L.sel && _cache.llm ? llmVisible(_cache.llm).filter(e => L.sel.has(e.id)).map(e => e.id) : [];
@@ -583,7 +583,7 @@ function exportTab(el) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 🧾 DENETİM KAYDI (admin)
+// 🧾 AUDIT LOG (admin)
 // ═══════════════════════════════════════════════════════
 const A = {action: '', user: '', q: '', limit: 100};
 
@@ -595,9 +595,9 @@ async function auditTab(el) {
   const q = A.q.trim().toLowerCase();
   const rows = d.entries.filter(x => (!A.action || x.action === A.action) && (!A.user || x.user === A.user) &&
     (!q || `${x.domain} ${x.details}`.toLowerCase().includes(q)));
-  // son 12 hafta: haftalık olay sayısı (eylem türüne göre yığılmış)
+  // last 12 weeks: weekly event count (stacked by action type)
   const pad = n => String(n).padStart(2, '0');
-  const wkOf = t => { t = new Date(t); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7));      // haftanın pazartesisi (yerel)
+  const wkOf = t => { t = new Date(t); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7));      // Monday of the week (local)
                       return `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`; };
   const wk = s => wkOf(s.replace(' ', 'T'));
   const weeks = [];

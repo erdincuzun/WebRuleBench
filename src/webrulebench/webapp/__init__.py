@@ -1,10 +1,10 @@
 """
-webapp — WebRuleBench web uygulaması (Flask).
+webapp — WebRuleBench web application (Flask).
 
-  core.py      uygulama nesnesi, yollar, oturum/yetki, dil, ortak yardımcılar
-  routes/      bölüm başına blueprint'ler (auth, users, pages, data, templates, annotation,
+  core.py      application object, paths, session/authorization, language, shared helpers
+  routes/      one blueprint per section (auth, users, pages, data, templates, annotation,
                groundtruth, evaluation, llm, reports)
-  app.py       blueprint'leri kaydeder ve sunucuyu başlatır:  webrulebench serve  (python -m webrulebench.webapp)
-  templates/ static/ i18n/   arayüz
-  manage_users.py            komut satırından kullanıcı yönetimi
+  app.py       registers the blueprints and starts the server:  webrulebench serve  (python -m webrulebench.webapp)
+  templates/ static/ i18n/   user interface
+  manage_users.py            user management from the command line
 """

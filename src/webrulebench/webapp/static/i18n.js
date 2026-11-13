@@ -1,12 +1,12 @@
-// Arayüz dili — tarayıcı tarafı. Kaynak metinler İngilizcedir; window.I18N
-// (/i18n/<dil>.js) {"İngilizce": "çeviri"} sözlüğüdür. Sözlükte olmayan metin
-// İngilizce kalır. Yer tutucular: T('{n} pages', {n: 3}).
+// Interface language — browser side. The source texts are in English; window.I18N
+// (/i18n/<lang>.js) is an {"English": "translation"} dictionary. A text that is not in the dictionary
+// stays in English. Placeholders: T('{n} pages', {n: 3}).
 window.LANG   = document.documentElement.lang || 'en';
 window.I18N   = window.I18N || {};
 window.LOCALE = ({en: 'en-GB', tr: 'tr-TR'})[window.LANG] || 'en-GB';
 
-// İngilizce kaynakta yer tutucu 1 ise ardındaki çoğul isim tekile çevrilir
-// ("{n} pages" → "1 page", "{n} required fields" → "1 required field"); i18n.py ile aynı kural.
+// In the English source, if a placeholder is 1 the plural noun after it is made singular
+// ("{n} pages" → "1 page", "{n} required fields" → "1 required field"); same rule as i18n.py.
 const _SING_EXCEPT = new Set(['is', 'has', 'was', 'this', 'bus', 'gas', 'ms', 's']);
 function _singular(w) {
   const lw = w.toLowerCase();
@@ -42,10 +42,10 @@ function setLang(lang) {
   location.reload();
 }
 
-// TR modunda CSS `text-transform: uppercase` Türkçe kuralını kullanır (i → İ). Bu Türkçe
-// arayüz metinleri için doğrudur ("SEÇİLİ SİTE") ama veri ve İngilizce teknik terimleri
-// bozar ("ARTİCLE", "20MİNUTOS.ES"). Büyük harfle gösterilen öğelerde metin Türkçe bir
-// arayüz metni değilse öğeye lang="en" verilir; DOM değiştikçe yeniden uygulanır.
+// In TR mode, CSS `text-transform: uppercase` uses the Turkish rule (i → İ). This is correct for
+// Turkish interface texts ("SEÇİLİ SİTE") but breaks data and English technical terms
+// ("ARTİCLE", "20MİNUTOS.ES"). On elements shown in upper case, if the text is not a Turkish
+// interface text the element gets lang="en"; this is reapplied as the DOM changes.
 (function () {
   if (window.LANG !== 'tr') return;
   const SEL = 'th, .stat-label, .site-stat-label, .form-row label, .form-row .form-field, .plist-group, .lbl, ' +
@@ -54,7 +54,7 @@ function setLang(lang) {
   let values = null, pending = false;
   const fix = () => {
     pending = false;
-    // yalnızca İngilizceden farklı çevrilmiş metinler Türkçe sayılır ("Listing" → "Listing" teknik terimdir)
+    // only texts translated differently from the English count as Turkish ("Listing" → "Listing" is a technical term)
     values = values || new Set(Object.entries(window.I18N).filter(([k, v]) => k !== v).map(([, v]) => String(v).trim()));
     document.querySelectorAll(SEL).forEach(el => {
       const t = el.textContent.trim();

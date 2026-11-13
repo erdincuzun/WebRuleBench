@@ -59,16 +59,16 @@ const sc = v => v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--
 const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${sc(v)}">${(v * 100).toFixed(1)}</span>`;
 const bar = v => v === null || v === undefined ? '<span class="muted">—</span>'
   : `<div class="scorebar"><div style="width:${v * 100}%;background:${sc(v)}"></div></div> ${pct(v)}`;
-// [css sınıfı, ikon, İngilizce etiket] — etiket görüntülenirken T() ile çevrilir
+// [css class, icon, English label] — the label is translated with T() when displayed
 const STATUS = {queued: ['', '⏳', 'queued'], running: ['auto', '▶', 'running'], done: ['auto', '✓', 'done'],
   cancelled: ['', '■', 'stopped'], interrupted: ['req', '⚠', 'interrupted'], error: ['req', '✗', 'error']};
 const statusOf = s => { const x = STATUS[s]; return x ? [x[0], `${x[1]} ${T(x[2])}`] : ['', s]; };
 const TABS = [['rank', '🏆', 'Ranking'], ['heat', '🟩', 'Heat map'], ['layout', '🗂', 'Per layout'], ['cross', '🔀', 'Cross check']];
-if (TABS.some(([k]) => k === location.hash.slice(1))) _tab = location.hash.slice(1);   // ör. raporlardan #cross
+if (TABS.some(([k]) => k === location.hash.slice(1))) _tab = location.hash.slice(1);   // e.g. #cross from the reports
 const ruleOf = c => (c.rule_source === 'llm_css_regexn' ? 'CSS→REGEXN' : c.rule_type.toUpperCase()) + ((c.css_repair ?? (c.rule_type === 'css' || c.rule_source === 'llm_css_regexn')) ? ` + ${T('repair')}` : '');
 const short = m => `${m.config.backend_snapshot?.model || m.config.model || m.config.backend} · ${ruleOf(m.config)}`;
 
-// Ollama model bilgisi (deney kaydındaki backend_snapshot.model_info)
+// Ollama model info (backend_snapshot.model_info in the experiment record)
 function modelInfo(c) {
   const i = c.backend_snapshot?.model_info;
   return i ? ` · ${Hub.esc(i.parameter_size || '')} ${Hub.esc(i.quantization || '')} · <span class="mono" title="${Hub.esc(i.digest || '')}">${Hub.esc((i.digest || '').slice(0, 8))}</span>` : '';
@@ -148,7 +148,7 @@ function heatTab() {
       ${fields.map(f => cell(m.summary?.per_field?.[f])).join('')}${cell(m.summary?.mean)}</tr>`).join('')}</tbody></table></div>
     <p class="muted" style="margin-top:8px">${T('Cell: field mean (percent). Empty cell: no page has a GT value for that field.')}</p>`;
 }
-function heatColor(v) {   // kırmızı → sarı → yeşil, koyu tema
+function heatColor(v) {   // red → yellow → green, dark theme
   const h = Math.round(v * 120);
   return `hsla(${h}, 65%, 40%, ${0.25 + v * 0.55})`;
 }
@@ -229,7 +229,7 @@ async function load() {
   if (!res.ok) { document.getElementById('body').innerHTML = `<div class="empty">${T('Group not found.')} <a class="btn sm" href="/evaluation">← ${T('List')}</a></div>`; return; }
   G = await res.json();
   const running = ['running', 'queued'].includes(groupStatus());
-  if (running) _cc = null;           // sonuçlar değişiyor → cross check yeniden hesaplanır
+  if (running) _cc = null;           // results change → the cross check is recomputed
   renderHead();
   if (_tab !== 'cross' || !running) renderBody();
   clearTimeout(_timer);

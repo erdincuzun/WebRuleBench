@@ -1,16 +1,16 @@
 """
 i18n.py
 =======
-Arayüz dili (İngilizce varsayılan, Türkçe).
+Interface language (English by default, Turkish).
 
-Kaynak koddaki metinler İngilizcedir; çeviriler webrulebench/webapp/i18n/<dil>/*.json
-dosyalarında {"İngilizce metin": "çeviri"} biçiminde tutulur (dosyalar sayfa
-gruplarına göre bölünmüştür, yüklenirken birleştirilir). Sözlükte olmayan metin
-İngilizce gösterilir. Yer tutucular {ad} biçimindedir: T("{n} pages", {n: 3}).
+Texts in the source code are in English; translations are kept in webrulebench/webapp/i18n/<lang>/*.json
+files as {"English text": "translation"} (the files are split by page
+group and merged on loading). Text missing from the dictionary is
+shown in English. Placeholders have the form {name}: T("{n} pages", {n: 3}).
 
-Sunucu tarafı: webrulebench/webapp/core.py'deki _t("...") ve Jinja şablonlarındaki {{ T("...") }}.
-Tarayıcı tarafı: static/i18n.js'teki T("...") — sözlük /i18n/<dil>.js ile gelir.
-Yeni dil: webrulebench/webapp/i18n/<kod>/ klasörü ve LANGS'e kod eklemek yeterlidir.
+Server side: _t("...") in webrulebench/webapp/core.py and {{ T("...") }} in the Jinja templates.
+Browser side: T("...") in static/i18n.js — the dictionary comes with /i18n/<lang>.js.
+New language: adding a webrulebench/webapp/i18n/<code>/ folder and the code to LANGS is enough.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ LOCALES = {"en": "en-GB", "tr": "tr-TR"}
 I18N_DIR = Path(__file__).resolve().parent / "i18n"
 
 _lock  = threading.Lock()
-_cache: dict = {}          # dil → {"sig": ..., "cat": {...}}
+_cache: dict = {}          # language → {"sig": ..., "cat": {...}}
 
 
 def _signature(lang: str) -> tuple:
@@ -36,7 +36,7 @@ def _signature(lang: str) -> tuple:
 
 
 def catalog(lang: str) -> dict:
-    """Dilin birleşik sözlüğü; dosyalar değişince yeniden okunur (debug'da yeniden başlatmadan)."""
+    """Merged dictionary of a language; re-read when the files change (no restart needed in debug)."""
     if lang == DEFAULT or lang not in LANGS:
         return {}
     sig = _signature(lang)
@@ -49,13 +49,13 @@ def catalog(lang: str) -> dict:
             try:
                 cat.update(json.loads(p.read_text(encoding="utf-8")))
             except ValueError as ex:
-                print(f"[i18n] {p} okunamadı: {ex}")
+                print(f"[i18n] {p} could not be read: {ex}")
         _cache[lang] = {"sig": sig, "cat": cat}
         return cat
 
 
 def version(lang: str) -> str:
-    """Tarayıcı önbelleği için sözlük sürümü."""
+    """Dictionary version for the browser cache."""
     return hashlib.md5(repr(_signature(lang)).encode()).hexdigest()[:10]
 
 
@@ -76,10 +76,10 @@ def _singular(w: str) -> str:
 
 
 def english_plurals(text: str, params: dict) -> str:
-    """İngilizce kaynakta yer tutucu 1 ise ardındaki çoğul ismi tekile çevirir:
+    """In the English source, if a placeholder is 1, turns the plural noun after it into the singular:
     "{n} pages" → "1 page", "{n} required fields" → "1 required field", "{n} sites are" → "1 site is".
-    Yalnızca kaynak dil (İngilizce) için; çevirilerde dilin kendi biçimi kullanılır.
-    static/i18n.js'teki T() aynı kuralı uygular."""
+    Only for the source language (English); translations use the language's own form.
+    T() in static/i18n.js applies the same rule."""
     for k, v in params.items():
         if str(v).strip() != "1":
             continue
@@ -99,7 +99,7 @@ def english_plurals(text: str, params: dict) -> str:
 def translate(text: str, lang: str, **params) -> str:
     cat = catalog(lang)
     s = cat.get(text, text)
-    if params and s is text:                      # çeviri yoksa İngilizce kaynak
+    if params and s is text:                      # no translation: English source
         s = english_plurals(s, params)
     if params:
         try:

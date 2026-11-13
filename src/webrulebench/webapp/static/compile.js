@@ -1,22 +1,22 @@
-// ── GT DERLEME ──────────────────────────────────────────
-// /ground-truth/<site>/<layout> sayfasında kullanılır (eskiden index.html'de modaldı).
-// Sayfa şunları sağlar: activeDomain, _templates, showToast, _escHtml, _escAttr,
-// closeCompileModal (listeye dönüş) ve selectSite (no-op).
+// ── GT COMPILE ──────────────────────────────────────────
+// Used on the /ground-truth/<site>/<layout> page (formerly a modal in index.html).
+// The page provides: activeDomain, _templates, showToast, _escHtml, _escAttr,
+// closeCompileModal (back to the list) and selectSite (no-op).
 
-// onclick="f('…')" içine gömülecek metin: önce JS tek tırnak kaçışı, sonra HTML nitelik kaçışı
+// Text to embed in onclick="f('…')": first JS single-quote escaping, then HTML attribute escaping
 function _jsq(s) { return _escAttr(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")); }
 
-// ── KURAL DİLLERİ ────────────────────────────────────────
-// Annotatör/GT alan değeri: düz string (= CSS), CSS listesi (links) ya da {css, xpath, regex}.
-// Her dil ayrı derlenir: sekme değişince _compileData.users[u].selectors ve gt_selectors
-// o dilin görünümüyle değiştirilir; K1/K2/tablo kodu dilden habersiz çalışır.
+// ── RULE LANGUAGES ───────────────────────────────────────
+// Annotator/GT field value: plain string (= CSS), list of CSS (links) or {css, xpath, regex}.
+// Each language is compiled separately: when the tab changes, _compileData.users[u].selectors and gt_selectors
+// are replaced with that language's view; the K1/K2/table code does not know about languages.
 const COMPILE_LANGS = { css: 'CSS', xpath: 'XPath', regex: 'Regex' };
 let _compileLang      = 'css';
-let _compileRawUsers  = {};   // {user: {field: ham değer}}
-let _compileRawGt     = {};   // {field: ham değer}
+let _compileRawUsers  = {};   // {user: {field: raw value}}
+let _compileRawGt     = {};   // {field: raw value}
 let _compileSelByLang = {};   // {lang: {field: {user, selector}}}
-let _compileK2ByLang  = {};   // {lang: K2 sonucu}
-let _compileInclude   = {};   // {lang: GT'ye dahil mi}
+let _compileK2ByLang  = {};   // {lang: K2 result}
+let _compileInclude   = {};   // {lang: included in GT?}
 let _compileNotes     = {};   // {field: text} — the admin's note on a field (for a left-out field: the reason)
 let _compileFocus     = null; // field shown in the detail panel under the table
 let _compileNoteOpen  = false; // note box of the detail panel is open (pencil)
@@ -150,8 +150,8 @@ function _ruleOf(v, lang) {
   return lang === 'css' ? (v || '') : '';
 }
 
-// Seçiciyi önizleme DOM'unda çalıştır: CSS → querySelectorAll, XPath → evaluate.
-// Regex DOM'a eşlenemez (ham HTML'de çalışır) → vurgulama yok, K2/Test sunucuda.
+// Run the selector on the preview DOM: CSS → querySelectorAll, XPath → evaluate.
+// Regex cannot be mapped to the DOM (it runs on the raw HTML) → no highlighting, K2/Test on the server.
 function _compileQuery(doc, rule) {
   if (!rule || _compileLang === 'regex') return [];
   if (_compileLang === 'xpath') {
@@ -159,7 +159,7 @@ function _compileQuery(doc, rule) {
     const out = [];
     for (let i = 0; i < r.snapshotLength; i++) {
       const n = r.snapshotItem(i);
-      const el = n.nodeType === 1 ? n : (n.ownerElement || n.parentElement);   // @attr / text() → eleman
+      const el = n.nodeType === 1 ? n : (n.ownerElement || n.parentElement);   // @attr / text() → element
       if (el && !out.includes(el)) out.push(el);
     }
     return out;
@@ -167,7 +167,7 @@ function _compileQuery(doc, rule) {
   return [...doc.querySelectorAll(rule)];
 }
 
-// Regex için metin/eşleşme sayısı sunucuda: {key: rule} → {texts: {key}, counts: {key}}
+// For regex, texts/match counts come from the server: {key: rule} → {texts: {key}, counts: {key}}
 async function _compileRemote(page, rules) {
   const res = await fetch('/api/compile/texts', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -222,10 +222,10 @@ function compileSetInclude(on) {
   _compileUpdateSummary();
 }
 
-// Sayfa, admin olmayan kullanıcı için COMPILE_READONLY = true tanımlar
+// The page defines COMPILE_READONLY = true for a non-admin user
 const _compileRO = () => typeof COMPILE_READONLY !== 'undefined' && COMPILE_READONLY;
 
-// Regex sekmesi: alanın CSS'inden (CSS sekmesinde seçili, yoksa mevcut GT) regex üret — REGEXN
+// Regex tab: generate a regex from the field's CSS (selected in the CSS tab, else the current GT) — REGEXN
 async function compileSuggestRegex(field, btn) {
   if (_compileRO()) return;
   const css = _compileSelByLang.css?.[field]?.selector || _ruleOf(_compileRawGt[field], 'css');
@@ -243,14 +243,14 @@ async function compileSuggestRegex(field, btn) {
   showToast(T('{field}: same result as CSS on {passed}/{total} pages ({strategy})', {field, passed: d.passed, total: d.total, strategy: d.strategy}), d.passed === d.total ? 'ok' : 'err');
 }
 
-// "Kaydedilecek" sütunu: admin alanın GT kuralını elle yazabilir
+// "To save" column: the admin can type the GT rule of the field by hand
 function compileManualSet(field, value) {
   if (_compileRO()) return;
   value = value.trim();
   if (!value) delete _compileSelected[field];
   else {
     _compileSelected[field] = { user: '__manual__', selector: value };
-    // elle kural girilen dil GT'ye dahil edilir (dahil değilken girilen kural kaybolmasın)
+    // a language with a hand-typed rule is included in the GT (so a rule typed while excluded is not lost)
     if (!_compileInclude[_compileLang]) {
       _compileInclude[_compileLang] = true;
       showToast(T('{lang} included in GT', {lang: COMPILE_LANGS[_compileLang]}), 'ok');
@@ -267,15 +267,15 @@ function compileManualSet(field, value) {
 let _compileLayoutId  = null;
 let _compileData      = null;   // API response
 let _compileSelected  = {};     // {field: {user, selector}}
-let _compileLayer     = 1;      // 1 = Selector, 2 = İçerik
+let _compileLayer     = 1;      // 1 = Selector, 2 = Content
 let _compileK1        = {};     // {field: {kappa, suggested_user, suggested_sel}}
 let _compileK2        = {};     // {field: {scores:{user:{em,jac,r1,r2,rl}}, suggested_user, suggested_sel}}
 
-// ── KURAL UYUMU (rule_agreement.py ile birebir aynı) ─────────
-// Layout × alan düzeyinde Fleiss κ tanımsızdır (tek konu: şans uyumu kestirilemez). Burada
-// gözlenen ikili uyum P_o gösterilir: aynı kuralı yazan annotatör çiftlerinin oranı, kurallar
-// anlamı değiştirmeyen yazım farklarından arındırılmış (normalize) olarak. Fleiss κ veri seti
-// düzeyinde, layout'lar konu sayılarak Rapor bölümünde hesaplanır.
+// ── RULE AGREEMENT (identical to rule_agreement.py) ──────────
+// Fleiss κ is undefined at the layout × field level (a single subject: chance agreement cannot be estimated).
+// Shown here is the observed pairwise agreement P_o: the share of annotator pairs that wrote the same rule,
+// with the rules normalized to remove spelling differences that do not change their meaning. Fleiss κ is
+// computed at dataset level, with layouts as subjects, in the Reports section.
 function _splitTop(s, seps) {
   const out = []; let cur = '', depth = 0, quote = '';
   for (const ch of s) {
@@ -312,7 +312,7 @@ function _normCompound(c) {
 }
 function _normCssOne(sel) {
   const orig = sel.trim().replace(/\s+/g, ' ');
-  // birleştiricilerin etrafındaki boşluk (yalnızca üst düzeyde; [href~="x"] gibi değerler bozulmaz)
+  // whitespace around combinators (top level only; values such as [href~="x"] are left intact)
   const s = _splitTop(orig, '>+~').map(t => (t.length === 1 && '>+~'.includes(t)) ? ` ${t} ` : t).join('').replace(/\s+/g, ' ').trim();
   const out = [];
   for (const t of _splitTop(s, ' ')) {
@@ -409,7 +409,7 @@ function _scoreColor(v) {
   return 'var(--red)';
 }
 
-// ── KATMAN 1 HESAP ────────────────────────────────────────
+// ── LAYER 1 COMPUTATION ───────────────────────────────────
 function _computeK1() {
   if (!_compileData) return;
   const { users, layout } = _compileData;
@@ -438,7 +438,7 @@ function _computeK1() {
   if (gEl) gEl.innerHTML = globalK !== null ? `${T('Mean rule agreement')} = ${_kappaBadge(globalK)}` : '';
 }
 
-// ── KATMAN 2 HESAP (iframe içeriği) ───────────────────────
+// ── LAYER 2 COMPUTATION (iframe content) ──────────────────
 async function compileRunK2() {
   const page = document.getElementById('compilePreviewPage').value;
   if (!page) { showToast(T('Select a page first'), 'err'); return; }
@@ -455,7 +455,7 @@ async function compileRunK2() {
   const fields = tmpl.fields ? Object.keys(tmpl.fields) : Object.keys(layout.selectors || {});
   const userKeys = Object.keys(users);
 
-  // Regex: metinler sunucuda ham HTML üzerinden
+  // Regex: texts come from the server, computed on the raw HTML
   let remote = null;
   if (_compileLang === 'regex') {
     const rules = {};
@@ -521,7 +521,7 @@ async function compileRunK2() {
   showToast(T('K2 content analysis complete'), 'ok');
 }
 
-// ── KATMAN SWITCH ─────────────────────────────────────────
+// ── LAYER SWITCH ──────────────────────────────────────────
 function compileSetLayer(n) {
   _compileLayer = n;
   document.getElementById('compileLayerK1Btn').classList.toggle('active', n === 1);
@@ -529,7 +529,7 @@ function compileSetLayer(n) {
   _compileRenderTable();
 }
 
-// ── OTOMATİK SEÇ ─────────────────────────────────────────
+// ── AUTO SELECT ──────────────────────────────────────────
 function compileAutoSelect() {
   if (!_compileData) return;
   const source = _compileLayer === 2 && Object.keys(_compileK2).length ? _compileK2 : _compileK1;
@@ -568,7 +568,7 @@ async function openCompileModal(layoutId) {
   const data = await res.json();
   if (data.error) { showToast(data.error, 'err'); closeCompileModal(); return; }
 
-  // Ham değerleri sakla; her dil için mevcut GT'yi ön-seçim yap
+  // Keep the raw values; preselect the current GT for each language
   _compileRawUsers = {};
   Object.entries(data.users || {}).forEach(([u, ud]) => { _compileRawUsers[u] = { ...(ud.selectors || {}) }; });
   _compileRawGt = { ...(data.gt_selectors || {}) };
@@ -582,7 +582,7 @@ async function openCompileModal(layoutId) {
     Object.entries(_compileRawGt).forEach(([f, v]) => { const r = _ruleOf(v, lang); if (r) sel[f] = { user: '__gt__', selector: r }; });
     _compileSelByLang[lang] = sel;
     const anyAnn = Object.values(_compileRawUsers).some(u => Object.values(u).some(v => _ruleOf(v, lang)));
-    // varsayılan: GT'de o dil varsa dahil; CSS için annotatör girmişse de dahil
+    // default: included if the GT has that language; CSS is also included if an annotator entered it
     _compileInclude[lang] = Object.keys(sel).length > 0 || (lang === 'css' && anyAnn);
   });
 
@@ -654,7 +654,7 @@ function _compileRenderTable() {
     const k2info = _compileK2[field] || {};
 
     if (!isK2) {
-      // ── Katman 1 ──
+      // ── Layer 1 ──
       const fcolor = _fieldColor(field);
       const frgb   = _hexToRgb(fcolor);
       const userCells = users.map(u => {
@@ -700,7 +700,7 @@ function _compileRenderTable() {
       </tr>`;
 
     } else {
-      // ── Katman 2 ──
+      // ── Layer 2 ──
       const fcolor = _fieldColor(field);
       const frgb   = _hexToRgb(fcolor);
       const userCells = users.map(u => {
@@ -749,7 +749,7 @@ function _compileRenderTable() {
   }).join('');
 }
 
-// ── FIELD RENK PALETİ ────────────────────────────────────
+// ── FIELD COLOR PALETTE ──────────────────────────────────
 const _FIELD_PALETTE = [
   '#5b7cfa', '#34d399', '#f87171', '#fbbf24', '#a78bfa',
   '#38bdf8', '#fb923c', '#4ade80', '#e879f9', '#67e8f9',
@@ -801,26 +801,26 @@ function _compileHighlightAll() {
     const doc = frame.contentDocument;
     if (!doc) return;
 
-    // Temizle — tüm field class'larını ve etiketleri kaldır
+    // Clear — remove all field classes and labels
     doc.querySelectorAll('[class*="__cfield_"]').forEach(el => {
       [...el.classList].filter(c => c.startsWith('__cfield_')).forEach(c => el.classList.remove(c));
     });
     doc.querySelectorAll('.__compile_label').forEach(el => el.remove());
 
-    // Her field için seçili selector'ı renkli highlight et + etiket ekle
+    // For each field, highlight the selected selector in color + add a label
     Object.entries(_compileSelected).forEach(([field, { selector }]) => {
       if (!selector) return;
       const color   = _fieldColor(field);
       const rgb     = _hexToRgb(color);
       const cls     = `__cfield_${field.replace(/[^a-zA-Z0-9]/g,'_')}`;
 
-      // CSS kuralını güncelle
+      // Update the CSS rule
       _compileUpdateFieldStyle(doc, cls, color, rgb);
 
       try {
         _compileQuery(doc, selector).forEach(el => {
           el.classList.add(cls);
-          // Etiket zaten varsa ekleme
+          // Do not add the label if it already exists
           const existingLbl = el.parentElement?.querySelector(`.__compile_label[data-field="${field}"]`);
           if (existingLbl) return;
 
@@ -838,7 +838,7 @@ function _compileHighlightAll() {
             text-overflow:ellipsis;pointer-events:none;
             opacity:.82;margin-bottom:0;
           `;
-          // Etiketi element'in hemen önüne, parent'a ekle
+          // Insert the label into the parent, right before the element
           if (el.parentElement) {
             el.parentElement.insertBefore(lbl, el);
           }
@@ -855,7 +855,7 @@ function _compileUpdateFieldStyle(doc, cls, color, rgb) {
     sheet.id = '__compile_field_styles';
     doc.head.appendChild(sheet);
   }
-  // Sadece bu class'ı güncelle — diğerlerini koru
+  // Update only this class — keep the others
   const rule = `.${cls} { outline: 2px solid ${color} !important; outline-offset: 3px !important; background: rgba(${rgb},.08) !important; }`;
   const existing = sheet.textContent;
   const clsRe = new RegExp(`\\.${cls}\\s*\\{[^}]*\\}`, 'g');
@@ -1016,7 +1016,7 @@ async function compileTestAll() {
 }
 
 async function compileSave() {
-  // Yalnızca "GT'ye dahil" dillerin seçimleri birleştirilir: yalnız CSS → düz string, aksi halde {css, xpath, regex}
+  // Only the selections of languages "included in GT" are merged: CSS only → plain string, else {css, xpath, regex}
   const langs  = Object.keys(COMPILE_LANGS).filter(l => _compileInclude[l]);
   const fields = new Set([..._compileFields(), ...langs.flatMap(l => Object.keys(_compileSelByLang[l] || {}))]);
   const selectors = {};

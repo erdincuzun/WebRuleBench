@@ -59,7 +59,7 @@ const sc = v => v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--
 const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${sc(v)}">${(v * 100).toFixed(1)}</span>`;
 const bar = v => v === null || v === undefined ? '<span class="muted">—</span>'
   : `<div class="scorebar"><div style="width:${v * 100}%;background:${sc(v)}"></div></div> ${pct(v)}`;
-// [css sınıfı, ikon, İngilizce etiket] — etiket görüntülenirken T() ile çevrilir
+// [css class, icon, English label] — the label is translated with T() when displayed
 const STATUS = {queued: ['', '⏳', 'queued'], running: ['auto', '▶', 'running'], done: ['auto', '✓', 'done'],
   cancelled: ['', '■', 'stopped'], interrupted: ['req', '⚠', 'interrupted'], error: ['req', '✗', 'error']};
 const statusOf = s => { const x = STATUS[s]; return x ? [x[0], `${x[1]} ${T(x[2])}`] : ['', s]; };

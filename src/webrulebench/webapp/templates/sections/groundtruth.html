@@ -109,7 +109,7 @@ function render() {
 
 Hub.ready().then(async () => {
   _all = (await (await fetch('/api/gt/overview')).json()).sites || [];
-  // bekleyen yoksa tüm siteleri göster
+  // if nothing is pending, show all sites
   if (!_all.some(s => s.pending)) document.getElementById('fStatus').value = '';
   document.getElementById('q').addEventListener('input', render);
   document.getElementById('fStatus').addEventListener('change', render);

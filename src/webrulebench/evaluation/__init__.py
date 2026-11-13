@@ -1,1 +1,1 @@
-"""Skorlama metrikleri, layout bazlı LLM deneyleri ve rapor toplama."""
+"""Scoring metrics, layout-based LLM experiments and report aggregation."""

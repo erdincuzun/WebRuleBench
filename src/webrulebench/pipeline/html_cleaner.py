@@ -3,39 +3,39 @@ html_cleaner.py
 ===============
 Phase 3 — HTML Skeleton / Reduction for AdaptiveScraper
 
-Girdi  : ham HTML string
-Çıktı  : küçültülmüş HTML string + metrikler (süre, token azalma)
+Input  : raw HTML string
+Output : reduced HTML string + metrics (time, token reduction)
 
-Ön-işleme (tüm stratejilere sabit uygulanır):
-  - script, style, iframe, noscript kaldır
-  - display:none / visibility:hidden kaldır
-  - HTML yorumları kaldır
+Preprocessing (applied identically to all strategies):
+  - remove script, style, iframe, noscript
+  - remove display:none / visibility:hidden
+  - remove HTML comments
 
-Stratejiler:
-  1. raw_regex        — regex tabanlı, DOM parse yok         → html2text (Swartz, 2011) benzeri baseline
-  2. whitelist        — sadece semantic tag'leri tut          → Readability (Arcavi, 2009) +
-                                                                trafilatura (Barbaresi, 2021) benzeri
-  3. dom_formula      — truncation score (derinliksiz)        → Boilerpipe (Kohlschütter et al., 2010) benzeri
-                                                                CETR (Wang et al., AAAI 2012) ile örtüşüyor
-  4. dom_depth_abs    — truncation score (mutlak derinlik)    → Dragnet (Peters & Lecocq, 2013) benzeri
-  5. dom_depth_rel    — truncation score (normalize derinlik) → CETR (Wang et al., 2012) normalize varyantı
-  6. entropy          — karakter entropisi tabanlı            → Özgün katkı; LLM pre-training veri
-                                                                temizliğindeki perplexity filtering ile
-                                                                kavramsal ilişki (Wenzek et al., 2020)
-  7. hybrid           — whitelist (soft-strip) +              → Bu çalışmanın katkısı: iki stratejinin
-                        enriched skeleton modu                   avantajlarını birleştiren melez yaklaşım.
-                                                                soft-strip: bilinmeyen tag attrs silinir ama
-                                                                  tag kaldırılmaz → container hiyerarşisi korunur
-                                                                enriched modu: orijinal metin annotation (date ↑)
+Strategies:
+  1. raw_regex        — regex-based, no DOM parse            → baseline similar to html2text (Swartz, 2011)
+  2. whitelist        — keep only semantic tags              → similar to Readability (Arcavi, 2009) +
+                                                                trafilatura (Barbaresi, 2021)
+  3. dom_formula      — truncation score (no depth)          → similar to Boilerpipe (Kohlschütter et al., 2010)
+                                                                overlaps with CETR (Wang et al., AAAI 2012)
+  4. dom_depth_abs    — truncation score (absolute depth)    → similar to Dragnet (Peters & Lecocq, 2013)
+  5. dom_depth_rel    — truncation score (normalized depth)  → normalized variant of CETR (Wang et al., 2012)
+  6. entropy          — character-entropy based              → Original contribution; conceptually related
+                                                                to perplexity filtering in LLM pre-training
+                                                                data cleaning (Wenzek et al., 2020)
+  7. hybrid           — whitelist (soft-strip) +              → Contribution of this work: a hybrid approach
+                        enriched skeleton mode                   combining the strengths of two strategies.
+                                                                soft-strip: unknown tag attrs are removed but
+                                                                  the tag is kept → container hierarchy preserved
+                                                                enriched mode: original text annotation (date ↑)
 
-Truncation score formülü (stratejiler 3-5):
+Truncation score formula (strategies 3-5):
   score = α × text_ratio + β × log(text_length) + γ × (1/depth)
-  score < θ1  → none     (dokunma)
-  θ1–θ2       → sentence (ilk cümle)
-  θ2–θ3       → fixed    (ilk N karakter)
+  score < θ1  → none     (leave as is)
+  θ1–θ2       → sentence (first sentence)
+  θ2–θ3       → fixed    (first N characters)
   θ3+         → placeholder [CONTENT]
 
-Kullanım:
+Usage:
   from webrulebench.pipeline.html_cleaner import HTMLCleaner, CleanerConfig
   config  = CleanerConfig()
   cleaner = HTMLCleaner(config)
@@ -87,27 +87,27 @@ STRATEGIES: list[Strategy] = [
 @dataclass
 class CleanerConfig:
     """
-    Tüm parametreler tek yerde.
-    Farklı config nesneleri ile farklı deneyler çalıştırılabilir.
+    All parameters in one place.
+    Different experiments can be run with different config objects.
     """
 
-    # ── Truncation score ağırlıkları (stratejiler 3-5) ────────────────────
-    alpha: float = 0.5    # text_ratio ağırlığı
-    beta:  float = 0.3    # log(text_length) ağırlığı
-    gamma: float = 0.2    # depth bileşeni ağırlığı
+    # ── Truncation score weights (strategies 3-5) ─────────────────────────
+    alpha: float = 0.5    # text_ratio weight
+    beta:  float = 0.3    # log(text_length) weight
+    gamma: float = 0.2    # depth component weight
 
-    # ── Truncation eşikleri ───────────────────────────────────────────────
-    theta1: float = 0.3   # altında → none
-    theta2: float = 0.5   # altında → sentence
-    theta3: float = 0.7   # altında → fixed(N), üstünde → placeholder
+    # ── Truncation thresholds ─────────────────────────────────────────────
+    theta1: float = 0.3   # below → none
+    theta2: float = 0.5   # below → sentence
+    theta3: float = 0.7   # below → fixed(N), above → placeholder
 
-    # ── Sabit truncation uzunluğu ─────────────────────────────────────────
+    # ── Fixed truncation length ───────────────────────────────────────────
     fixed_n: int = 80
 
-    # ── Entropy eşiği (strateji 6) ────────────────────────────────────────
-    entropy_threshold: float = 3.5   # altında → düşük bilgi → kes
+    # ── Entropy threshold (strategy 6) ────────────────────────────────────
+    entropy_threshold: float = 3.5   # below → low information → truncate
 
-    # ── Whitelist (strateji 2) ────────────────────────────────────────────
+    # ── Whitelist (strategy 2) ────────────────────────────────────────────
     keep_tags: list = field(default_factory=lambda: [
         "article", "main", "section", "header",
         "h1", "h2", "h3", "h4",
@@ -118,7 +118,7 @@ class CleanerConfig:
         "address", "img",
     ])
 
-    # ── Ön-işleme ─────────────────────────────────────────────────────────
+    # ── Preprocessing ─────────────────────────────────────────────────────
     remove_scripts:  bool = True
     remove_hidden:   bool = True
     remove_comments: bool = True
@@ -161,14 +161,14 @@ class HTMLCleaner:
 
     # ── Public API ────────────────────────────────────────────────────────
     def clean(self, html: str, strategy: Strategy = "dom_formula") -> CleanResult:
-        """Belirtilen strateji ile HTML temizle. CleanResult döndür."""
+        """Clean the HTML with the given strategy. Return a CleanResult."""
         if strategy not in STRATEGIES:
-            raise ValueError(f"Bilinmeyen strateji: {strategy}. Seçenekler: {STRATEGIES}")
+            raise ValueError(f"Unknown strategy: {strategy}. Options: {STRATEGIES}")
 
         original_chars = len(html)
         t0 = time.perf_counter()
 
-        if strategy == "none":                 # temizleme yok: sayfa olduğu gibi (tam HTML deneyleri)
+        if strategy == "none":                 # no cleaning: the page as is (full-HTML experiments)
             cleaned = html
         elif strategy == "raw_regex":
             cleaned = self._strategy_raw_regex(html)
@@ -202,14 +202,14 @@ class HTMLCleaner:
         )
 
     def clean_all(self, html: str) -> dict:
-        """Tüm stratejileri çalıştır. Benchmark için kullanılır."""
+        """Run all strategies. Used for benchmarking."""
         return {s: self.clean(html, strategy=s) for s in STRATEGIES}
 
-    # ── Ön-işleme (tüm DOM stratejileri için sabit) ───────────────────────
+    # ── Preprocessing (identical for all DOM strategies) ──────────────────
     def _preprocess(self, soup: BeautifulSoup):
         """
-        Gürültü elemanları kaldır.
-        Tüm stratejilere eşit uygulanır — strateji karşılaştırması adil olsun.
+        Remove noise elements.
+        Applied equally to all strategies — so the strategy comparison is fair.
         """
         if self.cfg.remove_scripts:
             for tag in soup.find_all(["script", "style", "iframe", "noscript"]):
@@ -231,16 +231,16 @@ class HTMLCleaner:
                     pass
 
     # ══════════════════════════════════════════════════════════════════════
-    # STRATEJİ 1 — Raw Regex
-    # Literatür: html2text (Aaron Swartz, 2011) benzeri naive baseline.
-    #            Boilerpipe ile KARIŞTIRILMAMALI — Boilerpipe metin
-    #            yoğunluğu + ML kullanır; bu strateji saf regex'tir.
-    # Farkımız : Haber domain'ine özel nav/footer/aside pattern listesi
+    # STRATEGY 1 — Raw Regex
+    # Literature: naive baseline similar to html2text (Aaron Swartz, 2011).
+    #            NOT TO BE CONFUSED with Boilerpipe — Boilerpipe uses text
+    #            density + ML; this strategy is pure regex.
+    # Our difference: a nav/footer/aside pattern list specific to the news domain
     # ══════════════════════════════════════════════════════════════════════
     def _strategy_raw_regex(self, html: str) -> str:
         """
-        Saf regex temizleme — DOM parse yok.
-        En hızlı strateji, baseline görevi görür.
+        Pure regex cleaning — no DOM parse.
+        The fastest strategy; serves as the baseline.
         """
         html = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE)
         html = re.sub(r"<style[^>]*>.*?</style>",   "", html, flags=re.DOTALL | re.IGNORECASE)
@@ -249,7 +249,7 @@ class HTMLCleaner:
         for tag in ["nav", "aside", "form", "noscript"]:
             html = re.sub(rf"<{tag}[^>]*>.*?</{tag}>", "", html,
                           flags=re.DOTALL | re.IGNORECASE)
-        # footer: raw_regex'te hepsini sil (DOM bağlamı yok), diğer stratejiler DOM'da kontrol eder
+        # footer: remove all of them in raw_regex (no DOM context); the other strategies check in the DOM
         html = re.sub(r"<header[^>]*>.*?</header>", "", html, flags=re.DOTALL | re.IGNORECASE)
         html = re.sub(r'\s+on\w+="[^"]*"',   "", html)
         html = re.sub(r'\s+data-[^=]+="[^"]*"', "", html)
@@ -257,32 +257,32 @@ class HTMLCleaner:
         return html.strip()
 
     # ══════════════════════════════════════════════════════════════════════
-    # STRATEJİ 2 — Tag Whitelist
-    # Literatür: Readability (Arcavi, 2009; Mozilla Reader Mode olarak
-    #            Firefox'a entegre edildi) ve trafilatura (Barbaresi, 2021).
-    #            trafilatura daha modern, çok dilli ve aktif olarak
-    #            sürdürülüyor; karşılaştırma için önerilen referans.
-    # Farkımız : Tag listesi LLM selector üretimi için optimize edildi;
-    #            skor tabanlı içerik seçimi yerine deterministik whitelist.
+    # STRATEGY 2 — Tag Whitelist
+    # Literature: Readability (Arcavi, 2009; integrated into Firefox as
+    #            Mozilla Reader Mode) and trafilatura (Barbaresi, 2021).
+    #            trafilatura is more modern, multilingual and actively
+    #            maintained; the recommended reference for comparison.
+    # Our difference: the tag list is optimized for LLM selector generation;
+    #            a deterministic whitelist instead of score-based content selection.
     # ══════════════════════════════════════════════════════════════════════
     def _strategy_whitelist(self, soup: BeautifulSoup) -> str:
         """
-        Sadece bilinen semantic tag'leri tut.
-        Hibrit: bilinen tag'ler kuralla, bilinmeyenler kaldırılır.
+        Keep only known semantic tags.
+        Hybrid: known tags are handled by rule, unknown ones are removed.
         """
         keep      = set(self.cfg.keep_tags)
-        # Yapısal gürültü → decompose (içerik hiç beklenmez)
+        # Structural noise → decompose (no content expected)
         hard_remove = {"nav", "form", "menu"}
-        # Form kontrolleri → unwrap (BS4 mis-parse durumunda child içerik kaybolmasın)
+        # Form controls → unwrap (so child content is not lost if BS4 mis-parses)
         soft_remove = {"button", "input", "select", "textarea"}
 
-        # header/footer/aside: article/main içindeyse koru, dışındaysa sil
+        # header/footer/aside: keep if inside article/main, remove if outside
         for tag in soup.find_all(["header", "footer", "aside"]):
             if not tag.find_parent(["article", "main"]):
                 tag.decompose()
 
         for tag in soup.find_all(True):
-            if not tag.parent:   # zaten kaldırılmış
+            if not tag.parent:   # already removed
                 continue
             if tag.name in hard_remove:
                 tag.decompose()
@@ -300,12 +300,12 @@ class HTMLCleaner:
         return str(soup)
 
     # ══════════════════════════════════════════════════════════════════════
-    # STRATEJİ 7 — Hybrid
-    # Whitelist cleaner: blacklisted → decompose, bilinmeyen → attrs temizle
-    # (unwrap() yok → image/tag container hiyerarşisi korunur).
-    # Skeleton aşamasında enriched modu uygulanır (metin annotation'ı).
-    # Böylece yapısal bütünlük (dom_depth_rel avantajı) + orijinal metin
-    # sinyalleri (enriched avantajı) aynı anda elde edilir.
+    # STRATEGY 7 — Hybrid
+    # Whitelist cleaner: blacklisted → decompose, unknown → clear attrs
+    # (no unwrap() → the image/tag container hierarchy is preserved).
+    # The enriched mode is applied in the skeleton stage (text annotation).
+    # This gives structural integrity (the dom_depth_rel advantage) and original
+    # text signals (the enriched advantage) at the same time.
     # ══════════════════════════════════════════════════════════════════════
     def _strategy_hybrid(self, soup: BeautifulSoup) -> str:
         keep        = set(self.cfg.keep_tags)
@@ -327,46 +327,46 @@ class HTMLCleaner:
                 except Exception:
                     pass
             elif tag.name not in keep:
-                # unwrap() yerine sadece attribute'ları sıfırla:
-                # tag yapısı (ve dolayısıyla container hiyerarşisi) bozulmaz,
-                # metin dokunulmadan kalır → enriched skeleton modu ham metni görebilir
+                # Instead of unwrap(), only reset the attributes:
+                # the tag structure (and hence the container hierarchy) stays intact,
+                # the text is left untouched → the enriched skeleton mode can see the raw text
                 tag.attrs = {}
 
         return str(soup)
 
     # ══════════════════════════════════════════════════════════════════════
-    # STRATEJİ 3-5 — DOM Formula (üç varyant)
+    # STRATEGY 3-5 — DOM Formula (three variants)
     #
-    # dom_formula (derinliksiz):
-    #   Literatür: Boilerpipe (Kohlschütter et al., ACM CIKM 2010).
-    #              Metin yoğunluğu (text/markup oranı) Boilerpipe'ın çekirdeği.
-    #              CETR (Wang et al., AAAI 2012) tag oranlarını benzer şekilde
-    #              kullanır. Justext (Pomikálek, 2011) paragraf sınıflandırması
-    #              yapar — stop-word bağımlılığı nedeniyle daha az uygun referans.
+    # dom_formula (no depth):
+    #   Literature: Boilerpipe (Kohlschütter et al., ACM CIKM 2010).
+    #              Text density (text/markup ratio) is the core of Boilerpipe.
+    #              CETR (Wang et al., AAAI 2012) uses tag ratios in a similar
+    #              way. Justext (Pomikálek, 2011) classifies paragraphs
+    #              — a less suitable reference because it depends on stop words.
     #
-    # dom_depth_abs (mutlak derinlik):
-    #   Literatür: Dragnet (Peters & Lecocq, WWW 2013). DOM yapısı +
-    #              içerik modeli + CRF; derinlik özelliğini açıkça kullanır.
-    #              SimpDOM (Zhou et al., 2021) ile KARIŞTIRILMAMALI —
-    #              SimpDOM graph neural network tabanlı DOM sadeleştirmedir.
+    # dom_depth_abs (absolute depth):
+    #   Literature: Dragnet (Peters & Lecocq, WWW 2013). DOM structure +
+    #              content model + CRF; uses the depth feature explicitly.
+    #              NOT TO BE CONFUSED with SimpDOM (Zhou et al., 2021) —
+    #              SimpDOM is DOM simplification based on a graph neural network.
     #
-    # dom_depth_rel (normalize derinlik):
-    #   Literatür: CETR (Wang et al., 2012) normalize tag ratio varyantı.
-    #              Web2Text (Vogels et al., EMNLP 2018) ile KARIŞTIRILMAMALI —
-    #              Web2Text derin öğrenme tabanlı sekans modelidir.
+    # dom_depth_rel (normalized depth):
+    #   Literature: the normalized tag ratio variant of CETR (Wang et al., 2012).
+    #              NOT TO BE CONFUSED with Web2Text (Vogels et al., EMNLP 2018) —
+    #              Web2Text is a deep-learning sequence model.
     #
-    # Ortak farkımız: Multi-parametrik α β γ θ ile LLM token
-    #                 optimizasyonuna odaklı truncation kararı.
+    # Our common difference: a truncation decision with multi-parameter α β γ θ,
+    #                 focused on LLM token optimization.
     # ══════════════════════════════════════════════════════════════════════
     def _strategy_dom_formula(self, soup: BeautifulSoup,
                                use_depth: bool = False,
                                relative: bool = False) -> str:
         """
-        Truncation score formülü:
+        Truncation score formula:
           score = α×text_ratio + β×log(text_length) + γ×depth_component
 
-        Eşikler:
-          score < θ1  → none     (dokunma)
+        Thresholds:
+          score < θ1  → none     (leave as is)
           θ1–θ2       → sentence
           θ2–θ3       → fixed(N)
           θ3+         → [CONTENT]
@@ -374,7 +374,7 @@ class HTMLCleaner:
         cfg       = self.cfg
         max_depth = self._max_depth(soup) if (use_depth and relative) else 1
 
-        # Normalize için max text uzunluğunu önceden hesapla
+        # Precompute the max text length for normalization
         all_texts = [len(t.get_text(strip=True)) for t in soup.find_all(True) if t.parent]
         max_tlen  = max(all_texts) if all_texts else 1
         log_max   = math.log(max_tlen + 1)
@@ -383,8 +383,8 @@ class HTMLCleaner:
             if not tag.parent:
                 continue
 
-            # Sadece text içeren node'lara uygula
-            # (child tag'i olan container'lara dokunma — parent-child çakışması önlenir)
+            # Apply only to nodes that contain text
+            # (leave containers with child tags alone — avoids parent-child conflicts)
             direct_text = "".join(
                 str(c) for c in tag.children
                 if isinstance(c, __import__('bs4').NavigableString)
@@ -416,7 +416,7 @@ class HTMLCleaner:
                      cfg.gamma * depth_val)
 
             if score < cfg.theta1:
-                pass  # none — dokunma
+                pass  # none — leave as is
             elif score < cfg.theta2:
                 self._truncate_tag(tag, self._first_sentence(text))
             elif score < cfg.theta3:
@@ -427,20 +427,20 @@ class HTMLCleaner:
         return str(soup)
 
     # ══════════════════════════════════════════════════════════════════════
-    # STRATEJİ 6 — Entropy
-    # Literatür: Doğrudan karşılığı yok — özgün katkı.
-    #            Kavramsal ilişki: Shannon (1948) karakter entropisi.
-    #            LLM pre-training veri temizliğinde kullanılan perplexity
-    #            filtering ile ruh yakın: Wenzek et al., "CCNet: Extracting
+    # STRATEGY 6 — Entropy
+    # Literature: No direct counterpart — original contribution.
+    #            Conceptual link: Shannon (1948) character entropy.
+    #            Close in spirit to the perplexity filtering used in LLM
+    #            pre-training data cleaning: Wenzek et al., "CCNet: Extracting
     #            High Quality Monolingual Datasets from Web Crawl Data",
-    #            LREC 2020. Fark: biz karakter-düzeyi entropi kullanırken
-    #            CCNet kelime-düzeyi perplexity kullanır.
+    #            LREC 2020. Difference: we use character-level entropy while
+    #            CCNet uses word-level perplexity.
     # ══════════════════════════════════════════════════════════════════════
     def _strategy_entropy(self, soup: BeautifulSoup) -> str:
         """
-        Karakter entropisi tabanlı truncation.
-        Düşük entropi → tekrarlayan/navigasyon metni → kes.
-        Yüksek entropi → zengin içerik → koru.
+        Truncation based on character entropy.
+        Low entropy → repetitive/navigation text → truncate.
+        High entropy → rich content → keep.
 
         entropy = -Σ p(c) × log2(p(c))
         """
@@ -455,7 +455,7 @@ class HTMLCleaner:
 
         return str(soup)
 
-    # ── Yardımcılar ───────────────────────────────────────────────────────
+    # ── Helpers ───────────────────────────────────────────────────────────
     def _get_depth(self, tag: Tag) -> int:
         depth, parent = 0, tag.parent
         while parent:
@@ -490,15 +490,15 @@ class HTMLCleaner:
 
 
 # ---------------------------------------------------------------------------
-# CLI — tek HTML dosyası üzerinde tüm stratejileri çalıştır
+# CLI — run all strategies on a single HTML file
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import argparse, pathlib
 
-    parser = argparse.ArgumentParser(description="HTML Cleaner — strateji karşılaştırması")
-    parser.add_argument("html_file", help="Temizlenecek HTML dosyası")
+    parser = argparse.ArgumentParser(description="HTML Cleaner — comparison of strategies")
+    parser.add_argument("html_file", help="HTML file to clean")
     parser.add_argument("--strategy", default="all",
-                        help=f"Strateji: all veya {STRATEGIES}")
+                        help=f"Strategy: all or one of {STRATEGIES}")
     parser.add_argument("--alpha",  type=float, default=0.5)
     parser.add_argument("--beta",   type=float, default=0.3)
     parser.add_argument("--gamma",  type=float, default=0.2)
@@ -517,8 +517,8 @@ if __name__ == "__main__":
     cleaner = HTMLCleaner(cfg)
 
     print("=" * 60)
-    print("  HTML Cleaner — Strateji Karşılaştırması")
-    print(f"  Orijinal boyut: {len(html):,} karakter")
+    print("  HTML Cleaner — comparison of strategies")
+    print(f"  Original size: {len(html):,} characters")
     print("=" * 60)
 
     def fmt_dur(ms: float) -> str:

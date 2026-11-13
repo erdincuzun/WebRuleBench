@@ -1,17 +1,17 @@
 """
 reports.py
 ==========
-Rapor & Dışa Aktarma bölümü (WebRuleBench 6. bölüm) için toplama işleri.
+Aggregation for the Reports & Export section (WebRuleBench section 6).
 
-- llm_results(): bütün deneyler, layout başına sade satırlarla (skorlar, token, süre).
-  Filtreleme, ortak layout kümesi ve kırılımlar (alan / ülke / dil / şablon)
-  tarayıcıda yapılır — veri küçük, etkileşim anlık olur.
-- manifest(): makalenin tekrarlanabilirlik eki — deney yapılandırmaları, kullanılan
-  prompt metinleri, model digest'leri, GT derleme zamanları, kod dosyalarının özetleri.
-- audit_entries(): dataset/deletion_audit.log satırlarını ayrıştırır.
+- llm_results(): all experiments, as plain rows per layout (scores, tokens, time).
+  Filtering, the common layout set and breakdowns (field / country / language / template)
+  are done in the browser — the data is small, so interaction is instant.
+- manifest(): the reproducibility appendix of the paper — experiment configurations, prompt texts
+  used, model digests, GT compilation times, digests of the code files.
+- audit_entries(): parses the lines of dataset/deletion_audit.log.
 
-Skorlar deney özetiyle (experiments.summarize) aynı tanımdadır: layout ortalamalarının
-ortalaması (makro). Sayfa × alan skorları experiments/<id>.json'da durur.
+Scores have the same definition as in the experiment summary (experiments.summarize): the mean of the
+layout means (macro). Page × field scores are kept in experiments/<id>.json.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from webrulebench.evaluation import experiments as EX
 
 from webrulebench.paths import CODE_DIR as ROOT, DATA_DIR
 AUDIT_LOG = DATA_DIR / "dataset" / "deletion_audit.log"
-# manifestte özetlenen kod dosyaları: deneyin hangi kodla üretildiğini sabitler
+# code files digested in the manifest: pins down the code the experiment was produced with
 CODE_FILES = ("evaluation/experiments.py", "evaluation/metrics.py", "pipeline/llm_extractor.py", "pipeline/llm_models.py",
               "pipeline/prompt_builder.py", "pipeline/html_cleaner.py", "pipeline/skeleton.py",
               "rules/regex_generator.py", "rules/rule_utils.py")
@@ -51,13 +51,13 @@ def _sha(path: Path) -> str | None:
 
 
 def _match_rate(rows: list) -> float | None:
-    """Skorlanan hücrelerden tam eşleşme (MATCH) oranı."""
+    """Share of exact matches (MATCH) among the scored cells."""
     labs = [c["label"] for r in rows for c in r.values() if c.get("label") != "NO_GT"]
     return round(sum(1 for x in labs if x == "MATCH") / len(labs), 4) if labs else None
 
 
 def _prompt_names(e: dict) -> dict:
-    """şablon → kullanılan prompt'un adı (otomatik / varyant)."""
+    """template → name of the prompt used (automatic / variant)."""
     out = {}
     for key, p in (e.get("prompts_used") or {}).items():
         tid = key.split("|", 1)[0]
@@ -96,7 +96,7 @@ def _slim_experiment(e: dict) -> dict:
         "created_at": e.get("created_at"), "finished_at": e.get("finished_at"), "created_by": e.get("created_by"),
         "backend": c.get("backend"), "api": snap.get("api"), "model": snap.get("model") or c.get("model"),
         "rule_type": c.get("rule_type"), "rule_source": c.get("rule_source", "llm"),
-        # anahtar yoksa (1.0.4 öncesi kayıt) LLM CSS'i onarımla işlenmişti
+        # if the key is missing (record from before 1.0.4), the LLM CSS had been processed with repair
         "css_repair": c.get("css_repair", c.get("rule_type") == "css" or c.get("rule_source") == "llm_css_regexn"),
         "strategy": c.get("strategy"), "skeleton": c.get("skeleton", "enriched"), "sample": c.get("sample"),
         "params": snap.get("params") or {},
@@ -125,10 +125,10 @@ def llm_results() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# tekrarlanabilirlik manifesti
+# reproducibility manifest
 # ---------------------------------------------------------------------------
 def manifest(ids: list | None, gt_compiled: dict, dataset: dict) -> dict:
-    """ids boşsa tamamlanmış bütün deneyler. gt_compiled: {domain: {layout: {lang: {at, by}}}}."""
+    """All completed experiments if ids is empty. gt_compiled: {domain: {layout: {lang: {at, by}}}}."""
     out_exps = []
     for p in sorted(EX.EXP_DIR.glob("*.json")) if EX.EXP_DIR.exists() else []:
         e = EX.load(p.stem)
@@ -163,13 +163,13 @@ def manifest(ids: list | None, gt_compiled: dict, dataset: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# denetim kaydı
+# audit log
 # ---------------------------------------------------------------------------
 _KV = re.compile(r"(\w+)=(\S*)")
 
 
 def audit_entries() -> list:
-    """'YYYY-MM-DD HH:MM:SS  EYLEM  k=v  k=v' satırları → sözlük (yeniden eskiye)."""
+    """'YYYY-MM-DD HH:MM:SS  ACTION  k=v  k=v' lines → dicts (newest first)."""
     if not AUDIT_LOG.exists():
         return []
     out = []

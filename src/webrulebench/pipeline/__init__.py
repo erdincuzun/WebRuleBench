@@ -1,1 +1,1 @@
-"""Sayfa → temizleme → iskelet → LLM: kural üretim hattı ve LLM backend kayıt defteri."""
+"""Page → cleaning → skeleton → LLM: the rule-generation pipeline and the LLM backend registry."""

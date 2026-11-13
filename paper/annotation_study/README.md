@@ -6,7 +6,8 @@ LLM experiments with five local models.
 
 | File | Content |
 |---|---|
-| `annotator_guide.md` | the guideline that defines the fields |
+| `annotator_guide_en.md` | the guideline that defines the fields (English translation) |
+| `annotator_guide.md` | the same guideline in Turkish, as given to the annotators |
 | `sample.json` | the ten layouts (top ten "Article 1" layouts by number of ground-truth pages) |
 | `analyze.py` | inter-annotator agreement: Fleiss' κ on normalized rules, Krippendorff's α on extracted content (Table 3) |
 | `make_figures.py` | the agreement figure and the LaTeX table |
@@ -15,6 +16,7 @@ LLM experiments with five local models.
 | `results/fig_agreement.*`, `results/table_agreement.tex` | figure and table |
 | `results/experiments_submitted/*.json` | the eight LLM experiment records as run with WebRuleBench 1.0.4 (one comparison group): configuration, prompts, generated rules, tokens, model digest, and the per-page scores against the first reference |
 | `rescore.py` | rescores the saved rules of these records against the reviewed reference (no LLM call) |
+| `reference_check.py` | agreement of the reviewed reference with the annotators, and over-extraction on fields absent from a site (Section 3) |
 | `results/experiments/*.json` | the same records with the rescored per-page scores and summaries; `rescored.submitted_summary` keeps the first summary |
 | `results/llm_experiments.csv` | one row per experiment: mean, sample-page and other-page scores, tokens, time, per-field means (rescored) |
 | `results/coverage.csv` | scored page–field pairs by layout and field; for the others the reason (no rule by any annotator, left out by the administrator, rule returns no value on the page) and the source of each approved rule |
@@ -49,6 +51,7 @@ export WRB_DATA_DIR=<folder with the open record and the extracted html.zip>
 python paper/annotation_study/analyze.py --annotators A1 A2 A3   # agreement (Table 3)
 python paper/annotation_study/make_figures.py                    # figure and LaTeX table (needs .[figures])
 python paper/annotation_study/rescore.py                         # rescore the saved LLM rules (Table 4 scores, coverage)
+python paper/annotation_study/reference_check.py                 # reference vs. annotators, over-extraction (Section 3)
 python paper/annotation_study/analyze_rules.py                   # rule analysis (Section 3.2), writes the results table
 ```
 

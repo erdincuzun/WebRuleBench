@@ -1,1 +1,1 @@
-"""Hakem demosu: sentetik sayfalar, demo veri klasörü kurulumu, test fixture üretimi."""
+"""Reviewer demo: synthetic pages, demo data folder setup, test fixture generation."""

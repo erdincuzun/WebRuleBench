@@ -1,17 +1,17 @@
 """
 manage_users.py
 ===============
-Sunucu makinesinde kullanıcı yönetimi — özellikle tek admin token'ını unuttuğunda
-kurtarma ve ilk kurulum için (web arayüzünde "şifremi unuttum" bilerek yok).
+User management on the server machine — especially for recovery when the only admin forgets
+their token, and for the first setup (the web interface deliberately has no "forgot my password").
 
-Kullanım:
+Usage:
   webrulebench users list
-  webrulebench users create-admin <kullanıcı>      # ilk kurulum ya da yeni admin
-  webrulebench users create <kullanıcı> [--role user|admin]
-  webrulebench users reset-token <kullanıcı>       # yeni token; eski token ve oturumlar geçersiz
-  webrulebench users activate|deactivate <kullanıcı>
+  webrulebench users create-admin <user>      # first setup or a new admin
+  webrulebench users create <user> [--role user|admin]
+  webrulebench users reset-token <user>       # new token; the old token and its sessions become invalid
+  webrulebench users activate|deactivate <user>
 
-Token yalnızca bir kez ekrana yazılır; <veri klasörü>/users.json'da özet olarak saklanır.
+The token is printed only once; <data folder>/users.json stores only its hash.
 """
 
 import argparse
@@ -19,7 +19,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # doğrudan çalıştırma: src/
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # direct run: src/
 from webrulebench import users_store as U  # noqa: E402
 
 from webrulebench.paths import DATA_DIR  # noqa: E402

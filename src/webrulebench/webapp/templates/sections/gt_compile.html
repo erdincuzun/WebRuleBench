@@ -13,7 +13,7 @@
 <div class="compile-page" id="compileOverlay">
   <span id="compileTitle" hidden></span>
   <div class="compile-body">
-    <!-- SOL: selector tablosu + sayfalar -->
+    <!-- LEFT: selector table + pages -->
     <div class="compile-left">
       <div class="compile-lang-bar" id="compileLangBar"></div>
       <div class="compile-layer-bar">
@@ -31,7 +31,7 @@
       <div class="compile-detail" id="compileDetail"></div>
     </div>
     <div class="compile-splitter" id="compileSplitter" title="{{ T('Drag to resize · double-click to reset') }}"></div>
-    <!-- SAĞ: önizleme -->
+    <!-- RIGHT: preview -->
     <div class="compile-right">
       <div class="compile-preview-toolbar">
         <select id="compilePreviewPage" class="picker-attr-select" style="font-size:12px;padding:4px 8px;flex:1" onchange="compileLoadPreview()" title="{{ T('Preview page') }}">
@@ -166,7 +166,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='compile.css') }}">
 <script src="{{ url_for('static', filename='compile.js') }}"></script>
 <script>
-// compile.js'in beklediği ortam (eskiden index.html sağlıyordu)
+// the environment compile.js expects (formerly provided by index.html)
 const activeDomain = {{ domain|tojson }};
 const LAYOUT_ID    = {{ layout_id|tojson }};
 let _templates = {};
@@ -174,7 +174,7 @@ function showToast(msg, type = 'ok') { Hub.toast(msg, type === 'err' ? 'err' : '
 function _escHtml(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function _escAttr(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
 async function selectSite() {}
-// Kaydettikten / kapatınca layout listesine dön
+// After saving / closing, return to the layout list
 closeCompileModal = () => { location.href = `/ground-truth/${encodeURIComponent(activeDomain)}`; };
 
 Hub.ready().then(async () => {
@@ -192,7 +192,7 @@ Hub.ready().then(async () => {
   }
 
   if (!Hub.isAdmin()) {
-    // salt okunur: seçim, otomatik seçim ve kayıt kapalı; vurgulama/K2/test açık
+    // read-only: selection, auto-selection and saving off; highlighting/L2/test on
     document.getElementById('compileOverlay').classList.add('readonly');
     document.getElementById('compileAutoBtn').style.display = 'none';
     document.getElementById('compileSaveBtn').style.display = 'none';

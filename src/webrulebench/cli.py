@@ -1,14 +1,14 @@
 """
-webrulebench — komut satırı (pip install -e . ile kurulur; ya da python -m webrulebench)
+webrulebench — command line (installed with pip install -e .; or python -m webrulebench)
 
     webrulebench serve [--port 5001] [--host 127.0.0.1] [--data DIR] [--no-debug]
-    webrulebench demo  [--port 5002] [--rebuild]           # hakem demosu (LLM gerekmez)
-    webrulebench users list | create-admin <ad> | create <ad> [--role] | reset-token <ad> | activate|deactivate <ad>
+    webrulebench demo  [--port 5002] [--rebuild]           # reviewer demo (no LLM needed)
+    webrulebench users list | create-admin <name> | create <name> [--role] | reset-token <name> | activate|deactivate <name>
     webrulebench --version
 
-Seçenekler ortam değişkenlerine çevrilir (WRB_DATA_DIR, WRB_PORT, WRB_HOST, WRB_DEBUG; bkz. paths.py).
-Veri klasörü webrulebench.paths yüklenirken belirlendiğinden, ortam değişkenleri proje modülleri
-import edilmeden önce ayarlanır.
+Options are turned into environment variables (WRB_DATA_DIR, WRB_PORT, WRB_HOST, WRB_DEBUG; see paths.py).
+Because the data folder is determined when webrulebench.paths is loaded, the environment variables are set
+before the project modules are imported.
 """
 from __future__ import annotations
 
@@ -19,11 +19,11 @@ from pathlib import Path
 
 from webrulebench import __version__
 
-_PROJECT_DIR = Path(__file__).resolve().parents[2]   # src/webrulebench/cli.py → depo kökü
+_PROJECT_DIR = Path(__file__).resolve().parents[2]   # src/webrulebench/cli.py → repository root
 
 
 def _demo_dir() -> Path:
-    """paths.default_demo_dir() ile aynı (paths'i erken yüklememek için burada)."""
+    """Same as paths.default_demo_dir() (here so that paths is not loaded early)."""
     if (_PROJECT_DIR / "pyproject.toml").exists():
         return _PROJECT_DIR / "demo" / "data"
     return Path.cwd() / "webrulebench-demo"
@@ -52,7 +52,7 @@ def main(argv=None):
 
     sub.add_parser("users", help="user management (see 'webrulebench users -h')", add_help=False)
 
-    if argv[:1] == ["users"]:                       # ayrıştırmayı manage_users'a bırak
+    if argv[:1] == ["users"]:                       # leave argument parsing to manage_users
         from webrulebench.webapp.manage_users import main as users_main
         return users_main(argv[1:])
     a = ap.parse_args(argv)

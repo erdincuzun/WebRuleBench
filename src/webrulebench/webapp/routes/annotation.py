@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/annotation.py — Annotation: kural doğrulama, XPath/Regex önerisi, layout, annotation kaydı, sayfa atama, toplu test, Auto Detect.
+webrulebench/webapp/routes/annotation.py — Annotation: rule validation, XPath/Regex suggestion, layout, annotation saving, page assignment, bulk test, Auto Detect.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("annotation", __name__)
 
@@ -44,12 +44,12 @@ def api_validate():
         html = path.read_text(encoding="utf-8")
         soup = BeautifulSoup(html, "html.parser")
         result = _run_selector(soup, selector, merge, rule_type=rule_type, raw_html=html)
-        # compare_css: aynı alanın CSS selector'ı — XPath/Regex sonucu onunla aynı mı?
+        # compare_css: the CSS selector of the same field — is the XPath/Regex result the same as its result?
         compare_css = (data.get("compare_css") or "").strip()
         if compare_css and rule_type != "css" and not result.get("syntax_error"):
             kind = _field_kind(domain, filename, field)
             if rule_type == "regex" and kind in ("image", "url"):
-                # regex src/href değerini yakalar → CSS tarafında da nitelik değerleri karşılaştırılır
+                # regex captures the src/href value → attribute values are compared on the CSS side as well
                 from webrulebench.rules.regex_generator import css_values, regex_values
                 result["compare"] = _compare_texts(css_values(soup, compare_css, kind, merge),
                                                    regex_values(html, selector, kind))
@@ -80,8 +80,8 @@ def api_suggest_xpath():
     if not selector:
         return jsonify({"success": False, "error": _t("Selector cannot be empty")})
 
-    # Aday sırası: okunaklı → okunaklı + tam class eşleşmesi → cssselect çevirisi.
-    # Sayfa verilmişse, CSS ile aynı içeriği çıkaran ilk aday seçilir.
+    # Candidate order: readable → readable + exact class match → cssselect translation.
+    # If a page is given, the first candidate that extracts the same content as the CSS is chosen.
     candidates = [x for x in (css_to_xpath_readable(selector),
                               css_to_xpath_readable(selector, strict_classes=True),
                               css_to_xpath(selector)) if x]
@@ -105,11 +105,11 @@ def api_suggest_xpath():
 
 @bp.route("/api/suggest-regex", methods=["POST"])
 def api_suggest_regex():
-    """CSS selector → regex (regex_generator: REGEXN'in genişletilmiş hali).
+    """CSS selector → regex (regex_generator: an extended version of REGEXN).
 
     Body: {selector, domain, filename?, layout_id?, field?}
-    Aday regex'ler bu layout'un sayfalarında (en fazla 6; seçili sayfa önce) CSS ile
-    karşılaştırılır; en çok sayfada aynı sonucu veren seçilir.
+    Candidate regexes are compared with the CSS on this layout's pages (at most 6; selected page
+    first); the one that gives the same result on the most pages is chosen.
     """
     _, err = require_login()
     if err: return err
@@ -121,7 +121,7 @@ def api_suggest_regex():
     if not selector or not domain or not (DATASET_DIR / domain).is_dir():
         return jsonify({"success": False, "error": _t("Selector and site are required")})
 
-    # alan tipi (image/url → nitelik yakalanır) ve merge, layout'un şablonundan
+    # field type (image/url → the attribute is captured) and merge, from the layout's template
     gt        = load_ground_truth(domain)
     layout_id = data.get("layout_id") or gt.get("page_assignments", {}).get(data.get("filename") or "", {}).get("layout_id")
     layout    = gt.get("layouts", {}).get(layout_id, {}) if layout_id else {}
@@ -181,14 +181,14 @@ def api_save_layout():
 
 @bp.route("/api/annotate/<domain>/<filename>", methods=["GET"])
 def api_get_annotate(domain, filename):
-    """Kullanıcının bu sayfa için annotation'ını döndür."""
+    """Return the user's annotation for this page."""
     username, err = require_login()
     if err: return err
 
     ann = load_user_annotation(domain, username)
     gt  = load_ground_truth(domain)
 
-    # layout_id doğrudan query param'dan gelebilir (layout bazlı çağrı)
+    # layout_id may come directly from the query param (layout-based call)
     layout_id = request.args.get("layout_id")
     if not layout_id and filename != "_":
         pa        = gt.get("page_assignments", {}).get(filename, {})
@@ -197,7 +197,7 @@ def api_get_annotate(domain, filename):
     layout   = gt.get("layouts", {}).get(layout_id, {}) if layout_id else {}
     template = get_template(layout.get("template_id", "")) or {}
 
-    # Selector'lar layout bazlı
+    # Selectors are per layout
     ann_layout = ann.get("layouts", {}).get(layout_id, {}) if layout_id else {}
     selectors  = ann_layout.get("selectors", {})
     updated_at = ann_layout.get("updated_at")
@@ -216,7 +216,7 @@ def api_get_annotate(domain, filename):
 
 @bp.route("/api/annotate/<domain>/<filename>", methods=["POST"])
 def api_save_annotate(domain, filename):
-    """Kullanıcının CSS selector annotation'ını kaydet."""
+    """Save the user's CSS selector annotation."""
     username, err = require_login()
     if err: return err
 
@@ -225,12 +225,12 @@ def api_save_annotate(domain, filename):
 
     ann = load_user_annotation(domain, username)
 
-    # Layout bazlı kayıt: önce kullanıcı annotation'ına, sonra GT'ye bak
+    # Layout-based save: check the user annotation first, then the GT
     gt        = load_ground_truth(domain)
     user_pa   = ann.get("page_assignments", {}).get(filename, {})
     gt_pa     = gt.get("page_assignments", {}).get(filename, {})
-    # Düzenlenen layout istemciden gelir (layout listesinden açılan annotation sayfanın atamasından
-    # farklı bir layout olabilir); gelmezse sayfanın atamasına bakılır (eski istemciler).
+    # The edited layout comes from the client (an annotation opened from the layout list may be for a layout
+    # other than the page's assignment); if missing, the page's assignment is used (old clients).
     layout_id = body.get("layout_id") or user_pa.get("layout_id") or gt_pa.get("layout_id")
     if layout_id and layout_id not in gt.get("layouts", {}) and layout_id not in ann.get("layouts", {}):
         return jsonify({"success": False, "error": _t("Layout not found")}), 404
@@ -248,7 +248,7 @@ def api_save_annotate(domain, filename):
             history.append({"field": field, "old": old_val, "new": new_val, "at": now})
             _audit(f"ANNOTATE  user={username}  domain={domain}  layout={layout_id}  field={field}")
 
-    # Layout meta bilgisini GT'den kopyala
+    # Copy the layout meta info from the GT
     gt_layout = gt.get("layouts", {}).get(layout_id, {})
     layouts[layout_id] = {
         "name":       gt_layout.get("name", layout_id),
@@ -264,7 +264,7 @@ def api_save_annotate(domain, filename):
 
 @bp.route("/api/annotate/<domain>/<filename>/all")
 def api_all_annotate(domain, filename):
-    """Tüm kullanıcıların bu sayfa için selector'larını döndür (kıyas için)."""
+    """Return all users' selectors for this page (for comparison)."""
     gt        = load_ground_truth(domain)
     pa        = gt.get("page_assignments", {}).get(filename, {})
     layout_id = pa.get("layout_id")
@@ -368,7 +368,7 @@ def api_bulk_test():
     layout_id = data.get("layout_id", "")
     filenames = data.get("filenames", [])   # list of HTML filenames to test
 
-    source    = data.get("source", "gt")    # "gt": onaylı GT kuralları · "mine": kullanıcının kendi kuralları
+    source    = data.get("source", "gt")    # "gt": approved GT rules · "mine": the user's own rules
 
     gt      = load_ground_truth(domain)
     layouts = gt.get("layouts", {})
@@ -399,7 +399,7 @@ def api_bulk_test():
     test_fields = []
     for k in scalar_keys:
         v = selectors.get(k)
-        if isinstance(v, dict):          # {css, xpath, regex} → CSS kısmı
+        if isinstance(v, dict):          # {css, xpath, regex} → the CSS part
             v = v.get("css")
         if v and isinstance(v, str):
             merge = bool(tmpl_fields.get(k, {}).get("merge", False))

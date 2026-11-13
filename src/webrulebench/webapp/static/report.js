@@ -1,15 +1,15 @@
-/* Rapor sayfası için tablo + grafik yardımcıları.
+/* Table + chart helpers for the Reports page.
  *
- * RT.table(spec)  → sıralanabilir tablo HTML'i; başlığında CSV / LaTeX / Markdown çıktısı.
- *   spec = {id, title, caption?, note?, columns: [{k, label, fmt?(v,row)→metin, html?(v,row)→HTML,
- *           num?, heat?(0..1 ısı hücresi), best?: 'max'|'min'|'absmin' (en iyi değer kalın), sortable?: false}], rows,
+ * RT.table(spec)  → sortable table HTML; CSV / LaTeX / Markdown export in its header.
+ *   spec = {id, title, caption?, note?, columns: [{k, label, fmt?(v,row)→text, html?(v,row)→HTML,
+ *           num?, heat?(0..1 heat cell), best?: 'max'|'min'|'absmin' (best value in bold), sortable?: false}], rows,
  *           sort?: {k, dir}}
- * RT.chart(id, title, build, opts) → grafik kutusu HTML'i; build(theme) Chart.js yapılandırmasını döndürür.
- *   Sayfaya eklendikten sonra RT.mount() çağrılır. PNG çıktısı aynı build ile açık "makale teması"nda,
- *   beyaz zeminde ve yüksek çözünürlükte yeniden çizilir; CSV grafiğin verisini verir (matplotlib vb. için).
+ * RT.chart(id, title, build, opts) → chart box HTML; build(theme) returns the Chart.js configuration.
+ *   Call RT.mount() after adding it to the page. The PNG export is redrawn with the same build in a light
+ *   "paper theme", on a white background at high resolution; CSV gives the chart data (for matplotlib etc.).
  */
 const RT = {
-  // Okabe–Ito: renk körlüğüne dayanıklı, baskıda ayırt edilebilir
+  // Okabe–Ito: colorblind-safe, distinguishable in print
   PALETTE: ['#0072B2', '#E69F00', '#009E73', '#CC79A7', '#56B4E9', '#D55E00', '#F0E442', '#999999',
             '#332288', '#88CCEE', '#117733', '#AA4499'],
   SCREEN: {text: '#8892a4', grid: '#262b38', title: '#e2e8f0', font: "'Syne', sans-serif", bg: null},
@@ -25,12 +25,12 @@ const RT = {
   pct: v => v === null || v === undefined || Number.isNaN(v) ? '—' : (v * 100).toFixed(1),
   num: (v, d = 0) => v === null || v === undefined ? '—' : Number(v).toLocaleString(LOCALE, {maximumFractionDigits: d}),
   mean(xs) { xs = xs.filter(x => typeof x === 'number' && !Number.isNaN(x)); return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null; },
-  heat(v) {               // kırmızı → sarı → yeşil (koyu tema), değerlendirme sayfalarıyla aynı
+  heat(v) {               // red → yellow → green (dark theme), same as the evaluation pages
     if (v === null || v === undefined) return 'var(--bg)';
     return `hsla(${Math.round(v * 120)}, 65%, 40%, ${0.25 + v * 0.55})`;
   },
 
-  // ── TABLO ───────────────────────────────────────────
+  // ── TABLE ───────────────────────────────────────────
   table(spec) {
     this._tables[spec.id] = spec;
     return `<div class="rt-block" id="rtb-${spec.id}">${this._tableInner(spec)}</div>`;
@@ -45,7 +45,7 @@ const RT = {
     for (const c of spec.columns.filter(c => c.best)) {
       const vs = spec.rows.map(r => r[c.k]).filter(v => typeof v === 'number');
       if (vs.length < 2) continue;
-      out[c.k] = c.best === 'max' ? Math.max(...vs) : c.best === 'absmin'      // absmin: sıfıra en yakın (ör. genelleme farkı)
+      out[c.k] = c.best === 'max' ? Math.max(...vs) : c.best === 'absmin'      // absmin: closest to zero (e.g. generalization gap)
         ? vs.reduce((m, v) => Math.abs(v) < Math.abs(m) ? v : m) : Math.min(...vs);
     }
     return out;
@@ -57,7 +57,7 @@ const RT = {
     return [...spec.rows].sort((a, b) => {
       const x = a[s.k], y = b[s.k];
       if (x === y) return 0;
-      if (x === null || x === undefined) return 1;            // boşlar her zaman sonda
+      if (x === null || x === undefined) return 1;            // empty values always last
       if (y === null || y === undefined) return -1;
       return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), LOCALE)) * dir;
     });
@@ -133,7 +133,7 @@ const RT = {
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   },
 
-  // ── GRAFİK ──────────────────────────────────────────
+  // ── CHART ───────────────────────────────────────────
   chart(id, title, build, opts = {}) {
     this._pending[id] = {title, build, opts};
     return `<div class="rt-block rt-chart">
@@ -194,7 +194,7 @@ const RT = {
     const {labels = [], datasets = []} = ch.config.data;
     const q = s => /[",\n]/.test(String(s)) ? `"${String(s).replace(/"/g, '""')}"` : String(s ?? '');
     let lines;
-    if (datasets.some(d => d.data.some(v => v && typeof v === 'object'))) {           // scatter: nokta listesi
+    if (datasets.some(d => d.data.some(v => v && typeof v === 'object'))) {           // scatter: list of points
       lines = ['series,label,x,y', ...datasets.flatMap(d => d.data.map(pt => [d.label, pt.label ?? '', pt.x, pt.y].map(q).join(',')))];
     } else {
       lines = [['label', ...datasets.map(d => d.label)].map(q).join(','),

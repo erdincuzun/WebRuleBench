@@ -1,12 +1,12 @@
 """
-webrulebench/evaluation/agreement.py — annotatör uyumu iki düzeyde
+webrulebench/evaluation/agreement.py — annotator agreement at two levels
 ===================================================================
-  1. Kural düzeyi  — normalize kurallar üzerinden Fleiss κ (layout'lar konu) ve P̄o
-  2. İçerik düzeyi — kuralların layout'un BÜTÜN GT sayfalarında çıkardığı değerler üzerinden
-                     Krippendorff α (uzaklık = 1 − alan metriği: ROUGE-1 F1 / Jaccard / tam eşleşme)
-                     ve annotatör çiftleri arasındaki ortalama içerik benzerliği
+  1. Rule level    — Fleiss κ over normalized rules (layouts as subjects) and P̄o
+  2. Content level — over the values the rules extract on ALL GT pages of the layout:
+                     Krippendorff α (distance = 1 − field metric: ROUGE-1 F1 / Jaccard / exact match)
+                     and the mean content similarity between annotator pairs
 
-Web arayüzü (Raporlar → Annotation & GT) ve paper/annotation_study/analyze.py aynı fonksiyonu kullanır.
+The web interface (Reports → Annotation & GT) and paper/annotation_study/analyze.py use the same function.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ ANNOTATIONS_DIR = X.ROOT / "annotations"
 
 
 def similarity(a: list, b: list, metric: str) -> float:
-    """İki annotatörün bir sayfada çıkardığı değerlerin benzerliği; ikisi de boşsa 1, biri boşsa 0."""
+    """Similarity of the values two annotators extracted on a page; 1 if both are empty, 0 if one is empty."""
     if not a and not b:
         return 1.0
     if not a or not b:
@@ -32,8 +32,8 @@ def similarity(a: list, b: list, metric: str) -> float:
 
 
 def annotator_rules(domain: str, layout_id: str, fields: dict, lang: str = "css", users: list | None = None) -> dict:
-    """{kullanıcı: {alan: kural | None}} — layout için bu dilde en az bir kural yazmış annotatörler.
-    users verilirse yalnızca onlar, verilen sırayla; yoksa sitedeki bütün annotation dosyaları (ada göre sıralı)."""
+    """{user: {field: rule | None}} — annotators who wrote at least one rule in this language for the layout.
+    If users is given, only those, in the given order; otherwise all annotation files of the site (sorted by name)."""
     d = ANNOTATIONS_DIR / domain
     files = [d / f"{u}.json" for u in users] if users else sorted(d.glob("*.json"))
     out = {}
@@ -50,7 +50,7 @@ def annotator_rules(domain: str, layout_id: str, fields: dict, lang: str = "css"
 
 
 def approved_layouts() -> list:
-    """[(alan adı, layout_id)] — onaylı GT'deki bütün layout'lar (alan adına göre sıralı)."""
+    """[(domain name, layout_id)] — all layouts in the approved GT (sorted by domain name)."""
     out = []
     for f in sorted(X.GT_DIR.glob("*.json")):
         out += [(f.stem, lid) for lid in (X._load_json(f, {}).get("layouts") or {})]
@@ -59,12 +59,12 @@ def approved_layouts() -> list:
 
 def agreement_study(layouts: list | None = None, users: list | None = None, lang: str = "css",
                     max_pairs: int = 20000, seed: int = 0, min_annotators: int = 2) -> dict:
-    """Seçilen layout'larda (varsayılan: onaylı GT'deki ve en az min_annotators annotatörlü bütün layout'lar)
-    alan bazında kural ve içerik uyumu, annotatör çiftleri ve layout bazında özet."""
+    """Field-level rule and content agreement, annotator pairs and a per-layout summary for the selected layouts
+    (default: all layouts in the approved GT with at least min_annotators annotators)."""
     tmpls = X._templates()
     rule_subjects, content_units, metric_of = {}, {}, {}
-    pair_sims = {}                 # (a, b, alan) -> [benzerlik]; a < b
-    exact = {}                     # alan -> [normalize kurallar aynı mı]
+    pair_sims = {}                 # (a, b, field) -> [similarity]; a < b
+    exact = {}                     # field -> [are the normalized rules identical]
     per_layout, seen = [], []
 
     for dom, lid in (layouts if layouts is not None else approved_layouts()):
@@ -97,7 +97,7 @@ def agreement_study(layouts: list | None = None, users: list | None = None, lang
                 vals = {}
                 for u in rules:
                     r = rules[u][f]
-                    if r:                      # kuralı yazılmamış annotatör = eksik değer
+                    if r:                      # annotator who did not write the rule = missing value
                         vals[u] = X.rule_values(html, soup, r, lang, X._kind(fd), bool(fd.get("merge")))
                 if len(vals) >= 2:
                     content_units.setdefault(f, []).append(list(vals.values()))

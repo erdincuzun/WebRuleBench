@@ -3,18 +3,18 @@ mcp_server.py
 =============
 WebRuleBench MCP Server
 
-Araçlar:
-  detect_selectors   — HTML pipeline çalıştır, CSS selector üret
-  validate_selector  — CSS selector'ı HTML dosyasına karşı test et
-  evaluate_page      — LLM çıktısını GT ile karşılaştır, skor ver
-  bulk_test          — Layout selector'larını çoklu sayfada test et
-  get_ground_truth   — Domain GT verisi getir
-  get_pages          — Domain sayfa listesi getir
+Tools:
+  detect_selectors   — run the HTML pipeline, generate CSS selectors
+  validate_selector  — test a CSS selector against an HTML file
+  evaluate_page      — compare the LLM output with the GT, give a score
+  bulk_test          — test layout selectors on multiple pages
+  get_ground_truth   — get the domain's GT data
+  get_pages          — get the domain's page list
 
-Auth: <veri klasörü>/users.json içindeki token'lar kullanılır.
-Config: mcp_config.json → backend / model / strategy (UI'dan değiştirilebilir)
+Auth: the tokens in <data folder>/users.json are used.
+Config: mcp_config.json → backend / model / strategy (can be changed from the UI)
 
-Kurulum:
+Setup:
   pip install mcp beautifulsoup4 python-dateutil requests
   python -m webrulebench.mcp_server
 """
@@ -23,8 +23,8 @@ import json
 import sys
 from pathlib import Path
 
-# Proje kök dizinini path'e ekle
-_ROOT = Path(__file__).resolve().parents[1]   # src/ (python src/webrulebench/mcp_server.py ile çalıştırma)
+# Add the project root directory to the path
+_ROOT = Path(__file__).resolve().parents[1]   # src/ (for running as python src/webrulebench/mcp_server.py)
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
@@ -46,7 +46,7 @@ MCP_CONFIG_FILE = _DATA / "mcp_config.json"
 
 
 # ---------------------------------------------------------------------------
-# CONFIG — her çağrıda taze okunur (UI'dan değişince anında yansır)
+# CONFIG — read fresh on every call (a change in the UI takes effect immediately)
 # ---------------------------------------------------------------------------
 def load_mcp_config() -> dict:
     if MCP_CONFIG_FILE.exists():
@@ -63,7 +63,7 @@ def load_users() -> dict:
     return {}
 
 def verify_token(token: str) -> str | None:
-    """Token doğrula → username döndür, geçersizse None (token'lar özet olarak saklanır; users_store.py)."""
+    """Verify the token → return the username, None if invalid (tokens are stored as digests; users_store.py)."""
     from webrulebench import users_store
     return users_store.verify_any(token)
 
@@ -86,8 +86,8 @@ def get_template(template_id: str) -> dict | None:
     return load_templates()["templates"].get(template_id)
 
 def _template_prompt(domain: str, filename: str):
-    """Sayfanın layout'unun şablonundan otomatik prompt (prompt_builder) ve alan listesi.
-    Şablon yoksa llm_extractor'ın haber varsayılanları kullanılır."""
+    """Automatic prompt (prompt_builder) and field list from the template of the page's layout.
+    If there is no template, the news defaults of llm_extractor are used."""
     gt        = load_ground_truth(domain)
     layout_id = gt.get("page_assignments", {}).get(filename, {}).get("layout_id")
     layout    = gt.get("layouts", {}).get(layout_id, {}) if layout_id else {}
@@ -181,26 +181,26 @@ def detect_selectors(
     domain: str,
     filename: str,
     token: str,
-    use_admin_prompt: bool = False,   # kullanımdan kalktı; prompt her zaman şablondan üretilir
+    use_admin_prompt: bool = False,   # deprecated; the prompt is always generated from the template
 ) -> dict:
     """
-    HTML pipeline çalıştır: clean → skeleton → LLM → CSS selector'lar döndür.
-    Backend/model/strategy mcp_config.json'dan okunur.
+    Run the HTML pipeline: clean → skeleton → LLM → return CSS selectors.
+    Backend/model/strategy are read from mcp_config.json.
     """
     username = verify_token(token)
     if not username:
-        return {"error": "Geçersiz token"}
+        return {"error": "Invalid token"}
 
     html_path = DATASET_DIR / domain / filename
     if not html_path.exists():
-        return {"error": f"Dosya bulunamadı: {domain}/{filename}"}
+        return {"error": f"File not found: {domain}/{filename}"}
 
     cfg      = load_mcp_config()
     backend  = cfg.get("backend", "ollama")
     model    = cfg.get("model") or None
     strategy = cfg.get("strategy", "whitelist")
 
-    # Prompt seçimi
+    # Prompt selection
     system_prompt, user_prompt, fields, prompt_source = _template_prompt(domain, filename)
 
     try:
@@ -248,16 +248,16 @@ def validate_selector(
     token: str,
     field: str = "",
 ) -> dict:
-    """CSS selector'ı HTML dosyasına karşı test et, eşleşen eleman sayısı ve önizleme döndür."""
+    """Test a CSS selector against an HTML file, return the number of matching elements and a preview."""
     username = verify_token(token)
     if not username:
-        return {"error": "Geçersiz token"}
+        return {"error": "Invalid token"}
 
     html_path = DATASET_DIR / domain / filename
     if not html_path.exists():
-        return {"error": "Dosya bulunamadı"}
+        return {"error": "File not found"}
     if not selector.strip():
-        return {"valid": False, "message": "Selector boş olamaz"}
+        return {"valid": False, "message": "Selector must not be empty"}
 
     try:
         from bs4 import BeautifulSoup
@@ -289,10 +289,10 @@ def validate_selector(
 
         previews = [el.get_text(strip=True)[:100] for el in els[:3] if el.get_text(strip=True)]
         if not els:
-            return {"valid": False, "message": "Hiç eleman bulunamadı", "count": 0, "previews": []}
+            return {"valid": False, "message": "No element found", "count": 0, "previews": []}
         return {"valid": True, "message": f"{len(els)} eleman bulundu", "count": len(els), "previews": previews}
     except Exception as e:
-        return {"valid": False, "message": f"Hata: {str(e)}"}
+        return {"valid": False, "message": f"Error: {str(e)}"}
 
 
 # ---------------------------------------------------------------------------
@@ -303,23 +303,23 @@ def evaluate_page(
     domain: str,
     filename: str,
     token: str,
-    use_admin_prompt: bool = False,   # kullanımdan kalktı; prompt her zaman şablondan üretilir
+    use_admin_prompt: bool = False,   # deprecated; the prompt is always generated from the template
 ) -> dict:
     """
-    LLM'in ürettiği selector'ları GT ile karşılaştır, field bazlı skor döndür.
-    Backend/model mcp_config.json'dan okunur.
+    Compare the selectors generated by the LLM with the GT, return per-field scores.
+    Backend/model are read from mcp_config.json.
     """
     username = verify_token(token)
     if not username:
-        return {"error": "Geçersiz token"}
+        return {"error": "Invalid token"}
 
     gt_selectors = selectors_for_page(domain, filename)
     if not gt_selectors:
-        return {"error": "Bu sayfa için GT selector bulunamadı"}
+        return {"error": "No GT selector for this page"}
 
     html_path = DATASET_DIR / domain / filename
     if not html_path.exists():
-        return {"error": "HTML dosyası bulunamadı"}
+        return {"error": "HTML file not found"}
 
     cfg      = load_mcp_config()
     backend  = cfg.get("backend", "ollama")
@@ -405,15 +405,15 @@ def bulk_test(
     filenames: list[str],
     token: str,
 ) -> dict:
-    """Layout selector'larını birden fazla sayfada test et."""
+    """Test layout selectors on more than one page."""
     username = verify_token(token)
     if not username:
-        return {"error": "Geçersiz token"}
+        return {"error": "Invalid token"}
 
     gt      = load_ground_truth(domain)
     layout  = gt.get("layouts", {}).get(layout_id)
     if not layout:
-        return {"error": "Layout bulunamadı"}
+        return {"error": "Layout not found"}
 
     selectors   = layout.get("selectors", {})
     opt_fields  = set(layout.get("optional_fields", []))
@@ -426,7 +426,7 @@ def bulk_test(
         for filename in filenames:
             path = DATASET_DIR / domain / filename
             if not path.exists():
-                results.append({"filename": filename, "error": "Dosya bulunamadı", "fields": {}})
+                results.append({"filename": filename, "error": "File not found", "fields": {}})
                 continue
 
             html = path.read_text(encoding="utf-8")
@@ -493,10 +493,10 @@ def bulk_test(
 # ---------------------------------------------------------------------------
 @mcp.tool()
 def get_ground_truth(domain: str, token: str) -> dict:
-    """Domain için onaylı GT layout ve sayfa atamalarını döndür."""
+    """Return the approved GT layouts and page assignments for the domain."""
     username = verify_token(token)
     if not username:
-        return {"error": "Geçersiz token"}
+        return {"error": "Invalid token"}
 
     gt = load_ground_truth(domain)
     pa = gt.get("page_assignments", {})
@@ -520,14 +520,14 @@ def get_ground_truth(domain: str, token: str) -> dict:
 # ---------------------------------------------------------------------------
 @mcp.tool()
 def get_pages(domain: str, token: str) -> dict:
-    """Domain'e ait HTML sayfa listesini döndür (homepage, listing, article)."""
+    """Return the domain's list of HTML pages (homepage, listing, article)."""
     username = verify_token(token)
     if not username:
-        return {"error": "Geçersiz token"}
+        return {"error": "Invalid token"}
 
     site_dir = DATASET_DIR / domain
     if not site_dir.exists():
-        return {"error": f"Site bulunamadı: {domain}"}
+        return {"error": f"Site not found: {domain}"}
 
     files = sorted(site_dir.glob("*.html"))
     return {

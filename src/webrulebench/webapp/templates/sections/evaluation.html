@@ -95,7 +95,7 @@ let _all = [], _sel = new Set(), _timer = null;
 const fmtDate = iso => iso ? new Date(iso).toLocaleString(LOCALE, {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}) : '—';
 const pct = v => v === null || v === undefined ? '<span class="muted">—</span>' : `<span style="color:${scoreColor(v)}">${(v * 100).toFixed(1)}</span>`;
 function scoreColor(v) { return v >= 0.8 ? 'var(--green)' : v >= 0.5 ? 'var(--yellow)' : 'var(--red)'; }
-// [css sınıfı, ikon, İngilizce etiket] — etiket görüntülenirken T() ile çevrilir
+// [css class, icon, English label] — the label is translated with T() when displayed
 const STATUS = {
   queued: ['', '⏳', 'queued'], running: ['auto', '▶', 'running'], done: ['auto', '✓', 'done'],
   cancelled: ['', '■', 'stopped'], interrupted: ['req', '⚠', 'interrupted'], error: ['req', '✗', 'error'],
@@ -108,7 +108,7 @@ function promptLabel(c) {
   return n ? T('Prompt variant in {n} templates', {n}) : T('automatic');
 }
 
-// Grup üyeleri tek bir satırda toplanır (en iyi üyenin skoru gösterilir)
+// Group members are collapsed into one row (the best member's score is shown)
 function rowsOf(list) {
   const out = [], seen = {};
   list.forEach(e => {

@@ -1,24 +1,24 @@
 """
 experiments.py
 ==============
-LLM değerlendirme deneyleri (WebRuleBench 5. bölüm).
+LLM evaluation experiments (WebRuleBench, section 5).
 
-Bir deney = sabit bir yapılandırmanın (backend/model, kural dili, prompt,
-temizleme stratejisi, kural kaynağı) seçilen layout'lara uygulanması:
+An experiment = applying a fixed configuration (backend/model, rule language, prompt,
+cleaning strategy, rule source) to the selected layouts:
 
-  her layout için
-    1. örnek sayfa seçilir (ilk GT sayfası ya da seed'li rastgele)
-    2. sayfa temizlenir → yapısal iskelet → LLM bir kez çağrılır → kural seti
-       (kural kaynağı "llm_css_regexn" ise LLM CSS üretir, regex_generator
-        yalnızca örnek sayfayı kullanarak regex'e çevirir)
-    3. kurallar layout'un TÜM GT sayfalarında LLM'siz çalıştırılır ve alan bazında
-       GT içeriğiyle (GT'nin CSS kuralının çıkardığı değer) şablon metriğiyle skorlanır
-    → örnek sayfa skoru ile diğer sayfaların skoru (genelleme) ayrı raporlanır.
+  for each layout
+    1. a sample page is chosen (the first GT page or seeded random)
+    2. the page is cleaned → structural skeleton → the LLM is called once → rule set
+       (if the rule source is "llm_css_regexn", the LLM generates CSS and regex_generator
+        converts it to regex using only the sample page)
+    3. the rules are run without the LLM on ALL GT pages of the layout and scored per field
+       against the GT content (the value extracted by the GT's CSS rule) with the template metric
+    → the sample-page score and the score on the other pages (generalization) are reported separately.
 
-Deney experiments/<id>.json dosyasına her layout'tan sonra yazılır: yapılandırma,
-kullanılan prompt'ların tam metni, üretilen kurallar, sayfa × alan skorları,
-token/süre. Yarıda kalan deney kaldığı yerden sürdürülebilir (tamamlanan
-layout'lar atlanır).
+The experiment is written to experiments/<id>.json after each layout: configuration,
+full text of the prompts used, generated rules, page × field scores,
+tokens/time. An interrupted experiment can be resumed where it stopped (completed
+layouts are skipped).
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 
-from webrulebench.paths import DATA_DIR as ROOT   # veri klasörü (WRB_DATA_DIR ya da proje kökü)
+from webrulebench.paths import DATA_DIR as ROOT   # data folder (WRB_DATA_DIR or the project root)
 from webrulebench.rules.rule_utils import regex_timeouts
 
 EXP_DIR      = ROOT / "experiments"
@@ -44,19 +44,19 @@ PROMPTS_FILE  = ROOT / "template_prompts.json"
 
 RULE_TYPES    = ("css", "xpath", "regex")
 RULE_SOURCES  = ("llm", "llm_css_regexn")
-SKELETONS     = ("enriched", "none")     # none: LLM iskelet yerine temizlenmiş sayfanın HTML'ini görür
+SKELETONS     = ("enriched", "none")     # none: the LLM sees the cleaned page's HTML instead of the skeleton
 MATCH_AT      = 0.9
 
 _lock    = threading.Lock()
 _running = {}          # id → {"thread", "cancel": Event}
-_queued  = set()       # grup kuyruğunda sırasını bekleyen deney id'leri
-_groups  = {}          # grup id → cancel Event (çalışan grup)
-_quick   = {}          # hızlı test belirteci → {user, at, payload} (kaydedilene kadar bellekte)
-UI_STRATEGIES = ("whitelist", "raw_regex", "none")     # arayüzde sunulan temizleme stratejileri
+_queued  = set()       # experiment ids waiting for their turn in the group queue
+_groups  = {}          # group id → cancel Event (running group)
+_quick   = {}          # quick-test token → {user, at, payload} (in memory until saved)
+UI_STRATEGIES = ("whitelist", "raw_regex", "none")     # cleaning strategies offered in the interface
 
 
 # ---------------------------------------------------------------------------
-# yardımcılar
+# helpers
 # ---------------------------------------------------------------------------
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -84,8 +84,8 @@ def _rule_of(v, lang: str):
 
 
 def layout_template_id(layout: dict, templates: dict) -> str:
-    """Layout'un şablonu. Eski layout'larda template_id yok, page_type var (article / listing):
-    aynı adlı şablon varsa o kullanılır."""
+    """The layout's template. Old layouts have no template_id but a page_type (article / listing):
+    if a template with that name exists, it is used."""
     tid = layout.get("template_id") or ""
     if tid:
         return tid
@@ -111,7 +111,7 @@ def exp_path(exp_id: str) -> Path:
 def load(exp_id: str) -> dict | None:
     e = _load_json(exp_path(exp_id), None)
     if e and e.get("status") in ("queued", "running") and exp_id not in _running and exp_id not in _queued:
-        e["status"] = "interrupted"          # sunucu yeniden başladı (ör. debug reloader)
+        e["status"] = "interrupted"          # the server restarted (e.g. debug reloader)
     return e
 
 
@@ -123,7 +123,7 @@ def save(e: dict):
 
 
 def list_all() -> list:
-    """Deney özetleri (layout ayrıntıları hariç), yeniden eskiye."""
+    """Experiment summaries (without layout details), newest first."""
     out = []
     for p in sorted(EXP_DIR.glob("*.json")):
         e = load(p.stem)
@@ -135,14 +135,14 @@ def list_all() -> list:
 
 
 # ---------------------------------------------------------------------------
-# kapsam: değerlendirilebilir layout'lar
+# scope: layouts that can be evaluated
 # ---------------------------------------------------------------------------
 def eligible_layouts(domains: list | None = None, templates: list | None = None) -> list:
-    """GT'de CSS kuralı ve en az bir atanmış sayfası olan (şablonlu) layout'lar."""
+    """Layouts (with a template) that have a CSS rule in the GT and at least one assigned page."""
     out, tmpls = [], _templates()
     for f in sorted(GT_DIR.glob("*.json")):
         gt  = _load_json(f, {})
-        dom = f.stem                     # dosya adı esastır (içteki "domain" alanı yanlış kopyalanmış olabilir)
+        dom = f.stem                     # the file name is authoritative (the "domain" field inside may have been copied wrongly)
         if domains and dom not in domains:
             continue
         pa = gt.get("page_assignments", {})
@@ -161,12 +161,12 @@ def eligible_layouts(domains: list | None = None, templates: list | None = None)
 
 
 # ---------------------------------------------------------------------------
-# prompt çözümü
+# prompt resolution
 # ---------------------------------------------------------------------------
 def resolve_prompt(template: dict, template_id: str, rule_type: str, prompt_id: str | None,
                    skeleton: bool = True) -> dict:
-    """{source, name, system, user}. prompt_id yoksa / 'auto' ise şablondan otomatik prompt
-    (skeleton=False: iskelet yerine sayfanın HTML'i verildiğini söyleyen otomatik prompt)."""
+    """{source, name, system, user}. If prompt_id is missing / 'auto', an automatic prompt from the template
+    (skeleton=False: an automatic prompt saying the page's HTML is given instead of the skeleton)."""
     from webrulebench.pipeline.prompt_builder import build_prompt
     if prompt_id and prompt_id != "auto":
         p = _load_json(PROMPTS_FILE, {}).get("prompts", {}).get(prompt_id)
@@ -181,7 +181,7 @@ def resolve_prompt(template: dict, template_id: str, rule_type: str, prompt_id: 
 
 
 # ---------------------------------------------------------------------------
-# kural çalıştırma ve skorlama
+# running and scoring rules
 # ---------------------------------------------------------------------------
 def _kind(fdef: dict) -> str:
     from webrulebench.rules.regex_generator import KIND_OF_TYPE
@@ -189,7 +189,7 @@ def _kind(fdef: dict) -> str:
 
 
 def rule_values(html: str, soup, rule: str, rule_type: str, kind: str, merge: bool) -> list:
-    """Kuralın çıkardığı değerler: metin alanı → eleman metinleri, image/url → src/href listesi."""
+    """Values the rule extracts: text field → element texts, image/url → list of src/href."""
     from webrulebench.rules.regex_generator import css_values, regex_values, html_to_text
     if not rule:
         return []
@@ -216,7 +216,7 @@ def rule_values(html: str, soup, rule: str, rule_type: str, kind: str, merge: bo
 
 
 def score_field(gt_vals: list, pred_vals: list, metric: str) -> tuple:
-    """(skor | None, etiket). GT boşsa (None, 'NO_GT')."""
+    """(score | None, label). If the GT is empty, (None, 'NO_GT')."""
     from webrulebench.evaluation.metrics import word_f1_similarity
     if not gt_vals:
         return None, "NO_GT"
@@ -274,12 +274,12 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
         prompts_used[pkey] = resolve_prompt(tmpl, tid, llm_rt, pid, cfg.get("skeleton", "enriched") != "none")
     prompt = prompts_used[pkey]
 
-    # 1-2. örnek sayfa → iskelet (skeleton = none: temizlenmiş HTML) → LLM
+    # 1-2. sample page → skeleton (skeleton = none: cleaned HTML) → LLM
     html_s  = (RAW_DIR / dom / sample).read_text(encoding="utf-8", errors="ignore")
     cleaned = HTMLCleaner().clean(html_s, strategy=cfg.get("strategy", "whitelist"))
     use_skel = cfg.get("skeleton", "enriched") != "none"
     skel    = Skeleton(strategy="enriched").extract(cleaned.cleaned_html).skeleton_html if use_skel else cleaned.cleaned_html
-    # css_repair anahtarı olmayan kayıtlar (1.0.4 öncesi) onarımla çalışmıştı; sürdürülürken de öyle kalır
+    # records without a css_repair key (before 1.0.4) ran with repair; they stay that way when resumed
     ex = LLMExtractor(backend=cfg["backend"], model=cfg.get("model") or None, rule_type=llm_rt,
                       system_prompt=prompt["system"], user_prompt=prompt["user"], fields=list(fields),
                       repair_css=bool(cfg.get("css_repair", True)),
@@ -297,13 +297,13 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
             if not css:
                 continue
             k, m = _kind(fields.get(f, {})), bool(fields.get(f, {}).get("merge"))
-            r = generate(css, [html_s], [css_values(html_s, css, k, m)], k)   # yalnızca örnek sayfa
+            r = generate(css, [html_s], [css_values(html_s, css, k, m)], k)   # sample page only
             rules[f] = r["regex"] if r else ""
-            # verified: örnek sayfada CSS ile aynı sonucu veriyor mu (değilse en yakın aday seçildi)
+            # verified: does it give the same result as CSS on the sample page (if not, the closest candidate was chosen)
             generated[f] = {"css": css, "strategy": r["strategy"] if r else None,
                             "verified": bool(r and r["passed"] == r["total"])}
 
-    # 3. tüm GT sayfalarında skorla (GT içeriği: GT'nin CSS kuralı)
+    # 3. score on all GT pages (GT content: the GT's CSS rule)
     gt_sels, page_scores = layout.get("selectors") or {}, {}
     for p in pages:
         html = html_s if p == sample else (RAW_DIR / dom / p).read_text(encoding="utf-8", errors="ignore")
@@ -323,10 +323,10 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
 
     per_field = {f: _mean(page_scores[p][f]["score"] for p in pages) for f in fields}
     others    = [p for p in pages if p != sample]
-    timeouts  = regex_timeouts(reset=True)   # süreyi aşan regex'ler (o sayfada sonuç boş sayıldı)
+    timeouts  = regex_timeouts(reset=True)   # regexes that exceeded the time limit (their result on that page was counted as empty)
     return {
         **item, "template_id": tid, "sample_page": sample, "n_pages": len(pages),
-        # girdisi kesilen layout hatalı sayılır (ortalamaya girmez); puanları kayıtta kalır
+        # a layout whose input was truncated counts as failed (not included in the mean); its scores stay in the record
         **({"error": res.truncated} if res.truncated else {}),
         "prompt_key": pkey, "rules": rules, "regexn": generated or None,
         **({"regex_timeouts": timeouts} if timeouts else {}),
@@ -345,7 +345,7 @@ def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# deney özeti
+# experiment summary
 # ---------------------------------------------------------------------------
 def summarize(e: dict) -> dict:
     ls = [l for l in e.get("layouts", []) if not l.get("error")]
@@ -374,7 +374,7 @@ def summarize(e: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# oluşturma / çalıştırma
+# creation / running
 # ---------------------------------------------------------------------------
 def validate_config(cfg: dict) -> dict:
     from webrulebench.pipeline.llm_models import BACKENDS
@@ -403,23 +403,23 @@ def validate_config(cfg: dict) -> dict:
     c["sample"] = smp
     c["delay_s"] = max(0.0, float(c.get("delay_s") or 0))
     c["max_pages"] = int(c["max_pages"]) if c.get("max_pages") else None
-    # LLM'in CSS kurallarına sezgisel onarım: varsayılan kapalı (kurallar modelin yazdığı gibi skorlanır);
-    # yalnızca LLM CSS ürettiğinde (CSS ve CSS→REGEXN) anlamlıdır
+    # heuristic repair of the LLM's CSS rules: off by default (rules are scored as the model wrote them);
+    # meaningful only when the LLM generates CSS (CSS and CSS→REGEXN)
     c["css_repair"] = (c.get("css_repair") in (True, 1, "1", "true", "on")
                        and (c["rule_type"] == "css" or c["rule_source"] == "llm_css_regexn"))
-    # tekrarlanabilirlik: backend'in o anki API tipi, URL'i ve üretim parametreleri deneye yazılır
-    # (ayar sayfasında sonradan değişse de deneyin hangi ayarla çalıştığı bilinir)
+    # reproducibility: the backend's current API type, URL and generation parameters are written to the experiment
+    # (even if they change later on the settings page, it is known which settings the experiment ran with)
     b = BACKENDS[c["backend"]]
     model = c.get("model") or b.get("default_model")
     from webrulebench.pipeline.llm_models import effective_params
     overrides = dict((b.get("model_params") or {}).get(model) or {})
-    # params: bu çağrıda gerçekten kullanılan (birleşik) değerler; model_overrides: bunlardan modele özel olanlar
+    # params: the (merged) values actually used in this call; model_overrides: those among them specific to the model
     from webrulebench.pipeline.llm_models import call_timeout
     c["backend_snapshot"] = {"api": b.get("api"), "url": b.get("url"), "params": effective_params(c["backend"], model),
                              "model_overrides": overrides, "model": model, "timeout": call_timeout(c["backend"])}
     if b.get("api") == "ollama":
-        # model makinede yoksa deney başlamadan reddedilir; varsa digest ve bilgileri kaydedilir
-        # (aynı etiket yeniden çekilirse model dosyası değişebilir — digest hangi dosyanın kullanıldığını sabitler)
+        # if the model is not on the machine, the experiment is rejected before it starts; if it is, its digest and info are saved
+        # (if the same tag is pulled again the model file may change — the digest pins which file was used)
         from webrulebench.pipeline.llm_models import model_catalog
         cat = model_catalog(c["backend"])
         if cat["reachable"]:
@@ -437,7 +437,7 @@ def create(name: str, cfg: dict, layouts: list, user: str) -> dict:
         raise ExperimentError("Select at least one layout")
     tmpls = _templates()
     llm_rt = "css" if cfg["rule_source"] == "llm_css_regexn" else cfg["rule_type"]
-    for tid, pid in (cfg.get("prompts") or {}).items():       # prompt ↔ kural dili uyumu baştan kontrol
+    for tid, pid in (cfg.get("prompts") or {}).items():       # check prompt ↔ rule language compatibility up front
         if llm_rt == cfg["rule_type"]:
             resolve_prompt(tmpls.get(tid, {}), tid, llm_rt, pid)
     e = {
@@ -454,7 +454,7 @@ def create(name: str, cfg: dict, layouts: list, user: str) -> dict:
 
 
 def start(exp_id: str):
-    """Arka planda çalıştır (ya da yarıda kalanı sürdür)."""
+    """Run in the background (or resume an interrupted one)."""
     with _lock:
         if exp_id in _running:
             return
@@ -472,7 +472,7 @@ def cancel(exp_id: str) -> bool:
 
 
 def _worker(exp_id: str, cancel_ev: threading.Event):
-    from bs4 import BeautifulSoup  # noqa: F401 — bağımlılığı erken doğrula
+    from bs4 import BeautifulSoup  # noqa: F401 — validate the dependency early
     e = _load_json(exp_path(exp_id), None)
     try:
         cfg  = e["config"]
@@ -512,7 +512,7 @@ def _worker(exp_id: str, cancel_ev: threading.Event):
 
 
 # ---------------------------------------------------------------------------
-# hızlı test (kaydedilmez; istenirse save_quick ile deneye dönüşür)
+# quick test (not saved; turned into an experiment with save_quick if wanted)
 # ---------------------------------------------------------------------------
 QUICK_TTL_S = 3600
 
@@ -553,7 +553,7 @@ def save_quick(token: str, name: str, user: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# karşılaştırmalı deney (grup): model × kural dili başına bir deney, sırayla
+# comparative experiment (group): one experiment per model × rule language, in order
 # ---------------------------------------------------------------------------
 def create_group(name: str, cfgs: list, layouts: list, user: str) -> tuple:
     if len(cfgs) < 2:
@@ -580,7 +580,7 @@ def group_members(gid: str) -> list:
 
 
 def start_group(gid: str):
-    """Grubun bitmemiş deneylerini sırayla çalıştır (yerel modelleri aynı anda yüklememek için)."""
+    """Run the group's unfinished experiments in order (so that local models are not loaded at the same time)."""
     with _lock:
         if gid in _groups:
             return
@@ -620,10 +620,10 @@ def cancel_group(gid: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# cross check: modeller arası uyum (GT'den bağımsız)
+# cross check: agreement between models (independent of the GT)
 # ---------------------------------------------------------------------------
 def _agree(a: list, b: list, metric: str):
-    """İki modelin aynı alan için çıkardığı değerlerin uyumu (simetrik). İkisi de boşsa None."""
+    """Agreement of the values two models extracted for the same field (symmetric). None if both are empty."""
     if not a and not b:
         return None
     s, _ = score_field(a, b, metric) if a else score_field(b, a, metric)
@@ -631,9 +631,9 @@ def _agree(a: list, b: list, metric: str):
 
 
 def cross_check(gid: str) -> dict:
-    """Ortak layout'larda her (sayfa, alan) için modellerin çıkardığı içeriklerin ikili uyumu.
-    Kurallar yeniden çalıştırılır (LLM çağrısı yok). Yüksek uyum + düşük GT skoru = GT ya da
-    ortak model hatası şüphesi; düşük uyum = zor alan."""
+    """Pairwise agreement of the content the models extracted for each (page, field) on the shared layouts.
+    The rules are run again (no LLM call). High agreement + low GT score = suspected GT error or
+    shared model error; low agreement = hard field."""
     from bs4 import BeautifulSoup
     members = [e for e in group_members(gid) if e.get("layouts")]
     if len(members) < 2:
@@ -697,8 +697,8 @@ def cross_check(gid: str) -> dict:
         "common_layouts": len(common),
         "fields":     {f: {"agreement": _mean(v["ag"]), "gt": _mean(v["gt"])} for f, v in fields_acc.items()},
         "layouts":    sorted(layouts_out, key=lambda x: (x["agreement"] is None, x["agreement"] or 0)),
-        # modeller uyuşuyor ama GT'ye uymuyor → GT'yi ya da ortak hatayı kontrol et
+        # the models agree but do not match the GT → check the GT or the shared error
         "suspicious": group_cells(lambda c: c["agreement"] >= 0.9 and c["gt"] is not None and c["gt"] < 0.3),
-        # modeller birbirinden ayrışıyor → zor alan
+        # the models diverge from each other → hard field
         "hard":       group_cells(lambda c: c["agreement"] < 0.3),
     }

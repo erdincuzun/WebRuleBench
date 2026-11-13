@@ -1,22 +1,22 @@
 """
-webrulebench/demo/setup_demo.py — hakem demosu
+webrulebench/demo/setup_demo.py — reviewer demo
 =================================
-Ayrı bir veri klasörü (varsayılan: demo/data/) kurar; gerçek veriye dokunmaz:
+Sets up a separate data folder (default: demo/data/); does not touch the real data:
 
-  · 3 sentetik haber sitesi, 5 layout, 29 sayfa (webrulebench/demo/generate_pages.py)
-  · 3 annotatörün bağımsız kuralları — bilerek üç tür fark içerir:
-      yalnızca yazımı farklı (normalize edilince aynı) · farklı seçici, aynı içerik ·
-      gerçek yorum farkı (category = breadcrumb mı etiket mi; related_links'e "en çok okunanlar"
-      dahil mi) → GT Onayı'nda kural uyumu ile içerik skoru arasındaki fark görülür
-  · onaylı ground truth (annotatör A'nın kuralları, derleme bilgisiyle)
-  · LLM gerektirmeyen "demo" backend'i (replay): demo-strong ve demo-weak modelleri;
-    demo-weak tipik LLM hatalarını yapar (görsel yerine kapsayıcı, :nth-child, eksik alan)
-  · hazır sonuçlar: karşılaştırmalı deney (strong CSS · weak CSS · strong XPath) + regex deneyi
-  · "reviewer" admin hesabı — token ekrana bir kez yazılır
+  · 3 synthetic news sites, 5 layouts, 29 pages (webrulebench/demo/generate_pages.py)
+  · independent rules from 3 annotators — deliberately containing three kinds of difference:
+      spelling only (identical after normalization) · different selector, same content ·
+      a real difference of interpretation (category = breadcrumb or tag; is "most read" included in
+      related_links) → GT Approval shows the difference between rule agreement and content score
+  · approved ground truth (annotator A's rules, with compilation info)
+  · a "demo" backend that needs no LLM (replay): demo-strong and demo-weak models;
+    demo-weak makes typical LLM mistakes (container instead of image, :nth-child, missing field)
+  · ready results: comparative experiment (strong CSS · weak CSS · strong XPath) + regex experiment
+  · "reviewer" admin account — the token is printed to the screen once
 
-Kullanım:
-    webrulebench demo [--rebuild]      (ya da: python -m webrulebench.demo.setup_demo [--dir DIR] [--force])
-    webrulebench demo   (ya da ./run_demo.sh)
+Usage:
+    webrulebench demo [--rebuild]      (or: python -m webrulebench.demo.setup_demo [--dir DIR] [--force])
+    webrulebench demo   (or ./run_demo.sh)
 """
 
 from __future__ import annotations
@@ -29,11 +29,11 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-CODE = Path(__file__).resolve().parents[1]              # webrulebench/ paketi (defaults/ burada)
-PROJECT = CODE.parents[1]                               # depo kökü (src/webrulebench → kök)
+CODE = Path(__file__).resolve().parents[1]              # the webrulebench/ package (defaults/ is here)
+PROJECT = CODE.parents[1]                               # repository root (src/webrulebench → root)
 DEFAULT_DIR = PROJECT / "demo" / "data" if (PROJECT / "pyproject.toml").exists() else Path.cwd() / "webrulebench-demo"
 
-# ── annotatör kuralları (CSS) ───────────────────────────────────────
+# ── annotator rules (CSS) ───────────────────────────────────────────
 HARBOR_A = {"title": "h1.entry-title", "body": "div.entry-content", "author": "span.byline a.author",
             "date": "time.published", "category": "a.crumb-section", "images": "figure.wp-block-image img",
             "images_caption": "figure.wp-block-image figcaption", "related_links": "section.related-posts a",
@@ -74,7 +74,7 @@ GALLERY_A = {"title": "div.galeria-head h1", "body": "div.galeria-intro", "autho
 GALLERY_B = {"title": "h1", "body": ".galeria-intro", "author": ".galeria-datos b", "date": ".galeria-datos i",
              "category": ".galeria-etiqueta", "images": ".galeria-items img", "images_caption": ".galeria-texto"}
 
-# layout: (site, layout_id, name, template, sayfa türü, {annotatör: kurallar})
+# layout: (site, layout_id, name, template, page kind, {annotator: rules})
 LAYOUTS = [
     ("harborherald.example", "layout-1", "Article", "article", "article",
      {"demo-annotator-a": HARBOR_A, "demo-annotator-b": HARBOR_B, "demo-annotator-c": HARBOR_C}),
@@ -88,16 +88,16 @@ LAYOUTS = [
      {"demo-annotator-a": GALLERY_A, "demo-annotator-b": GALLERY_B}),
 ]
 
-# ── kayıtlı LLM yanıtları (replay) ──────────────────────────────────
+# ── recorded LLM responses (replay) ─────────────────────────────────
 STRONG = {
     "harborherald.example": [{"rules": {"css": {**HARBOR_A, "author": "a.author", "images_caption": "figcaption",
-                                                "related_links": "section.related-posts a, aside a"}}},   # kenar çubuğu da dahil
+                                                "related_links": "section.related-posts a, aside a"}}},   # sidebar included too
                              {"rules": {"css": HARBOR_LIST_A}}],
     "pulsedaily.example": [{"rules": {"css": {**PULSE_A, "date": '[data-testid="timestamp"]', "images_caption": None}}}],
     "noticiasdelnorte.example": [{"rules": {"css": {**NORTE_A, "related_links": "div.relacionadas li a"}}},
                                  {"match": "galeria", "rules": {"css": GALLERY_A}}],
 }
-WEAK = {   # tipik hatalar: kapsayıcı yerine img yok, sıra numarası, fazla geniş seçici, eksik alan
+WEAK = {   # typical mistakes: container instead of img, position index, overly broad selector, missing field
     "harborherald.example": [{"rules": {"css": {"title": "h1", "body": "p", "author": "span a:nth-child(1)", "date": "time",
                                                 "category": None, "images": "figure.wp-block-image", "images_caption": "figure",
                                                 "related_links": "aside a", "summary": None, "tags": "ul li a"}}},
@@ -147,10 +147,10 @@ def main(argv=None):
     out.mkdir(parents=True)
     (out / ".llmwb-demo").write_text("created by webrulebench/demo/setup_demo.py\n")
 
-    os.environ["WRB_DATA_DIR"] = str(out)          # proje modülleri bundan sonra demo klasörünü kullanır
+    os.environ["WRB_DATA_DIR"] = str(out)          # from here on the project modules use the demo folder
     from webrulebench.demo.generate_pages import generate
 
-    # 1. sayfalar + indeks
+    # 1. pages + index
     kinds = generate(out / "dataset" / "raw")
     index = {}
     for dom, files in kinds.items():
@@ -163,7 +163,7 @@ def main(argv=None):
     _wj(out / "dataset" / "download_log.json", [])
     _wj(out / "dataset" / "excluded_domains.json", [])
 
-    # 2. yapılandırma dosyaları
+    # 2. configuration files
     for name in ("layout_templates.json", "template_prompts.json"):
         shutil.copy(CODE / "defaults" / name, out / name)
     models = json.loads((CODE / "defaults" / "llm_models.json").read_text(encoding="utf-8"))
@@ -179,7 +179,7 @@ def main(argv=None):
                  for c, code, cont, lang, dom, name in SITES_META]
     _wj(out / "sites.json", {"meta": {"created": "2026-10-04", "criteria": "synthetic demo"}, "countries": countries})
 
-    # 3. replay yanıtları (XPath: CSS'ten okunabilir çeviri)
+    # 3. replay responses (XPath: readable translation of the CSS)
     from webrulebench.rules.rule_utils import css_to_xpath_readable, css_to_xpath
     replay = {"demo-strong": {}, "demo-weak": {}}
     for model, src in (("demo-strong", STRONG), ("demo-weak", WEAK)):
@@ -189,20 +189,20 @@ def main(argv=None):
                 css = e["rules"]["css"]
                 rules = {"css": css,
                          "xpath": {f: (css_to_xpath_readable(r) or css_to_xpath(r)) if r else None for f, r in css.items()}}
-                if model == "demo-strong":                 # sayfalardaki JSON-LD üzerinden
+                if model == "demo-strong":                 # via the JSON-LD in the pages
                     rules["regex"] = {f: REGEX.get(f) for f in css}
                 out_entries.append({**({"match": e["match"]} if "match" in e else {}), "rules": rules})
             replay[model][dom] = out_entries
     _wj(out / "llm_replay.json", replay)
 
-    # 4. kullanıcılar
+    # 4. users
     from webrulebench import users_store as U
     token = U.create("reviewer", "admin")
     for u in ("demo-annotator-a", "demo-annotator-b", "demo-annotator-c"):
         U.create(u, "user")
 
-    # 5. annotation'lar + onaylı GT
-    from webrulebench.evaluation.experiments import layout_template_id  # noqa: F401  (modül veri yolunu doğrular)
+    # 5. annotations + approved GT
+    from webrulebench.evaluation.experiments import layout_template_id  # noqa: F401  (the module validates the data path)
     gt_by_site, ann = {}, {}
     for dom, lid, name, tid, kind, by_user in LAYOUTS:
         pages = sorted(f for f, k in kinds[dom].items() if k == kind)
@@ -217,7 +217,7 @@ def main(argv=None):
             a = ann.setdefault((dom, u), {"domain": dom, "annotator": u, "layouts": {}, "page_assignments": {}})
             a["layouts"][lid] = {"name": name, "page_type": gt["layouts"][lid]["page_type"], "template_id": tid,
                                  "selectors": rules, "updated_at": _iso(3 + k), "history": []}
-            if u != "demo-annotator-c":          # atama isteğe bağlıdır; C yalnızca kural yazdı
+            if u != "demo-annotator-c":          # assignment is optional; C only wrote rules
                 for p in pages:
                     a["page_assignments"][p] = {"layout_id": lid, "skipped": False}
     for dom, gt in gt_by_site.items():
@@ -227,7 +227,7 @@ def main(argv=None):
     for (dom, u), a in ann.items():
         _wj(out / "annotations" / dom / f"{u}.json", a)
 
-    # 6. hazır deneyler (replay — saniyeler sürer)
+    # 6. ready experiments (replay — takes seconds)
     import threading
     from webrulebench.evaluation import experiments as X
     layouts = X.eligible_layouts()

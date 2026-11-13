@@ -1,13 +1,13 @@
 """
 rule_utils.py
 =============
-CSS selector, XPath ve Regex kurallarını ortak bir arayüzden çalıştırma.
+Running CSS selector, XPath and Regex rules through a common interface.
 
-Amaç: llm_extractor.py ve web uygulaması (webapp/), alan çıkarımını üç farklı kural
-diliyle yapabilsin — CSS her zaman olduğu gibi BeautifulSoup ile, XPath
-lxml ile, Regex ise ham HTML/metin üzerinde re ile çalışır.
+Purpose: let llm_extractor.py and the web application (webapp/) extract fields with three different rule
+languages — CSS runs with BeautifulSoup as always, XPath
+with lxml, and Regex with re on the raw HTML/text.
 
-Kullanım:
+Usage:
   from webrulebench.rules.rule_utils import run_rule, css_to_xpath
 
   elems = run_rule(soup, ".article-title", "css")
@@ -52,7 +52,7 @@ def split_selector_list(selector: str) -> list:
 
 
 def css_to_xpath(css: str) -> str | None:
-    """CSS selector'ı XPath'e çevir. Çeviremezse None döner."""
+    """Translate a CSS selector to XPath. Returns None if it cannot be translated."""
     if not css or not css.strip():
         return None
     try:
@@ -73,7 +73,7 @@ def css_to_xpath(css: str) -> str | None:
 
 
 def xpath_literal(s: str) -> str:
-    """Bir string'i XPath 1.0 literal'ine çevir (tırnak kaçışı yoktur, concat gerekir)."""
+    """Turn a string into an XPath 1.0 literal (there is no quote escaping, concat is needed)."""
     if "'" not in s:
         return f"'{s}'"
     if '"' not in s:
@@ -82,8 +82,8 @@ def xpath_literal(s: str) -> str:
 
 
 def _xpath_class_test(cls: str, strict: bool) -> str:
-    # contains(@class,'x') okunaklıdır ama 'subtitle' içinde 'title'ı da bulur;
-    # strict biçim class'ı tam token olarak eşler (CSS .x ile birebir aynı).
+    # contains(@class,'x') is readable but also finds 'title' inside 'subtitle';
+    # the strict form matches the class as a whole token (exactly like CSS .x).
     if strict:
         return f"contains(concat(' ', normalize-space(@class), ' '), {xpath_literal(' ' + cls + ' ')})"
     return f"contains(@class, {xpath_literal(cls)})"
@@ -111,7 +111,7 @@ _ATTR  = re.compile(r"\[\s*([\w:-]+)\s*(?:([*^$~]?=)\s*(\"[^\"]*\"|'[^']*'|[^\]\
 
 
 def _compound_to_xpath(comp: str, strict: bool) -> str | None:
-    """'div.a#b[x="y"]' → 'div[@id='b'][contains(@class,'a')][@x='y']'. Desteklenmeyen sözdizimi → None."""
+    """'div.a#b[x="y"]' → 'div[@id='b'][contains(@class,'a')][@x='y']'. Unsupported syntax → None."""
     i, tag, tests = 0, "*", []
     m = _IDENT.match(comp)
     if comp.startswith("*"):
@@ -136,19 +136,19 @@ def _compound_to_xpath(comp: str, strict: bool) -> str | None:
             tests.append(_xpath_attr_test(name, op, val))
             i = m.end()
         else:
-            return None   # :pseudo, \\escape, +, ~ ... → desteklenmiyor
+            return None   # :pseudo, \\escape, +, ~ ... → not supported
     return tag + "".join(f"[{t}]" for t in tests)
 
 
 def css_to_xpath_readable(css: str, strict_classes: bool = False) -> str | None:
-    """Basit CSS selector'ları (tag, #id, .class, [attr], ' ' ve '>' birleştiricileri)
-    okunaklı XPath'e çevirir: 'div.body > p' → '//div[contains(@class, 'body')]/p'.
-    Desteklenmeyen bir parça varsa None döner (çağıran css_to_xpath'e düşebilir)."""
+    """Translates simple CSS selectors (tag, #id, .class, [attr], ' ' and '>' combinators)
+    into readable XPath: 'div.body > p' → '//div[contains(@class, 'body')]/p'.
+    Returns None if there is an unsupported part (the caller can fall back to css_to_xpath)."""
     if not css or not css.strip() or "\\" in css:
         return None
     out = []
     for part in split_selector_list(css):
-        # birleştiricileri ayır; attribute değerleri içindeki boşluk/'>' korunur
+        # split off the combinators; spaces/'>' inside attribute values are kept
         tokens, buf, depth = [], "", 0
         for ch in part:
             depth += (ch == "[") - (ch == "]")
@@ -181,18 +181,18 @@ def css_to_xpath_readable(css: str, strict_classes: bool = False) -> str | None:
 
 
 def _to_lxml_tree(html_or_soup):
-    """BeautifulSoup nesnesi veya HTML string'i lxml ağacına çevir."""
+    """Convert a BeautifulSoup object or an HTML string into an lxml tree."""
     from lxml import html as lxml_html
 
     if isinstance(html_or_soup, str):
         return lxml_html.fromstring(html_or_soup)
 
-    # BeautifulSoup nesnesi verildiyse tekrar parse et (lxml kendi ağacını ister)
+    # if a BeautifulSoup object was given, parse it again (lxml needs its own tree)
     return lxml_html.fromstring(str(html_or_soup))
 
 
 def run_css(soup, selector: str) -> list:
-    """CSS selector'ı BeautifulSoup ağacında çalıştır, virgüllü parçaları birleştirir."""
+    """Run a CSS selector on the BeautifulSoup tree, joining the comma-separated parts."""
     parts = split_selector_list(selector)
     seen, elems = set(), []
     for part in parts:
@@ -208,21 +208,21 @@ def run_css(soup, selector: str) -> list:
 
 
 def run_xpath(html_or_soup, xpath: str) -> list:
-    """XPath'i lxml ağacında çalıştır. Element listesi döner (lxml elements)."""
+    """Run XPath on the lxml tree. Returns a list of elements (lxml elements)."""
     try:
         tree = _to_lxml_tree(html_or_soup)
         result = tree.xpath(xpath)
     except Exception:
         return []
-    # xpath text()/attribute() sorguları string döndürebilir — element'lere sarmıyoruz,
-    # çağıran taraf (metrics.py) bunları ayrıca ele alır.
+    # xpath text()/attribute() queries may return strings — we do not wrap them into elements,
+    # the caller (metrics.py) handles them separately.
     return result if isinstance(result, list) else [result]
 
 
-# ── Regex süre sınırı ─────────────────────────────────────────────────────
-# LLM'in yazdığı bir regex (ör. iç içe .*? ile) "felaket geri izleme"ye girip saatlerce sürebilir ve re
-# kesilemez. Regex bu yüzden ayrı bir işlemde, yine re ile çalışır; süreyi aşarsa işlem kapatılır, sonuç boş
-# sayılır ve desen regex_timeouts() listesine yazılır (çağıran thread'e özel).
+# ── Regex time limit ──────────────────────────────────────────────────────
+# A regex written by an LLM (e.g. with nested .*?) can run into "catastrophic backtracking" and take hours, and re
+# cannot be interrupted. The regex therefore runs in a separate process, still with re; if it exceeds the time limit,
+# the process is killed, the result counts as empty and the pattern is recorded in regex_timeouts() (per calling thread).
 REGEX_TIMEOUT_S = 5.0
 _FLAGS = re.IGNORECASE | re.DOTALL
 _worker = {"proc": None, "send": None, "recv": None, "text": None}
@@ -231,7 +231,7 @@ _local = threading.local()
 
 
 def _regex_serve():
-    """Yardımcı işlemin döngüsü: (desen, metin | None) alır, re.findall sonucunu yollar."""
+    """Loop of the helper process: receives (pattern, text | None), sends back the re.findall result."""
     import os
     from multiprocessing.connection import Connection
     inp, out = Connection(os.dup(0), writable=False), Connection(os.dup(1), readable=False)
@@ -242,7 +242,7 @@ def _regex_serve():
             pattern, new_text = inp.recv()
         except EOFError:
             return
-        if new_text is not None:      # metin yalnızca değiştiğinde gönderilir
+        if new_text is not None:      # the text is sent only when it changes
             text = new_text
         try:
             out.send(("ok", re.findall(pattern, text, flags=_FLAGS)))
@@ -262,7 +262,7 @@ def _start_worker(w):
     w["send"] = Connection(os.dup(w["proc"].stdin.fileno()), readable=False)
     w["recv"] = Connection(os.dup(w["proc"].stdout.fileno()), writable=False)
     w["text"] = None
-    if not w["recv"].poll(60):        # yorumlayıcının açılışı süre sınırına sayılmaz
+    if not w["recv"].poll(60):        # interpreter start-up does not count toward the time limit
         _stop_worker(w)
         raise RuntimeError("regex worker did not start")
     w["recv"].recv()
@@ -277,9 +277,9 @@ def _stop_worker(w):
 
 
 def _findall_limited(pattern: str, text: str):
-    """re.findall'ın sonucu; geçersiz desen → []; süre aşımı → None (işlem yeniden başlatılır)."""
+    """Result of re.findall; invalid pattern → []; timeout → None (the process is restarted)."""
     import os
-    if os.name != "posix":            # Windows: süre sınırı yok
+    if os.name != "posix":            # Windows: no time limit
         try:
             return re.findall(pattern, text, flags=_FLAGS)
         except re.error:
@@ -291,7 +291,7 @@ def _findall_limited(pattern: str, text: str):
         same = w["text"] is not None and w["text"] is text
         try:
             w["send"].send((pattern, None if same else text))
-        except OSError:               # işlem kapanmış: yeniden başlat, bir kez daha dene
+        except OSError:               # the process has closed: restart it and try once more
             _stop_worker(w)
             _start_worker(w)
             w["send"].send((pattern, text))
@@ -304,7 +304,7 @@ def _findall_limited(pattern: str, text: str):
 
 
 def regex_timeouts(reset: bool = False) -> list[str]:
-    """Bu thread'de süreyi aşan desenler (reset=True: listeyi boşaltır ve önceki içeriği döndürür)."""
+    """Patterns that timed out in this thread (reset=True: empties the list and returns its previous content)."""
     out = getattr(_local, "timeouts", [])
     if reset:
         _local.timeouts = []
@@ -312,7 +312,7 @@ def regex_timeouts(reset: bool = False) -> list[str]:
 
 
 def run_regex(html_or_soup, pattern: str) -> list[str]:
-    """Regex'i ham HTML/metin üzerinde çalıştır, eşleşen grupları/tam eşleşmeleri döndürür."""
+    """Run a regex on the raw HTML/text, returning the matching groups/full matches."""
     text = html_or_soup if isinstance(html_or_soup, str) else str(html_or_soup)
     try:
         re.compile(pattern, _FLAGS)
@@ -328,7 +328,7 @@ def run_regex(html_or_soup, pattern: str) -> list[str]:
     results = []
     for m in matches:
         if isinstance(m, tuple):
-            # Birden çok grup varsa ilk boş olmayanı al
+            # If there are several groups, take the first non-empty one
             m = next((g for g in m if g), "")
         if m:
             results.append(m)
@@ -337,11 +337,11 @@ def run_regex(html_or_soup, pattern: str) -> list[str]:
 
 def run_rule(html_or_soup, rule: str, rule_type: RuleType) -> list:
     """
-    Kural tipine göre uygun çalıştırıcıyı seçer.
+    Chooses the appropriate runner by rule type.
 
-    - css   : BeautifulSoup select — element listesi döner
-    - xpath : lxml xpath — element/string listesi döner
-    - regex : re.findall — string listesi döner
+    - css   : BeautifulSoup select — returns a list of elements
+    - xpath : lxml xpath — returns a list of elements/strings
+    - regex : re.findall — returns a list of strings
     """
     if not rule:
         return []

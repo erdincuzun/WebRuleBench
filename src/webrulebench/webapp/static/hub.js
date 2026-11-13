@@ -1,6 +1,6 @@
-// Hub + bölüm sayfaları için ortak yardımcılar (oturum, site seçici, derin link).
-// Oturum index.html ile ortaktır: aynı Flask session'ı ve aynı localStorage
-// anahtarları (llmwb_username / llmwb_token) kullanılır.
+// Shared helpers for the hub + section pages (session, site picker, deep link).
+// The session is shared with index.html: the same Flask session and the same localStorage
+// keys (llmwb_username / llmwb_token) are used.
 
 const Hub = {
   me: null,
@@ -9,7 +9,7 @@ const Hub = {
 
   isAdmin() { return this.me?.role === 'admin'; },
 
-  // /annotate?site=...&open=...  — index.html içindeki _handleDeepLink() okur
+  // /annotate?site=...&open=...  — read by _handleDeepLink() in index.html
   annotateUrl(params = {}) {
     const q = new URLSearchParams();
     Object.entries(params).forEach(([k, v]) => { if (v) q.set(k, v); });
@@ -33,7 +33,7 @@ const Hub = {
       const u = localStorage.getItem('llmwb_username');
       const t = localStorage.getItem('llmwb_token');
       if (u && t && await this._postLogin(u, t)) {
-        // _postLogin this.me'yi doldurdu
+        // _postLogin has filled this.me
       } else {
         document.getElementById('hubLogin').classList.add('open');
         const saved = localStorage.getItem('llmwb_username');
@@ -88,7 +88,7 @@ const Hub = {
       <button type="button" class="btn sm" onclick="Hub.logout()">${T('Log out')}</button>`;
   },
 
-  // data-admin işaretli öğeler admin değilse kilitlenir
+  // elements marked data-admin are locked for non-admins
   applyRoleGates(root = document) {
     root.querySelectorAll('[data-admin]').forEach(el => {
       if (this.isAdmin()) return;
@@ -118,8 +118,8 @@ const Hub = {
     return 'empty';
   },
 
-  // Aranabilir site seçici. Seçilen domain URL'de (?site=) tutulur ki
-  // bölümler arası geçişte ve yenilemede kaybolmasın.
+  // Searchable site picker. The selected domain is kept in the URL (?site=) so that
+  // it is not lost when moving between sections or reloading.
   async sitePicker(container, onChange) {
     const sites = await this.sites();
     const id = 'sitelist-' + Math.random().toString(36).slice(2, 8);
@@ -144,7 +144,7 @@ const Hub = {
     return input;
   },
 
-  // Başlık + bölümler ({label, text}) içeren salt okunur metin penceresi (prompt görüntüleme vb.)
+  // Read-only text window with a title + sections ({label, text}) (for viewing prompts etc.)
   showText(title, parts) {
     document.getElementById('hubTextModal')?.remove();
     const el = document.createElement('div');
@@ -166,7 +166,7 @@ const Hub = {
     document.body.appendChild(el);
   },
 
-  // Şablonun prompt'unu göster: pid 'auto' (ya da boş) → otomatik prompt (rule dili için), aksi halde deneme prompt'u
+  // Show the template's prompt: pid 'auto' (or empty) → automatic prompt (for the rule language), else a trial prompt
   async showPrompt(tid, ruleType, pid, html = false) {
     const d = await (await fetch(`/api/templates/${encodeURIComponent(tid)}/prompts`)).json();
     let name, sys, usr;

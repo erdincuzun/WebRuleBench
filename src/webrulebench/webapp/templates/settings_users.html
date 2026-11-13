@@ -138,7 +138,7 @@ async function resetTok(name) {
                     : T('Generate a new token for {user}? The old token and open sessions become invalid immediately.', {user: name}))) return;
   const d = await api(`/api/admin/users/${encodeURIComponent(name)}/token`);
   if (!d.success) { Hub.toast(d.error, 'err'); return; }
-  if (d.self) {        // tarayıcıda hatırlanan giriş bilgisini güncelle
+  if (d.self) {        // update the login info remembered in the browser
     try { localStorage.setItem('llmwb_username', name); localStorage.setItem('llmwb_token', d.token); } catch (e) {}
   }
   showTok(`🔑 ${name} — ${T('new token')}`, (d.self ? T('New token for {user} (the login saved in this browser was updated):', {user: `<b class="mono">${Hub.esc(name)}</b>`}) : T('New token for {user}:', {user: `<b class="mono">${Hub.esc(name)}</b>`})), d.token);

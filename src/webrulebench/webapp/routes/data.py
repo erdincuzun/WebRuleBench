@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/data.py — Veri Toplama: siteler, sayfalar (ekleme, silme, yeniden indirme, toplu ekleme), ülkeler, istatistik.
+webrulebench/webapp/routes/data.py — Data Collection: sites, pages (add, delete, re-download, bulk add), countries, statistics.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("data", __name__)
 
@@ -26,8 +26,8 @@ def api_sites():
             assigned = sum(1 for v in pa.values() if not v.get("skipped") and v.get("layout_id"))
 
         layouts = len(gt.get("layouts", {}))
-        # giriş yapan kullanıcının kendi ilerlemesi: kural yazdığı layout'lar ve son kaydı
-        # (yalnızca kendi annotation dosyası okunur — başkalarının kuralları gösterilmez)
+        # the logged-in user's own progress: layouts they wrote rules for and their last save
+        # (only their own annotation file is read — other users' rules are not shown)
         my_done, my_last = 0, None
         if username:
             mine = load_user_annotation(domain, username).get("layouts", {})
@@ -72,7 +72,7 @@ def api_site(domain):
         ann      = load_user_annotation(domain, username)
         user_pa  = ann.get("page_assignments", {})
         merged   = dict(gt.get("page_assignments", {}))
-        merged.update(user_pa)   # kullanıcı atamaları öncelikli
+        merged.update(user_pa)   # user assignments take precedence
         gt = dict(gt)
         gt["page_assignments"] = merged
     return jsonify({
@@ -231,7 +231,7 @@ def api_add_page():
     if not site_dir.exists():
         return jsonify({"success": False, "error": _t("Site folder not found")})
 
-    # Next available file number — önce boşlukları doldur, sonra sona ekle
+    # Next available file number — fill gaps first, then append at the end
     import re
     pattern  = re.compile(rf"^{page_type}_(\d+)\.html$")
     existing = sorted([int(m.group(1)) for f in site_dir.iterdir()
@@ -433,7 +433,7 @@ def api_add_site():
     if site_dir.exists():
         return jsonify({"success": False, "error": _t("'{name}' already exists", name=domain)})
 
-    # Register in sites.json (klasörden önce: ülke hatası varsa hiçbir şey oluşturulmasın)
+    # Register in sites.json (before the folder: on a country error nothing should be created)
     meta_err = _upsert_site_meta(domain, name, data.get("country", ""), (data.get("notes") or "").strip(),
                                  url=f"https://{domain}", new_country=data.get("new_country"))
     if meta_err:
@@ -467,7 +467,7 @@ def api_add_site():
 
 @bp.route("/api/countries")
 def api_countries():
-    """sites.json'daki ülkeler (kod/kıta/dil) + site sayısı; 'Other' hariç."""
+    """Countries in sites.json (code/continent/language) + number of sites; excluding 'Other'."""
     groups = _load_sites_file()["countries"]
     return jsonify({"countries": [
         {k: g.get(k, "") for k in ("country", "code", "continent", "language")} | {"sites": len(g.get("sites", []))}
@@ -477,7 +477,7 @@ def api_countries():
 
 @bp.route("/api/site/update", methods=["POST"])
 def api_update_site():
-    """Site bilgilerini (ad, ülke, not) düzenle. Domain değişmez — klasör ve GT dosyaları ona bağlı."""
+    """Edit site info (name, country, notes). The domain does not change — the folder and GT files depend on it."""
     _, err = require_admin()
     if err: return err
     data   = request.json or {}
@@ -552,7 +552,7 @@ def api_delete_site():
 
 @bp.route("/api/stats")
 def api_stats():
-    """Overall annotation statistics — layout bazlı."""
+    """Overall annotation statistics — per layout."""
     sites = load_sites()
     stats = {
         "total_sites":    len(sites),

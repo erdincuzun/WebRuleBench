@@ -1,16 +1,16 @@
 """
-webrulebench/webapp/routes/groundtruth.py — Ground Truth Onayı: özetler ve derleme (K1/K2, kaydetme).
+webrulebench/webapp/routes/groundtruth.py — Ground Truth Approval: summaries and compilation (K1/K2, saving).
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("groundtruth", __name__)
 
 
 @bp.route("/api/gt/overview")
 def api_gt_overview():
-    """GT Onayı site listesi: layout'u olan her site için özet."""
+    """GT Approval site list: a summary for each site with layouts."""
     _, err = require_login()
     if err: return err
     audit_times = _audit_compile_times()
@@ -39,7 +39,7 @@ def api_gt_overview():
 
 @bp.route("/api/gt/layouts/<domain>")
 def api_gt_layouts(domain):
-    """GT Onayı layout listesi: bir sitenin layout'ları, dil bazında durum ve κ."""
+    """GT Approval layout list: the layouts of a site, status and κ per language."""
     _, err = require_login()
     if err: return err
     if not (DATASET_DIR / domain).is_dir():
@@ -52,7 +52,7 @@ def api_gt_layouts(domain):
 
 @bp.route("/api/gt/pending")
 def api_gt_pending():
-    """Site bazlı: layout ataması olan domain'lerin GT onay durumunu döndür."""
+    """Per site: return the GT approval status of domains with layout assignments."""
     sites  = load_sites()
     result = []
     for site in sites:
@@ -76,11 +76,11 @@ def api_gt_pending():
 
 @bp.route("/api/gt/site/<domain>")
 def api_gt_site(domain):
-    """Site için ground_truth layout verileri ve approved GT'yi döndür."""
+    """Return the ground_truth layout data and the approved GT for the site."""
     gt = load_ground_truth(domain)
     pa = gt.get("page_assignments", {})
 
-    # Her layout için atanmış sayfalar
+    # Assigned pages for each layout
     layout_pages: dict[str, list] = {}
     for fname, info in pa.items():
         if info.get("skipped") or not info.get("layout_id"):
@@ -99,7 +99,7 @@ def api_gt_site(domain):
 @bp.route("/api/compile/<path:domain>/<layout_id>")
 def api_compile_data(domain, layout_id):
     """Per-user selectors and page_assignments for a layout (compile view).
-    Herkes görüntüleyebilir; kaydetme (POST) yalnızca admin."""
+    Everyone can view; saving (POST) is admin only."""
     _, err = require_login()
     if err: return err
 
@@ -145,7 +145,7 @@ def api_compile_data(domain, layout_id):
 
 @bp.route("/api/compile/texts", methods=["POST"])
 def api_compile_texts():
-    """Derleme K2/Test için: {key: kural} → çıkarılan metin ve eşleşme sayısı (regex/xpath ham HTML'de).
+    """For compile K2/Test: {key: rule} → extracted text and match count (regex/xpath on the raw HTML).
     Body: {domain, filename, rule_type, rules: {key: rule}}"""
     _, err = require_login()
     if err: return err
@@ -266,8 +266,8 @@ def api_compile_save(domain, layout_id):
     # Update selectors, and record which annotators wrote each approved rule (none: the administrator did)
     gt["layouts"][layout_id]["selectors"] = selectors
     layout["rule_sources"] = rule_sources(selectors, user_sels, fdefs)
-    # Kim/ne zaman derledi — kural dili bazında (GT Onayı listelerindeki "güncelleme var" durumu için)
-    # yalnızca GT'de bulunan diller; GT'den çıkarılan dilin derleme bilgisi de silinir
+    # Who compiled and when — per rule language (for the "update available" status in the GT Approval lists)
+    # only languages present in the GT; the compile info of a language removed from the GT is deleted as well
     gt["layouts"][layout_id]["compiled"] = {lang: {"at": now, "by": username} for lang in _rule_langs(selectors)}
 
     # Update page_assignments: set these pages to this layout, keep others untouched

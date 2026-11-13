@@ -1,27 +1,27 @@
 """
 llm_extractor.py
 ================
-LLM tabanlı kural üretici (CSS selector / XPath / Regex).
+LLM-based rule generator (CSS selector / XPath / Regex).
 
-Skeleton HTML'i bir LLM'e gönderir, alan → kural eşlemesini JSON olarak alır.
-Backend'ler llm_models.json kayıt defterindedir (llm_models.py); API tipleri:
-  - ollama     — yerel (Ollama)
+Sends the skeleton HTML to an LLM and receives the field → rule mapping as JSON.
+Backends are in the llm_models.json registry (llm_models.py); API types:
+  - ollama     — local (Ollama)
   - anthropic  — Claude API
   - gemini     — Google Gemini API
-  - openai     — OpenAI uyumlu servisler (Groq, NVIDIA NIM, OpenRouter ...)
-Çağrılar requests ile yapılır; API anahtarı ortam değişkeninden ya da .env'den okunur.
+  - openai     — OpenAI-compatible services (Groq, NVIDIA NIM, OpenRouter ...)
+Calls are made with requests; the API key is read from an environment variable or from .env.
 
-Girdi  : skeleton HTML string
-Çıktı  : {"title": "h1.news-detail-title", "body": "...", ...}
+Input  : skeleton HTML string
+Output : {"title": "h1.news-detail-title", "body": "...", ...}
 
-Kullanım:
+Usage:
   from webrulebench.pipeline.llm_extractor import LLMExtractor
-  extractor = LLMExtractor(backend="ollama", rule_type="css")     # model: backend varsayılanı
+  extractor = LLMExtractor(backend="ollama", rule_type="css")     # model: backend default
   result    = extractor.extract(skeleton_html, domain="hurriyet.com.tr")
   print(result.selectors)
 
-  Deneylerde sistem/kullanıcı prompt'u ve alan listesi dışarıdan verilir
-  (system_prompt=, user_prompt=, fields= — bkz. prompt_builder.py, experiments.py).
+  In experiments the system/user prompt and the field list are passed in from outside
+  (system_prompt=, user_prompt=, fields= — see prompt_builder.py, experiments.py).
 
 CLI:
   python -m webrulebench.pipeline.llm_extractor dataset/raw/hurriyet.com.tr/article_001.html
@@ -43,16 +43,16 @@ import requests
 from webrulebench.pipeline.llm_models import BACKENDS, call_timeout, default_model as _default_model
 
 # ---------------------------------------------------------------------------
-# CONFIG — backend ayarları llm_models.json'da (llm_models.py); burada yalnızca yedek varsayılan
+# CONFIG — backend settings are in llm_models.json (llm_models.py); only a fallback default here
 # ---------------------------------------------------------------------------
 OLLAMA_MODEL = BACKENDS.get("ollama", {}).get("default_model", "qwen2.5-coder:14b")
 
-# Çıkarılacak alanlar
+# Fields to extract
 from webrulebench.config import FIELDS
 
 
 def _api_key(name: str) -> str:
-    """API anahtarı: önce ortam değişkeni, yoksa proje kökündeki .env (KEY=değer satırları)."""
+    """API key: first the environment variable, otherwise the .env in the project root (KEY=value lines)."""
     if os.environ.get(name):
         return os.environ[name]
     from webrulebench.paths import DATA_DIR
@@ -66,7 +66,7 @@ def _api_key(name: str) -> str:
                     return v.strip().strip("'\"")
     return ""
 
-# Geçerli HTML tag'leri — selector fix için
+# Valid HTML tags — for the selector fix
 HTML_TAGS_SET = {
     "a", "abbr", "address", "article", "aside", "audio", "b", "blockquote",
     "body", "br", "button", "canvas", "caption", "cite", "code", "col",
@@ -85,8 +85,8 @@ HTML_TAGS_SET = {
 
 
 def _split_top(s: str, sep: str | None = None) -> list[str]:
-    """Yalnızca en üst düzeyde böl: tırnak, (...) ve [...] içindekiler bölünmez.
-    sep=None → boşluklarda (boş parçalar atılır); aksi halde bu karakterde."""
+    """Split only at the top level: anything inside quotes, (...) and [...] is not split.
+    sep=None → on whitespace (empty parts are dropped); otherwise on this character."""
     parts, buf, depth, quote = [], [], 0, None
     for ch in s:
         if quote:
@@ -107,7 +107,7 @@ def _split_top(s: str, sep: str | None = None) -> list[str]:
 
 
 def _class_names(html: str) -> set:
-    """HTML'deki bütün class adları."""
+    """All class names in the HTML."""
     return {c for v in re.findall(r"""\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')""", html) for c in "".join(v).split()}
 
 # ---------------------------------------------------------------------------
@@ -295,7 +295,7 @@ write will run against the page's raw HTML text, not this skeleton) and return r
 Return only the JSON object.""",
 }
 
-# İskelet yerine sayfanın HTML'i verildiğinde (deney ayarı skeleton = none)
+# When the page's HTML is given instead of the skeleton (experiment setting skeleton = none)
 USER_PROMPT_TEMPLATES_HTML_BY_RULE_TYPE = {
     "css": """Analyze this HTML page from {domain} and return CSS selectors as JSON:
 
@@ -317,25 +317,25 @@ Return only the JSON object.""",
 
 
 # ---------------------------------------------------------------------------
-# GİRDİ KESİLMESİ
-# Bağlam penceresini aşan girdiyi bazı sunucular (Ollama) hata vermeden kısaltır: model sayfanın yalnızca
-# bir bölümünü görür ve kural yine üretilir. Sunucunun bildirdiği girdi token sayısından anlaşılır.
+# INPUT TRUNCATION
+# Some servers (Ollama) shorten input that exceeds the context window without an error: the model sees only
+# part of the page and a rule is still generated. Detected from the input token count the server reports.
 # ---------------------------------------------------------------------------
-TRUNCATION_MAX_CHARS_PER_TOKEN = 6.0   # HTML ≈ 2–3.5, iskelet ≈ 3.5–5 karakter/token
-OUTPUT_LIMIT_REASONS = {"length", "max_tokens"}   # OpenAI/Ollama, Anthropic, Gemini (küçük harfe çevrilmiş)
+TRUNCATION_MAX_CHARS_PER_TOKEN = 6.0   # HTML ≈ 2–3.5, skeleton ≈ 3.5–5 characters/token
+OUTPUT_LIMIT_REASONS = {"length", "max_tokens"}   # OpenAI/Ollama, Anthropic, Gemini (lower-cased)
 
-# Geçici HTTP hataları: 429 hız/kota sınırı, 503 sunucu (model) dolu — beklenip yeniden denenir (_post)
+# Transient HTTP errors: 429 rate/quota limit, 503 server (model) busy — waited out and retried (_post)
 RETRY_STATUSES     = {429, 503}
 MAX_RETRIES        = 5
-RETRY_WAIT_S       = 10     # ilk bekleme; her denemede ikiye katlanır (10, 20, 40, 60, 60)
-RETRY_WAIT_MAX_S   = 60     # tek bekleme en fazla
+RETRY_WAIT_S       = 10     # first wait; doubles on each attempt (10, 20, 40, 60, 60)
+RETRY_WAIT_MAX_S   = 60     # maximum for a single wait
 
 
 def _retry_wait(retry_after: str | None, body: str, attempt: int = 0) -> float:
-    """Yeniden denemeden önce beklenecek süre (sn): RETRY_WAIT_S · 2^attempt; sağlayıcı daha uzun bir süre
-    bildirirse o — Retry-After başlığı (saniye), yoksa hata gövdesindeki error.evren.resets_at anı (EVREN).
-    Sağlayıcının bildirdiği süre kısa kalabilir (EVREN: model dolu iken birkaç saniye), bu yüzden alt sınır
-    katlanan süredir. En fazla RETRY_WAIT_MAX_S."""
+    """Time (s) to wait before a retry: RETRY_WAIT_S · 2^attempt; if the provider reports a longer time, that —
+    the Retry-After header (seconds), otherwise the error.evren.resets_at instant in the error body (EVREN).
+    The time the provider reports can be short (EVREN: a few seconds while the model is busy), so the lower bound
+    is the doubled time. At most RETRY_WAIT_MAX_S."""
     wait = None
     try:
         wait = float(retry_after)
@@ -350,10 +350,10 @@ def _retry_wait(retry_after: str | None, body: str, attempt: int = 0) -> float:
 
 
 def input_truncation(prompt_chars: int, prompt_tokens: int) -> str:
-    """Girdi kesilmiş görünüyorsa nedenini, görünmüyorsa "" döndürür.
-    - Ollama, sığmayan girdiyi pencerenin yarısına indirir: prompt_tokens = 2^k + birkaç başlangıç token'ı
-      (Qwen, gpt-oss: +2 → 16k'da 8194, 32k'da 16386; gemma4: +3 → 128k'da 65539).
-    - Genel: karakter/token oranı metnin tamamının sayılamayacağı kadar yüksek."""
+    """Returns the reason if the input looks truncated, otherwise "".
+    - Ollama cuts input that does not fit down to half the window: prompt_tokens = 2^k + a few start tokens
+      (Qwen, gpt-oss: +2 → 8194 at 16k, 16386 at 32k; gemma4: +3 → 65539 at 128k).
+    - General: the character/token ratio is too high for the whole text to have been counted."""
     if prompt_tokens <= 0:
         return ""
     for extra in range(2, 5):
@@ -383,11 +383,11 @@ class ExtractResult:
     success:       bool
     rule_type:     str = "css"
     error:         str = ""
-    prompt_tokens: int = 0   # LLM girdi token sayısı (API'den)
-    gen_tokens:    int = 0   # LLM çıktı token sayısı (API'den)
-    truncated:     str = ""  # girdi kesilmesi (input_truncation) — boşsa yok
-    finish_reason: str = ""  # sağlayıcının bildirdiği durma nedeni (stop, length, max_tokens …) — bildirilmezse boş
-    retries:       int = 0   # 429/503 sonrası yeniden deneme sayısı (bekleme süresi elapsed_ms'e girmez)
+    prompt_tokens: int = 0   # LLM input token count (from the API)
+    gen_tokens:    int = 0   # LLM output token count (from the API)
+    truncated:     str = ""  # input truncation (input_truncation) — empty if none
+    finish_reason: str = ""  # stop reason reported by the provider (stop, length, max_tokens …) — empty if not reported
+    retries:       int = 0   # number of retries after 429/503 (the wait time is not included in elapsed_ms)
 
     def metrics(self) -> dict:
         return {
@@ -423,9 +423,9 @@ class LLMExtractor:
                  fields: list = None,
                  repair_css: bool = False,
                  snapshot: dict = None):
-        """fields: yanıttan okunacak alanlar (şablonun alanları). Verilmezse config.FIELDS.
-        repair_css: CSS kurallarına sezgisel onarımlar uygulanır (_fix_selector, _fix_body_from_skeleton);
-        kapalıyken kurallar modelin yazdığı gibi döner — deneylerde bir değişkendir (config.css_repair).
+        """fields: fields to read from the response (the template's fields). If not given, config.FIELDS.
+        repair_css: heuristic repairs are applied to CSS rules (_fix_selector, _fix_body_from_skeleton);
+        when off, rules are returned as the model wrote them — a variable in experiments (config.css_repair).
         snapshot: backend settings stored with an experiment when it was created ({api, url, params, timeout}).
         If given, the call uses these instead of the current settings, so that an experiment runs (and is
         resumed) with the configuration its record shows, also when the settings were changed in between.
@@ -433,25 +433,25 @@ class LLMExtractor:
         self.snapshot      = dict(snapshot) if snapshot else None
         self.fields        = list(fields) if fields else list(FIELDS)
         self.repair_css    = repair_css
-        self._classes      = set()          # iskeletteki class adları (onarım, extract'ta doldurulur)
-        self._finish       = ""             # son çağrının durma nedeni (_call_llm)
-        self._retries      = 0              # son çağrıda 429/503 sonrası yeniden deneme sayısı (_post)
-        self._waited       = 0.0            # bu denemeler için beklenen süre (sn)
+        self._classes      = set()          # class names in the skeleton (repair; filled in extract)
+        self._finish       = ""             # stop reason of the last call (_call_llm)
+        self._retries      = 0              # number of retries after 429/503 in the last call (_post)
+        self._waited       = 0.0            # time waited for these retries (s)
         self.backend       = backend
-        self.timeout       = timeout or (self.snapshot or {}).get("timeout") or call_timeout(backend)   # verilmezse backend ayarı
+        self.timeout       = timeout or (self.snapshot or {}).get("timeout") or call_timeout(backend)   # backend setting if not given
         self.rule_type     = rule_type
         self.model         = model or _default_model(backend) or OLLAMA_MODEL
         self._system_prompt = system_prompt or SYSTEM_PROMPTS_BY_RULE_TYPE[rule_type]
         self._user_prompt   = user_prompt   or USER_PROMPT_TEMPLATES_BY_RULE_TYPE[rule_type]
 
     def extract(self, skeleton_html: str, domain: str = "unknown", annotated: bool = True) -> ExtractResult:
-        """Skeleton HTML'den kural (CSS selector / XPath / Regex) çıkar.
-        annotated=False: girdi iskelet değil sayfanın HTML'idir; *annotation* temizliği yapılmaz."""
-        # *annotation* token'larını class attribute'larından temizle
-        # Örnek: class="text-[19px] *Lora-Regular* *[30px]*" → class="text-[19px]"
+        """Extract rules (CSS selector / XPath / Regex) from the skeleton HTML.
+        annotated=False: the input is the page's HTML, not a skeleton; no *annotation* cleanup is done."""
+        # remove *annotation* tokens from class attributes
+        # Example: class="text-[19px] *Lora-Regular* *[30px]*" → class="text-[19px]"
         import re as _re
         clean_skeleton = _re.sub(r'\s*\*[^*]+\*', '', skeleton_html) if annotated else skeleton_html
-        self._domain   = domain             # replay backend yanıtı alan adına göre seçer
+        self._domain   = domain             # the replay backend picks the response by domain
         self._classes  = _class_names(clean_skeleton)
 
         prompt     = self._user_prompt.format(
@@ -460,15 +460,15 @@ class LLMExtractor:
         )
         t0                            = time.perf_counter()
         raw, error, ptok, gtok        = self._call_llm(prompt)
-        elapsed_ms                    = (time.perf_counter() - t0 - self._waited) * 1000   # 429/503 beklemesi hariç
+        elapsed_ms                    = (time.perf_counter() - t0 - self._waited) * 1000   # excluding the 429/503 wait
 
         selectors, success, parse_error = self._parse_response(raw)
         if parse_error:
-            error = error or parse_error     # yanıt boşsa çağrı hatası (zaman aşımı vb.) korunur
+            error = error or parse_error     # if the response is empty, the call error (timeout etc.) is kept
         if not success and self._finish in OUTPUT_LIMIT_REASONS:
             error += f" — output limit reached ({gtok} tokens, finish_reason {self._finish}): raise max_tokens"
 
-        # CSS'e özel onarımlar (isteğe bağlı) — XPath/Regex'te selector söz dizimi farklı olduğundan uygulanmaz
+        # CSS-specific repairs (optional) — not applied to XPath/Regex, whose selector syntax differs
         if self.rule_type == "css" and self.repair_css and "body" in self.fields:
             selectors["body"] = self._fix_body_from_skeleton(
                 selectors.get("body"), skeleton_html
@@ -492,12 +492,12 @@ class LLMExtractor:
             retries        = self._retries,
         )
 
-    # ── LLM çağrıları ─────────────────────────────────────────────────────
+    # ── LLM calls ─────────────────────────────────────────────────────
     def _call_llm(self, prompt: str) -> tuple[str, str, int, int]:
-        """(text, error, prompt_tokens, gen_tokens) döndürür.
-        Çağrı biçimi backend'in API tipine göre seçilir (llm_models.json); URL ve üretim
-        parametreleri çağrı anında okunur — ayar sayfasındaki değişiklik hemen geçerlidir.
-        Sağlayıcının durma nedeni self._finish'e yazılır."""
+        """Returns (text, error, prompt_tokens, gen_tokens).
+        The call format is chosen by the backend's API type (llm_models.json); the URL and generation
+        parameters are read at call time — a change on the settings page takes effect immediately.
+        The provider's stop reason is written to self._finish."""
         self._finish = ""
         self._retries, self._waited = 0, 0.0
         cfg = BACKENDS.get(self.backend)
@@ -507,7 +507,7 @@ class LLMExtractor:
             cfg = {**(cfg or {}), "api": snap.get("api") or (cfg or {}).get("api"), "url": snap["url"],
                    "params": dict(snap.get("params") or {}), "model_params": {}}
         if not cfg:
-            return "", f"Bilinmeyen backend: {self.backend}", 0, 0
+            return "", f"Unknown backend: {self.backend}", 0, 0
         api = cfg.get("api") or {"ollama": "ollama", "claude": "anthropic", "gemini": "gemini"}.get(self.backend, "openai")
         key = ""
         if cfg.get("env_key"):
@@ -520,7 +520,7 @@ class LLMExtractor:
                     "replay": self._call_replay}.get(api)
             if not call:
                 return "", f"Unknown API type: {api}", 0, 0
-            # backend varsayılanları + bu modele özel ayarlar (llm_models.json → model_params)
+            # backend defaults + settings specific to this model (llm_models.json → model_params)
             params = {**(cfg.get("params") or {}), **((cfg.get("model_params") or {}).get(self.model) or {})}
             return call(prompt, cfg, key, params)
         except requests.Timeout:
@@ -531,21 +531,21 @@ class LLMExtractor:
             return "", str(e), 0, 0
 
     def _call_replay(self, prompt, cfg, key, p) -> tuple[str, str, int, int]:
-        """Kayıtlı yanıtları geri oynatır (LLM gerekmez).
-        Dosya: {model: {domain: [{match?: metin, rules: {css|xpath|regex: {alan: kural}}}]}}. Bir sitede birden fazla
-        kayıt varsa "match" metni prompt'ta (iskelette) geçenler arasından, alanları bu çağrının alanlarıyla en çok
-        örtüşen kayıt seçilir."""
+        """Replays recorded responses (no LLM needed).
+        File: {model: {domain: [{match?: text, rules: {css|xpath|regex: {field: rule}}}]}}. If a site has more than one
+        record, among those whose "match" text occurs in the prompt (the skeleton), the record whose fields overlap most
+        with this call's fields is chosen."""
         from webrulebench.paths import DATA_DIR
         path = DATA_DIR / (cfg.get("url") or "llm_replay.json")
         data = json.loads(path.read_text(encoding="utf-8"))
         if self.model not in data:
             return "", f"No recorded responses for model {self.model} in {path.name}", 0, 0
-        if not getattr(self, "_domain", ""):          # bağlantı testi (alan adı yok): dosya ve model mevcut
+        if not getattr(self, "_domain", ""):          # connection test (no domain): file and model exist
             return "OK", "", 0, 1
         entries = data[self.model].get(self._domain, [])
         best, overlap = None, -1
-        matched = [e for e in entries if e.get("match") and e["match"] in prompt]   # ayırt edici metni iskelette geçen kayıt
-        for e in matched or [e for e in entries if not e.get("match")]:              # öncelikli; yoksa koşulsuz kayıtlar
+        matched = [e for e in entries if e.get("match") and e["match"] in prompt]   # record whose distinguishing text occurs in the skeleton
+        for e in matched or [e for e in entries if not e.get("match")]:              # preferred; otherwise unconditional records
             rules = (e.get("rules") or {}).get(self.rule_type) or {}
             o = len(set(rules) & set(self.fields))
             if o > overlap:
@@ -556,11 +556,11 @@ class LLMExtractor:
         return text, "", len(self._system_prompt + prompt) // 4, len(text) // 4
 
     def _post(self, url: str, **kw):
-        """POST; HTTP hatasında sağlayıcının açıklamasını da içeren istisna.
-        self.timeout bir denemenin toplam süresidir (_attempt): yanıt başlıkları hiç gelmese de aşılınca deneme
-        bırakılır.
-        429 (hız/kota sınırı) ve 503 (sunucu dolu) geçicidir: sağlayıcının söylediği kadar beklenip en fazla
-        MAX_RETRIES kez yeniden denenir. Deneme sayısı self._retries'e, bekleme süresi self._waited'a yazılır."""
+        """POST; on an HTTP error, an exception that also contains the provider's explanation.
+        self.timeout is the total time of one attempt (_attempt): once exceeded, the attempt is abandoned even if
+        no response headers ever arrive.
+        429 (rate/quota limit) and 503 (server busy) are transient: wait as long as the provider says and retry at
+        most MAX_RETRIES times. The retry count is written to self._retries, the wait time to self._waited."""
         for attempt in range(MAX_RETRIES + 1):
             status, headers, body = self._attempt(url, **kw)
             if status in RETRY_STATUSES and attempt < MAX_RETRIES:
@@ -575,11 +575,11 @@ class LLMExtractor:
             return json.loads(body)
 
     def _attempt(self, url: str, **kw) -> tuple[int, dict, str]:
-        """Tek POST denemesi, toplam süresi self.timeout: (durum, başlıklar, gövde).
-        requests'in timeout'u yalnızca iki okuma arasındaki beklemeyi sınırlar; bağlantıyı ara ara gelen baytlarla
-        canlı tutan bir sunucu onu hiç doldurmaz. Gövde bu yüzden parça parça okunur, süre aşılınca bağlantı
-        kapatılır. Başlıklar gelmeden takılan bir istek (ör. bilgisayar uykudan dönünce) bu döngüye hiç ulaşmaz:
-        istek ayrı bir thread'de yapılır ve süre dolunca beklenmeden Timeout verilir."""
+        """A single POST attempt with total time self.timeout: (status, headers, body).
+        The requests timeout only limits the wait between two reads; a server that keeps the connection alive with
+        bytes arriving now and then never reaches it. So the body is read piece by piece and the connection is closed
+        once the time is exceeded. A request that hangs before the headers arrive (e.g. after the computer wakes from
+        sleep) never reaches this loop: the request runs in a separate thread and Timeout is raised without waiting."""
         deadline = time.monotonic() + self.timeout
         out = {}
 
@@ -587,16 +587,16 @@ class LLMExtractor:
             try:
                 with requests.post(url, timeout=self.timeout, stream=True, **kw) as resp:
                     chunks = []
-                    for chunk in resp.iter_content(chunk_size=1):   # büyük parça, dolana kadar bekler
+                    for chunk in resp.iter_content(chunk_size=1):   # large chunk, waits until full
                         chunks.append(chunk)
                         if time.monotonic() > deadline:
                             raise requests.Timeout()
                     body = b"".join(chunks).decode(resp.encoding or "utf-8", errors="replace")
                 out["result"] = resp.status_code, resp.headers, body
-            except BaseException as e:                          # çağıran thread'de yeniden fırlatılır
+            except BaseException as e:                          # re-raised in the calling thread
                 out["error"] = e
 
-        t = threading.Thread(target=run, daemon=True)           # süre dolunca bırakılır, soket zaman aşımıyla biter
+        t = threading.Thread(target=run, daemon=True)           # abandoned when time runs out, the socket ends with its timeout
         t.start()
         t.join(self.timeout)
         if t.is_alive() or time.monotonic() > deadline:
@@ -614,7 +614,7 @@ class LLMExtractor:
             if p.get(k) is not None:
                 opts[k] = p[k]
         body = {"model": self.model, "messages": self._messages(prompt), "stream": False, "options": opts}
-        if p.get("think") is not None:      # düşünen modeller (ör. gemma4): false → doğrudan yanıt
+        if p.get("think") is not None:      # thinking models (e.g. gemma4): false → direct answer
             body["think"] = bool(p["think"])
         data = self._post(cfg["url"].replace("/generate", "/chat"), json=body)
         msg = data.get("message") or {}
@@ -662,7 +662,7 @@ class LLMExtractor:
         for k in ("temperature", "top_p", "seed"):
             if p.get(k) is not None:
                 payload[k] = p[k]
-        if p.get("think") is not None:      # düşünen modeller (ör. EVREN): false → doğrudan yanıt; standart dışı alan, yalnızca verilince
+        if p.get("think") is not None:      # thinking models (e.g. EVREN): false → direct answer; non-standard field, only when given
             payload["thinking"] = bool(p["think"])
         headers = {"Content-Type": "application/json"}
         if key:
@@ -703,31 +703,31 @@ class LLMExtractor:
 
     def _fix_selector(self, selector: str, field: str = None) -> str:
         """
-        LLM çıktısındaki yaygın selector hatalarını düzelt.
+        Fix common selector errors in LLM output.
 
-        1. Eksik nokta: "div.wysiwyg wysiwyg--all-content p"
+        1. Missing dot: "div.wysiwyg wysiwyg--all-content p"
                       → "div.wysiwyg.wysiwyg--all-content p"
-           Kural: ardışık iki token, ikincisi harf ile başlıyor ve bilinen HTML
-                  tag'i değil → önceki token'a nokta ile birleştir
+           Rule: two consecutive tokens, the second starts with a letter and is not a known HTML
+                 tag → join it to the previous token with a dot
 
-        2. body field için main/article#id varsa tercih et
-           Kural: selector içinde main#... veya article#... geçiyorsa
-                  sadece onu kullan
+        2. For the body field, prefer main/article#id if present
+           Rule: if main#... or article#... occurs in the selector,
+                 use only that
         """
         if not selector or not isinstance(selector, str):
             return selector
 
         selector = selector.strip()
 
-        # Fix 0: virgüllü selector — her parçayı ayrı fix et (tırnak ve parantez içindeki virgüller hariç)
+        # Fix 0: comma-separated selector — fix each part separately (except commas inside quotes and parentheses)
         parts = _split_top(selector, ',')
         if len(parts) > 1:
             parts = [self._fix_selector(p.strip(), field) for p in parts]
             return ', '.join(p for p in parts if p)
 
         # Fix 4: "token.tagname" → "token tagname"
-        # Örnek: "div.c-detail__category.a" → "div.c-detail__category a"
-        # İskelette bu adla bir class varsa (ör. "div.meta", "h1.title") class olarak kalır
+        # Example: "div.c-detail__category.a" → "div.c-detail__category a"
+        # If the skeleton has a class with this name (e.g. "div.meta", "h1.title"), it stays a class
         fixed_tokens = []
         for tok in _split_top(selector):
             dot_idx = tok.rfind('.')
@@ -740,18 +740,18 @@ class LLMExtractor:
             fixed_tokens.append(tok)
         selector = ' '.join(fixed_tokens)
 
-        # Fix 1: eksik nokta
+        # Fix 1: missing dot
         tokens = _split_top(selector)
         fixed  = []
         i = 0
         while i < len(tokens):
             token = tokens[i]
-            # Sonraki token var mı ve tag adı değil mi ve . veya # ile başlamıyor mu?
+            # Is there a next token, is it not a tag name, and does it not start with . or #?
             if (i + 1 < len(tokens)
                     and not tokens[i+1][0] in '.#:>[+~'
                     and tokens[i+1].split('.')[0].split('#')[0].split('[')[0].split(':')[0] not in HTML_TAGS_SET
                     and tokens[i+1][0].isalpha()):
-                # Birleştir — önceki token'a nokta ekle
+                # Join — add a dot to the previous token
                 token = token + '.' + tokens[i+1]
                 i += 2
             else:
@@ -759,23 +759,23 @@ class LLMExtractor:
             fixed.append(token)
         selector = ' '.join(fixed)
 
-        # Fix 2: body field — main#id veya article#id varsa sadece onu al
+        # Fix 2: body field — if main#id or article#id is present, take only that
         if field == 'body':
             parts = _split_top(selector)
             for part in parts:
                 if re.match(r'^(main|article)#\S+', part):
                     return part
 
-        # Fix 3: "div.X__Y leaf" → "leaf.X__Y" — BEM element class, tag yanlış tahmin
-        # Örnek: "div.c-detail__date span" → "span.c-detail__date"
-        # Sadece __ içeren (BEM element) class'larda uygula
+        # Fix 3: "div.X__Y leaf" → "leaf.X__Y" — BEM element class, wrong tag guess
+        # Example: "div.c-detail__date span" → "span.c-detail__date"
+        # Apply only to classes containing __ (BEM element)
         import re as _re3
         parts = _split_top(selector)
         if len(parts) == 2:
             head, leaf_tag = parts
             head_m = _re3.match("^(\\w+)\\.(.+)$", head)
-            # Sadece inline/leaf tag'ler için uygula (span, time, em, strong)
-            # p, a, div gibi block/structural tag'lerde uygulama
+            # Apply only to inline/leaf tags (span, time, em, strong)
+            # do not apply to block/structural tags such as p, a, div
             SWAP_LEAF_TAGS = {"span", "time", "em", "strong", "small", "cite"}
             BEM_PREFIXES = {"c", "l", "u", "o", "t", "is", "has", "js"}
             cls = head_m.group(2) if head_m else ""
@@ -806,7 +806,7 @@ class LLMExtractor:
 
     def _fix_body_from_skeleton(self, selector, skeleton_html):
         """
-        Body selector zayıfsa (2+ token veya boş) skeleton'dan main#id / article#id bul.
+        If the body selector is weak (2+ tokens or empty), find main#id / article#id in the skeleton.
         """
         if not selector:
             selector = ""
@@ -814,7 +814,7 @@ class LLMExtractor:
         if not skeleton_html:
             return selector
 
-        # Sadece boş veya çok genel (class/id yok) selector'ı override et
+        # Override only an empty or very generic (no class/id) selector
         tokens = (selector or "").split()
         has_specific = any("." in t or "#" in t or "[" in t for t in tokens)
         is_weak = (not selector) or (not has_specific)
@@ -842,14 +842,14 @@ class LLMExtractor:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # doğrudan çalıştırma: src/
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))   # direct run: src/
     from webrulebench.pipeline.html_cleaner import HTMLCleaner, CleanerConfig, STRATEGIES
     from webrulebench.pipeline.skeleton import Skeleton
 
     parser = argparse.ArgumentParser(description="LLM Extractor — K4")
     parser.add_argument("html_file", help="Raw HTML file")
     parser.add_argument("--backend",  default="ollama",
-                        choices=list(BACKENDS))          # llm_models.json'daki backend'ler
+                        choices=list(BACKENDS))          # backends in llm_models.json
     parser.add_argument("--model",    default=None)
     parser.add_argument("--strategy", default="whitelist", choices=STRATEGIES)
     parser.add_argument("--rule-type", default="css", choices=["css", "xpath", "regex"],
@@ -865,7 +865,7 @@ if __name__ == "__main__":
     cleaner = HTMLCleaner(cfg)
     cleaned = cleaner.clean(html, strategy=args.strategy)
 
-    sk   = Skeleton(strategy="enriched")             # deneylerle aynı iskelet biçimi
+    sk   = Skeleton(strategy="enriched")             # same skeleton format as the experiments
     skel = sk.extract(cleaned.cleaned_html)
 
     if args.show_skeleton:
@@ -877,8 +877,8 @@ if __name__ == "__main__":
     print("  LLM Extractor — K4")
     print(f"  Domain   : {domain}")
     print(f"  Backend  : {args.backend} / {args.model or '(default)'}")
-    print(f"  Strateji : {args.strategy}")
-    print(f"  Kural tipi: {args.rule_type}")
+    print(f"  Strategy : {args.strategy}")
+    print(f"  Rule type: {args.rule_type}")
     print(f"  Skeleton : {skel.output_chars:,} chars / {skel.node_count} node")
     print("=" * 60)
     print("  Sending to the LLM...")
@@ -890,9 +890,9 @@ if __name__ == "__main__":
     print(f"  Time     : {result.elapsed_ms:.0f} ms")
     print(f"  Success  : {'✅' if result.success else '❌'}")
     if result.error:
-        print(f"  Hata     : {result.error}")
+        print(f"  Error    : {result.error}")
     print()
-    print(f"  Kurallar ({args.rule_type}):")
+    print(f"  Rules ({args.rule_type}):")
     print("  " + "-" * 40)
     for field, selector in result.selectors.items():
         status = "✅" if selector else "❌"

@@ -1,21 +1,21 @@
 """
 prompt_builder.py
 =================
-Şablon bazlı otomatik prompt üretimi.
+Automatic template-based prompt generation.
 
-Bir şablonun (layout_templates.json) adı, açıklaması ve alanlarından —
-ad, etiket, açıklama, zorunluluk — ve seçilen kural dilinden (css / xpath /
-regex) LLM'e gönderilecek sistem + kullanıcı prompt'unu üretir.
+Builds the system + user prompt sent to the LLM from a template's
+(layout_templates.json) name, description and fields — name, label,
+description, required flag — and the chosen rule language (css / xpath / regex).
 
-Otomatik prompt bilerek sadedir: yalnızca görevi, bulunacak alanları ve
-çıktı biçimini söyler. Seçici kuralları, anti-pattern'ler gibi ayrıntılar
-kullanıcıların template_prompts.json'a eklediği deneme prompt'larında
-denenir (webrulebench/webapp/routes/templates.py).
+The automatic prompt is deliberately plain: it states only the task, the fields
+to find and the output format. Details such as selector rules and anti-patterns
+are tried in the experimental prompts users add to template_prompts.json
+(webrulebench/webapp/routes/templates.py).
 
-Kullanım:
+Usage:
     from webrulebench.pipeline.prompt_builder import build_prompt
     p = build_prompt(template, "css")   # -> {"system": ..., "user": ...}
-    p = build_prompt(template, "css", skeleton=False)   # iskelet yerine sayfanın HTML'i verilir
+    p = build_prompt(template, "css", skeleton=False)   # the page's HTML is given instead of the skeleton
 """
 
 import json
@@ -33,7 +33,7 @@ _TASK = {
              "exactly one capturing group — the extracted value.",
 }
 
-# skeleton=False: regex görevinde iskelet yerine gösterilen HTML'e atıf
+# skeleton=False: the regex task refers to the HTML shown instead of the skeleton
 _TASK_HTML = {**_TASK,
               "regex": "write one Python regular expression for each field below. The regex is matched against "
                        "the page's raw HTML text and must contain exactly one capturing group — the extracted value."}

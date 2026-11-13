@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/auth.py — Giriş, çıkış, oturum bilgisi.
+webrulebench/webapp/routes/auth.py — Login, logout, session info.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("auth", __name__)
 
@@ -19,8 +19,8 @@ def login():
         info = users_store.verify(username, token)
         if not info:
             import time
-            time.sleep(0.8)          # kaba kuvvet denemelerini yavaşlat
-            # kullanıcı adının var olup olmadığını ya da pasif olduğunu ayrıca söyleme
+            time.sleep(0.8)          # slow down brute-force attempts
+            # do not reveal whether the username exists or is inactive
             return jsonify({"success": False, "error": _t("Wrong username or token (or the account is inactive)")})
         session["username"] = username
         session["tv"] = int(info.get("token_version", 0))
@@ -40,7 +40,7 @@ def api_me():
     u = current_user()
     if not u:
         return jsonify({"logged_in": False})
-    # yalnızca güvenli alanlar (token özeti dışarı verilmez)
+    # only safe fields (the token hash is not given out)
     return jsonify({"logged_in": True, **users_store.public(u, load_users().get(u, {}))})
 
 

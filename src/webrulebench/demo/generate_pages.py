@@ -1,19 +1,19 @@
 """
 webrulebench/demo/generate_pages.py
 ======================
-Hakem demosu için sentetik haber sayfaları (telifsiz, belirlenimci).
+Synthetic news pages for the reviewer demo (copyright-free, deterministic).
 
-Üç kurgusal site, gerçek sitelerde sık görülen üç farklı yapıyı taklit eder:
+Three fictional sites imitate three different structures common on real sites:
 
-  harborherald.example        İngilizce · anlamlı etiketler, WordPress benzeri sınıflar
+  harborherald.example        English · meaningful tags, WordPress-like classes
                               (article + listing layout)
-  pulsedaily.example          İngilizce · CSS-in-JS hash sınıfları, data-testid öznitelikleri
-  noticiasdelnorte.example    İspanyolca · iç içe div'ler, gövdede reklam bloğu, iki article
-                              layout'u (haber + galeri)
+  pulsedaily.example          English · CSS-in-JS hash classes, data-testid attributes
+  noticiasdelnorte.example    Spanish · nested divs, ad block inside the body, two article
+                              layouts (news + gallery)
 
-Her sayfada gürültü vardır (menü, çerez bandı, "en çok okunanlar", reklam, script),
-article sayfalarında JSON-LD bulunur (regex kuralları için). Görseller veri URI'li küçük
-SVG'lerdir (dış istek yok). Aynı seed her zaman aynı sayfaları üretir.
+Every page has noise (menu, cookie banner, "most read", ads, script);
+article pages contain JSON-LD (for regex rules). Images are small data-URI
+SVGs (no external requests). The same seed always produces the same pages.
 
     python webrulebench/demo/generate_pages.py OUT_DIR      # OUT_DIR/<domain>/{homepage,listing_NNN,article_NNN}.html
 """
@@ -86,7 +86,7 @@ NOISE_HEAD = """<script>window.dataLayer=[];function track(){}</script>
 <style>.cookie{position:fixed;bottom:0}</style>"""
 
 
-# ── harborherald.example: anlamlı etiketler ─────────────────────────
+# ── harborherald.example: meaningful tags ───────────────────────────
 def harbor_article(a, idx, domain):
     imgs = "".join(f'<figure class="wp-block-image"><img src="{_img(f"Harbor {idx}-{k}")}" alt="photo {k}" width="640" height="360">'
                    f'<figcaption>{html.escape(a["caption"])}</figcaption></figure>' for k in range(1, a["images"] + 1))
@@ -148,7 +148,7 @@ def pulse_article(a, idx, domain):
 </main><footer class="css-2l4k6j"><span>© Pulse Daily</span></footer></div></div></body></html>"""
 
 
-# ── noticiasdelnorte.example: iç içe div'ler, iki layout ────────────
+# ── noticiasdelnorte.example: nested divs, two layouts ──────────────
 def norte_article(a, idx, domain):
     imgs = "".join(f'<img src="{_img(f"Norte {idx}-{k}")}" alt="">' for k in range(1, a["images"] + 1))
     paras = [f"<p>{html.escape(p)}</p>" for p in a["paras"]]
@@ -191,7 +191,7 @@ SITES = {
 
 
 def generate(out_dir: Path) -> dict:
-    """Sayfaları yazar; {domain: {file: page_kind}} döndürür (page_kind: article | listing | gallery | homepage)."""
+    """Writes the pages; returns {domain: {file: page_kind}} (page_kind: article | listing | gallery | homepage)."""
     rng = random.Random(SEED)
     manifest = {}
     for domain, spec in SITES.items():

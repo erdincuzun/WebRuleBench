@@ -50,8 +50,8 @@
 </div>
 <div class="toast" id="hubToast"></div>
 
-{# Her sayfa {% block help %} ile kendi yardım içeriğini verir; "?" butonu bunu açar.
-   Yardım metni iki dillidir: {% if lang == 'tr' %} Türkçe {% else %} İngilizce {% endif %} #}
+{# Each page provides its own help content via {% block help %}; the "?" button opens it.
+   Help text is bilingual: {% if lang == 'tr' %} Turkish {% else %} English {% endif %} #}
 {% if self.help() | trim %}
 <div class="modal-overlay" id="helpModal" onclick="if(event.target===this) Hub.closeHelp()">
   <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">

@@ -1,101 +1,101 @@
-# WebRuleBench — Web Uygulaması Kullanım Kılavuzu
+# WebRuleBench — Web Application User Guide
 
-Ground truth toplama, onaylama ve LLM değerlendirme için Flask web uygulaması. Her bölümün **?** yardımı formülleri ve kuralları açıklar.
+Flask web application for collecting and approving ground truth and for evaluating LLMs. The **?** help of each section explains its formulas and rules.
 
 ---
 
-## Kurulum ve çalıştırma
+## Installation and running
 
-Gereksinimler: Python 3.10+.
+Requirements: Python 3.10+.
 
 ```bash
-# proje kökünde
+# in the project root
 pip install -r requirements.txt
 
-# ilk admin hesabı (token yalnızca bir kez ekrana yazılır)
-webrulebench users create-admin <kullanıcı>
+# first admin account (the token is printed only once)
+webrulebench users create-admin <user>
 
-# çalıştır
-./run.sh                      # ya da: webrulebench serve
+# run
+./run.sh                      # or: webrulebench serve
 ```
 
-Tarayıcıda aç: **http://127.0.0.1:5001** — kullanıcı adı ve token ile giriş yapılır; giriş bilgisi tarayıcıda hatırlanır.
-Arayüz varsayılan olarak İngilizcedir; üst menüdeki **EN / TR** düğmesiyle Türkçeye geçilir (seçim hatırlanır).
+Open in the browser: **http://127.0.0.1:5001** — log in with a user name and token; the login is remembered in the browser.
+The interface is in English by default; the **EN / TR** button in the top menu switches to Turkish (the choice is remembered).
 
-Diğer kullanıcılar uygulamadaki **👥 Kullanıcılar** sayfasından (admin) ya da komut satırından eklenir:
+Other users are added on the **👥 Users** page of the application (admin) or from the command line:
 
 ```bash
-webrulebench users create <kullanıcı> [--role user|admin]
-webrulebench users reset-token <kullanıcı>     # token unutulduysa
+webrulebench users create <user> [--role user|admin]
+webrulebench users reset-token <user>     # if the token is forgotten
 webrulebench users list
 ```
 
 ---
 
-## İş akışı — altı bölüm
+## Workflow — six sections
 
-Ana sayfa bölümlerin kartlarını gösterir; üst menü her sayfada ortaktır. Her sayfanın başlığındaki **?** o bölümün yardımını açar. 🔒 işaretli işlemler yalnızca admin içindir.
+The home page shows a card for each section; the top menu is shared by every page. The **?** in the header of each page opens the help of that section. Actions marked 🔒 are for admins only.
 
-### 1. Veri Toplama
-- Site listesi; ülkeye göre filtre ("⚠ Bilgisi eksik" ülke bilgisi olmayan siteleri gösterir).
-- 🔒 Site ekle / düzenle: ad, URL, ülke (listeden ya da yeni ülke — ISO kodu, kıta, dil), not.
-- 🔒 Sayfa ekle, yeniden indir, sil; **⚡ Toplu Sayfa Ekle**: bir listing sayfasından CSS selector ile linkleri çıkarıp seçilenleri indirir.
-- Sayfa türleri dosya adından anlaşılır: `homepage.html`, `listing_NNN.html`, `article_NNN.html`.
+### 1. Data Collection
+- Site list; filter by country ("⚠ Missing info" shows the sites without country information).
+- 🔒 Add / edit a site: name, URL, country (from the list or a new country — ISO code, continent, language), note.
+- 🔒 Add, re-download and delete pages; **⚡ Bulk add pages**: extracts the links of a listing page with a CSS selector and downloads the selected ones.
+- Page types are given by the file name: `homepage.html`, `listing_NNN.html`, `article_NNN.html`.
 
-### 2. Şablon & Prompt
-- Şablonlar (`article`, `listing`, `product`): alanlar, tip (`text`, `date`, `image`, `url`, `list`, `price`), metrik (`rouge`, `jaccard`, `exact_match`), zorunluluk, birleştirme (`merge`). 🔒 Düzenleme.
-- **Prompt'lar**: her şablon ve kural dili (CSS / XPath / Regex) için otomatik prompt (değiştirilemez) ve kullanıcıların eklediği varyantlar. Varyantı herkes ekler; yalnızca sahibi ya da admin düzenler. Kullanıcı prompt'u `{skeleton}` içermelidir.
+### 2. Templates & Prompts
+- Templates (`article`, `listing`, `product`): fields, type (`text`, `date`, `image`, `url`, `list`, `price`), metric (`rouge`, `jaccard`, `exact_match`), required flag, merging (`merge`). 🔒 Editing.
+- **Prompts**: for each template and rule language (CSS / XPath / Regex), an automatic prompt (cannot be changed) and the variants added by users. Anyone can add a variant; only its owner or an admin can edit it. A user prompt must contain `{skeleton}`.
 
 ### 3. Annotation
-Siteyi seç → çalışma ekranı açılır (**← Siteler** ile geri dönülür).
+Select a site → the work screen opens (go back with **← Site list**).
 
-1. Üstten bir sayfa seç (sayfa önizlemede açılır).
-2. Sayfayı bir **layout**'a ata. Layout, aynı HTML yapısındaki sayfa grubudur (ör. standart haber, köşe yazısı, galeri); bir kural seti bütün sayfalarına uygulanır. Uygun layout yoksa 🔒 admin şablondan yeni layout oluşturur. Bozuk / içeriksiz sayfalar için **Skip this page**.
-3. Layout'un her alanı için kuralını yaz — üç sekme:
-   - **CSS**: elle yaz ya da sayfada tıklayarak seç. **Test** ile sonucu gör.
-   - **XPath**: CSS'ten otomatik üretilir (sayfada CSS ile aynı metni veren aday önerilir); elle düzenlenebilir.
-   - **Regex**: uzman girdisi; istenirse CSS'ten üretilir (REGEXN — layout'un birkaç sayfasında doğrulanır).
-4. **💾 Kaydet** — kurallar yalnızca senin annotation dosyana (`annotations/<site>/<kullanıcı>.json`) yazılır.
-5. **⚡ Toplu Sayfa Atama**: layout'un kurallarını atanabilecek bütün sayfalarda test et, uygun olanları **✓ Seçilenleri Ata** ile topluca ata.
+1. Select a page at the top (the page opens in the preview).
+2. Assign the page to a **layout**. A layout is a group of pages with the same HTML structure (e.g. standard news, column, gallery); one rule set is applied to all of its pages. If no suitable layout exists, 🔒 an admin creates a new layout from a template. Use **Skip this page** for broken / empty pages.
+3. Write the rule for each field of the layout — three tabs:
+   - **CSS**: type it or select it by clicking on the page. See the result with **Test**.
+   - **XPath**: generated automatically from the CSS (a candidate that gives the same text as the CSS on the page is suggested); can be edited by hand.
+   - **Regex**: expert input; can be generated from the CSS on request (REGEXN — checked on several pages of the layout).
+4. **💾 Save** — the rules are written only to your own annotation file (`annotations/<site>/<user>.json`).
+5. **⚡ Bulk page assignment**: test the rules of the layout on all pages that can be assigned and assign the suitable ones at once with **✓ Assign selected**.
 
-CSS örnekleri:
+CSS examples:
 
 ```css
-h1.article-title           → class ile
-h1#main-title              → id ile
-div.content p              → iç içe eleman
-div[data-type="article"]   → öznitelik değeri
-div[class*="content"]      → class içinde "content" geçenler
-h2 a, h3 a                 → alternatifler (virgülle)
+h1.article-title           → by class
+h1#main-title              → by id
+div.content p              → nested element
+div[data-type="article"]   → attribute value
+div[class*="content"]      → class contains "content"
+h2 a, h3 a                 → alternatives (comma-separated)
 ```
 
-İpuçları: benzer yapıdaki sayfaları aynı layout'a ata; listing sayfaları için ayrı layout kullan; makaleye özgü numara içeren id/class'lardan kaçın (diğer sayfalarda tutmaz).
+Tips: assign pages with a similar structure to the same layout; use a separate layout for listing pages; avoid ids/classes that contain an article-specific number (they do not hold on other pages).
 
-### 4. Ground Truth Onayı
-Site → layout → derleme sayfası. Her annotatörün kuralları yan yana; kural dilleri ayrı sekmelerde.
-- **Katman 1 (kural uyumu)**: alan bazında aynı (normalize) kuralı yazan annotatör çiftlerinin oranı ve en sık yazılan kural önerisi (✓ ≥ 0.6, ~ 0.4–0.6, ! < 0.4). Fleiss κ ve Krippendorff α: **Rapor → Annotation & GT**.
-- **Katman 2 (K2)**: örnek sayfada her kuralın çıkardığı metnin EM / Jaccard / ROUGE skorları; en yüksek ROUGE-L önerisi.
-- 🔒 Admin hangi kural dillerinin GT'ye dahil olacağını seçer, önerileri uygular ya da elle değiştirir ve **💾 GT Kaydet** ile `ground_truth/approved/<site>.json`'a yazar. Diğer kullanıcılar sayfayı salt-okunur görür.
-- Liste sayfalarında durum: **onaylı**, **güncelleme var** (onaydan sonra annotation değişmiş), **GT yok**.
+### 4. Ground Truth Approval
+Site → layout → compile page. The rules of all annotators side by side; rule languages in separate tabs.
+- **Layer 1 (rule agreement)**: per field, the share of annotator pairs that wrote the same (normalized) rule, and the most frequently written rule as the suggestion (✓ ≥ 0.6, ~ 0.4–0.6, ! < 0.4). Fleiss κ and Krippendorff α: **Reports → Annotation & GT**.
+- **Layer 2 (K2)**: EM / Jaccard / ROUGE scores of the text extracted by each rule on the sample page; the highest ROUGE-L is suggested.
+- 🔒 The admin selects which rule languages are included in the GT, applies the suggestions or changes them by hand, and writes them to `ground_truth/approved/<site>.json` with **💾 Save GT**. Other users see the page read-only.
+- Status on the list pages: **approved**, **has updates** (annotations changed after approval), **no GT**.
 
-### 5. LLM Değerlendirme
-- **⚡ Hızlı test**: tek layout, kaydedilmez — prompt denemek için.
-- **Yeni deney / ⚖ Karşılaştırmalı deney**: model(ler), kural dil(ler)i (CSS, XPath, Regex, LLM CSS → REGEXN), temizleme stratejisi, şablon başına prompt, örnek sayfa seçimi ve layout kapsamı. Layout başına tek LLM çağrısı yapılır; kurallar layout'un bütün GT sayfalarında skorlanır (örnek sayfa ve diğer sayfalar ayrı).
-- Deney ayrıntısı, grup sayfası (sıralama, ısı haritası, layout bazında, **cross-check**) ve ikili karşılaştırma. Deney iptal edilebilir ve kaldığı yerden sürdürülebilir.
-- **⚙ LLM Modelleri**: backend'ler, Ollama'da yüklü modeller, model parametreleri, bağlantı testi. 🔒 Düzenleme; API anahtarı `data/.env`'e yazılır.
+### 5. LLM Evaluation
+- **⚡ Quick test**: a single layout, not saved — for trying out prompts.
+- **New experiment / ⚖ Comparative experiment**: model(s), rule language(s) (CSS, XPath, Regex, LLM CSS → REGEXN), cleaning strategy, prompt per template, sample page selection and layout scope. One LLM call is made per layout; the rules are scored on all GT pages of the layout (sample page and other pages separately).
+- Experiment details, group page (ranking, heat map, per layout, **cross-check**) and pairwise comparison. An experiment can be cancelled and resumed where it stopped.
+- **⚙ LLM Models**: backends, models installed in Ollama, model parameters, connection test. 🔒 Editing; the API key is written to `data/.env`.
 
-### 6. Rapor & Dışa Aktarma
-Sekmeler: 📦 Veri seti · ✍ Annotation & GT · 🤖 LLM sonuçları · ⬇ Dışa aktarma · 🧾 Denetim kaydı (🔒).
-- **Annotation & GT**: kullanıcı ilerlemesi, GT durumu, alan bazında Fleiss κ ve **▶ Hesapla** ile içerik düzeyinde uyum: her annotatörün kuralı ≥2 annotatörlü layout'ların bütün GT sayfalarında çalıştırılır; alan bazında Krippendorff α, annotatör çiftleri ve layout bazında uyum (sonuç dosyalar değişene kadar saklanır).
-- Her tablo **CSV / LaTeX / MD**, her grafik **PNG / CSV** olarak alınır.
-- Onaylı GT: JSONL, CSV, HuggingFace JSONL ve dataset card; deneyler için tekrarlanabilirlik manifesti.
+### 6. Reports & Export
+Tabs: 📦 Dataset · ✍ Annotation & GT · 🤖 LLM results · ⬇ Export · 🧾 Audit log (🔒).
+- **Annotation & GT**: user progress, GT status, per-field Fleiss κ, and content-level agreement with **▶ Compute**: each annotator's rule is run on all GT pages of the layouts with ≥2 annotators; per-field Krippendorff α, annotator pairs and per-layout agreement (the result is kept until the files change).
+- Every table can be exported as **CSV / LaTeX / MD**, every chart as **PNG / CSV**.
+- Approved GT: JSONL, CSV, HuggingFace JSONL and a dataset card; a reproducibility manifest for experiments.
 
 ---
 
-## Sorun giderme
+## Troubleshooting
 
-- **Port meşgul**: başka bir portla başlat: `WRB_PORT=5003 ./run.sh`.
-- **Sayfa önizlemede boş görünüyor**: bazı sayfalar iframe'de yüklenmez; dosyayı doğrudan aç: `data/dataset/raw/<site>/article_001.html`.
-- **Sayfa indirilemiyor**: JavaScript ile oluşan sayfalar için `playwright install chromium`.
-- **LLM bağlantı hatası**: ⚙ LLM Modelleri'nde **⚡ Test**; Ollama için `ollama serve` çalışıyor mu ve model yüklü mü (`ollama list`)?
-- **Admin token'ı unutuldu**: `webrulebench users reset-token <kullanıcı>`.
+- **Port in use**: start on another port: `WRB_PORT=5003 ./run.sh`.
+- **Page looks empty in the preview**: some pages do not load in an iframe; open the file directly: `data/dataset/raw/<site>/article_001.html`.
+- **Page cannot be downloaded**: for pages built with JavaScript, `playwright install chromium`.
+- **LLM connection error**: **⚡ Test** in ⚙ LLM Models; for Ollama, is `ollama serve` running and is the model installed (`ollama list`)?
+- **Admin token forgotten**: `webrulebench users reset-token <user>`.

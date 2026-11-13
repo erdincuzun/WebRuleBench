@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/reports.py — Rapor & Dışa Aktarma: raporlar, manifest, dataset card, denetim kaydı, JSONL/CSV/HF dışa aktarma.
+webrulebench/webapp/routes/reports.py — Report & Export: reports, manifest, dataset card, audit log, JSONL/CSV/HF export.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("reports", __name__)
 
@@ -17,7 +17,7 @@ def api_reports_dataset():
 
 @bp.route("/api/reports/quality")
 def api_reports_quality():
-    """Annotation ilerlemesi (kullanıcı × site) ve layout × kural dili GT durumu / κ."""
+    """Annotation progress (user × site) and GT status / κ per layout × rule language."""
     _, err = require_login()
     if err: return err
     meta = _site_meta_map()
@@ -54,20 +54,20 @@ def api_reports_quality():
                               for u, i in sorted(users.items())]})
 
 
-_agreement_cache: dict = {}   # kural dili → (dosya imzası, sonuç)
+_agreement_cache: dict = {}   # rule language → (file signature, result)
 
 
 def _agreement_signature() -> tuple:
-    """Annotation ve onaylı GT dosyalarının sayısı ve son değişiklik zamanı; değişince uyum yeniden hesaplanır."""
+    """Number and last modification time of the annotation and approved GT files; agreement is recomputed on change."""
     files = list(ANNOTATIONS_DIR.glob("*/*.json")) + list(APPROVED_DIR.glob("*.json"))
     return len(files), max((f.stat().st_mtime for f in files), default=0)
 
 
 @bp.route("/api/reports/agreement")
 def api_reports_agreement():
-    """Annotatör uyumu iki düzeyde: kural (Fleiss κ) ve içerik (Krippendorff α), ≥2 annotatörlü onaylı layout'lar,
-    seçili kural dili. Kurallar bütün GT sayfalarında çalıştırıldığından hesap uzun sürebilir; sonuç annotation ya da
-    GT dosyaları değişene kadar saklanır. ?cached=1 → yalnızca hazır sonucu döndür (yoksa {"pending": true})."""
+    """Annotator agreement at two levels: rule (Fleiss κ) and content (Krippendorff α), approved layouts with ≥2
+    annotators, selected rule language. The rules are run on all GT pages, so this can take long; the result is kept
+    until the annotation or GT files change. ?cached=1 → return only a ready result (otherwise {"pending": true})."""
     _, err = require_login()
     if err: return err
     lang = request.args.get("lang", "css")
@@ -99,7 +99,7 @@ def api_reports_llm():
 
 @bp.route("/api/reports/manifest")
 def api_reports_manifest():
-    """Tekrarlanabilirlik manifesti (JSON indirme). ?ids=a,b → yalnızca bu deneyler; boşsa tamamlananlar."""
+    """Reproducibility manifest (JSON download). ?ids=a,b → only these experiments; if empty, the completed ones."""
     _, err = require_login()
     if err: return err
     from webrulebench.evaluation import reports as R
@@ -117,7 +117,7 @@ def api_reports_manifest():
 
 @bp.route("/api/export/dataset-card")
 def api_export_dataset_card():
-    """HuggingFace dataset card (README.md): istatistikler, alanlar, biçim, atıf."""
+    """HuggingFace dataset card (README.md): statistics, fields, format, citation."""
     _, err = require_login()
     if err: return err
     ds = _dataset_report()
@@ -215,11 +215,11 @@ def api_reports_audit():
 @bp.route("/api/export/jsonl")
 def api_export_jsonl():
     """
-    Her onaylı domain için layout bazında JSONL export.
-    Satır formatı: {domain, layout_id, layout_name, page_type, template_id,
+    Per-layout JSONL export for each approved domain.
+    Row format:    {domain, layout_id, layout_name, page_type, template_id,
                     selectors: {field: selector}, metrics: {field: metric}, pages: [...]}
     """
-    # layout başına bir satır üret
+    # produce one row per layout
     by_layout: dict[str, dict] = {}
     for row in _build_export_rows():
         key = f"{row['domain']}|{row['layout_id']}"
@@ -264,15 +264,15 @@ def api_export_csv():
 @bp.route("/api/export/hf")
 def api_export_hf():
     """
-    HuggingFace datasets uyumlu JSONL:
-    Her satır bir (domain, page, field) üçlüsü — GT değeriyle birlikte.
-    HTML üzerinden extract ederek gerçek metin değerlerini döndürür.
+    HuggingFace datasets compatible JSONL:
+    Each row is a (domain, page, field) triple — together with the GT value.
+    Extracts from the HTML and returns the actual text values.
     """
     from flask import Response
     lines = []
     for domain_file in sorted(APPROVED_DIR.glob("*.json")):
         approved = json.loads(domain_file.read_text(encoding="utf-8"))
-        domain   = domain_file.stem      # dosya adı esastır
+        domain   = domain_file.stem      # the file name is authoritative
         layouts  = approved.get("layouts", {})
         pa       = approved.get("page_assignments", {})  # {filename: {layout_id, skipped}}
 

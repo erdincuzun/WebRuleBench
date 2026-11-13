@@ -1,6 +1,6 @@
 """
-webrulebench/demo/make_fixtures.py — test fixture'larını sentetik demo sayfalarından üretir
-(telifsiz; gerçek haber sitelerinin HTML'i depoda yeniden dağıtılmaz).
+webrulebench/demo/make_fixtures.py — generates the test fixtures from the synthetic demo pages
+(copyright-free; the HTML of real news sites is not redistributed in the repository).
 
     python -m webrulebench.demo.make_fixtures        # tests/fixtures/<domain>/{article_001.html, ground_truth.json}
 """

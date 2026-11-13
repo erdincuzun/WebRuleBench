@@ -1,25 +1,25 @@
 """
 llm_models.py
 =============
-LLM backend kaydı — URL, API tipi, modeller, anahtar değişkeni, üretim parametreleri.
+LLM backend registry — URL, API type, models, key variable, generation parameters.
 
-Kayıt veri klasöründeki llm_models.json dosyasında tutulur ve arayüzdeki
-"⚙ LLM Modelleri" sayfasından düzenlenir. Dosya yoksa aşağıdaki varsayılanlar
-kullanılır (ilk kayıtta dosyaya yazılır).
+The registry is kept in llm_models.json in the data folder and edited on the
+"⚙ LLM Models" page of the interface. If the file does not exist, the defaults
+below are used (they are written to the file on the first save).
 
-API tipleri (çağrının biçimi — llm_extractor bu tipe göre çağırır):
-  ollama     yerel Ollama /api/chat
+API types (the call format — llm_extractor calls according to this type):
+  ollama     local Ollama /api/chat
   anthropic  Anthropic Messages API
-  gemini     Google Generative Language generateContent ({model} URL'de)
-  openai     OpenAI uyumlu /chat/completions (Groq, NVIDIA NIM, OpenRouter, vLLM, LM Studio …)
+  gemini     Google Generative Language generateContent ({model} in the URL)
+  openai     OpenAI-compatible /chat/completions (Groq, NVIDIA NIM, OpenRouter, vLLM, LM Studio …)
 
-timeout: bir LLM çağrısının en fazla bekleneceği süre (sn, backend düzeyinde; yoksa DEFAULT_TIMEOUT_S).
-Modele gönderilmez; uzun girdiler ve düşünen modeller için yükseltilir.
+timeout: the longest time to wait for one LLM call (s, per backend; otherwise DEFAULT_TIMEOUT_S).
+It is not sent to the model; raise it for long inputs and thinking models.
 
-API anahtarları burada DEĞİL: env_key yalnızca değişkenin adıdır; değer ortam
-değişkeninden ya da proje kökündeki .env dosyasından okunur (llm_extractor._api_key).
+API keys are NOT stored here: env_key is only the name of the variable; the value is read from the
+environment variable or from the .env file in the project root (llm_extractor._api_key).
 
-Kullanım:
+Usage:
   from webrulebench.pipeline.llm_models import BACKENDS, default_model
   cfg = BACKENDS["nvidia"]
   cfg["api"], cfg["url"], cfg["default_model"], cfg["env_key"], cfg["params"]
@@ -30,19 +30,19 @@ import json
 
 from webrulebench.paths import DATA_DIR
 MODELS_FILE = DATA_DIR / "llm_models.json"
-# replay: kayıtlı yanıtları geri oynatan sahte backend (hakem demosu, testler); url = yanıt dosyası (veri klasörüne göre)
+# replay: a fake backend that replays recorded responses (reviewer demo, tests); url = response file (relative to the data folder)
 API_TYPES   = ("ollama", "anthropic", "gemini", "openai", "replay")
 DEFAULT_TIMEOUT_S = 180
 
-# Varsayılanlar: bu dosya json'a taşınmadan önceki davranışın aynısı (üretim parametreleri dahil),
-# böylece eski deney sonuçlarıyla karşılaştırılabilirlik korunur.
+# Defaults: identical to the behaviour before this registry moved to json (generation parameters included),
+# so results stay comparable with earlier experiments.
 _DEFAULTS: dict[str, dict] = {
     "ollama": {
         "api":           "ollama",
         "url":           "http://localhost:11434/api/chat",
         "default_model": "qwen2.5-coder:14b",
         "models":        [],
-        "env_key":       None,  # lokal, key gerekmez
+        "env_key":       None,  # local, no key needed
         "notes":         "Local Ollama server",
         "params":        {"temperature": 0.0, "max_tokens": 512, "seed": 42, "num_ctx": 16384},
     },
@@ -101,8 +101,8 @@ def _load() -> dict:
     return copy.deepcopy(_DEFAULTS)
 
 
-# Modül düzeyinde tek sözlük; reload()/save() onu YERİNDE günceller, böylece
-# `from llm_models import BACKENDS` yapan modüller değişikliği hemen görür.
+# A single module-level dict; reload()/save() update it IN PLACE, so modules
+# that do `from llm_models import BACKENDS` see the change immediately.
 BACKENDS: dict[str, dict] = _load()
 
 
@@ -129,29 +129,29 @@ def _bool(v) -> bool:
     raise ValueError(v)
 
 
-# think: düşünen modeller için (Ollama); false → model düşünmeden doğrudan yanıt verir
+# think: for thinking models (Ollama); false → the model answers directly without thinking
 PARAM_KEYS = {"temperature": float, "top_p": float, "max_tokens": int, "seed": int, "num_ctx": int, "think": _bool}
 
 
 def effective_params(backend: str, model: str | None = None) -> dict:
-    """Backend varsayılanları + o modele özel üzerine yazılanlar (model_params)."""
+    """Backend defaults + the overrides specific to that model (model_params)."""
     cfg = BACKENDS.get(backend) or {}
     model = model or cfg.get("default_model")
     return {**(cfg.get("params") or {}), **((cfg.get("model_params") or {}).get(model) or {})}
 
 
 def call_timeout(backend: str) -> int:
-    """Backend'in çağrı zaman aşımı (sn)."""
+    """The backend's call timeout (s)."""
     return int(BACKENDS.get(backend, {}).get("timeout") or DEFAULT_TIMEOUT_S)
 
 
 def default_model(backend: str) -> str:
-    """Backend adına göre varsayılan modeli döndür."""
+    """Return the default model for the backend name."""
     return BACKENDS.get(backend, {}).get("default_model", "")
 
 
 def backend_url(backend: str, model: str = None) -> str:
-    """Backend URL'ini döndür (Gemini için model adını yerleştirir)."""
+    """Return the backend URL (inserts the model name for Gemini)."""
     url = BACKENDS.get(backend, {}).get("url", "")
     if "{model}" in url:
         url = url.format(model=model or default_model(backend))
@@ -163,9 +163,9 @@ def list_backends() -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Ollama: model listesinin kaynağı makinenin kendisi (/api/tags).
-# Kayıtta yalnızca seçimler tutulur: default_model, hidden (formlarda gizlenen),
-# models (kayıtlı modeller — makinede yoksa "yüklü değil" uyarısı için).
+# Ollama: the source of the model list is the machine itself (/api/tags).
+# The registry keeps only the choices: default_model, hidden (hidden in forms),
+# models (registered models — for the "not installed" warning if absent from the machine).
 # ---------------------------------------------------------------------------
 def _ollama_base(cfg: dict) -> str:
     from urllib.parse import urlparse
@@ -174,7 +174,7 @@ def _ollama_base(cfg: dict) -> str:
 
 
 def ollama_installed(cfg: dict, timeout: float = 2.0) -> list | None:
-    """Makinede yüklü modeller ve bilgileri; Ollama'ya ulaşılamazsa None."""
+    """Models installed on the machine and their details; None if Ollama cannot be reached."""
     import requests
     try:
         r = requests.get(_ollama_base(cfg) + "/api/tags", timeout=timeout)
@@ -199,9 +199,9 @@ def ollama_installed(cfg: dict, timeout: float = 2.0) -> list | None:
 
 
 def model_catalog(name: str, timeout: float = 2.0) -> dict:
-    """Bir backend'in model kataloğu.
+    """The model catalogue of a backend.
     {models: [{name, installed, hidden, default, info}], reachable: bool|None}
-    Ollama: yüklü ∪ kayıtlı; diğerleri: kayıtlı liste (reachable=None)."""
+    Ollama: installed ∪ registered; others: the registered list (reachable=None)."""
     cfg = BACKENDS.get(name) or {}
     default, hidden = cfg.get("default_model"), set(cfg.get("hidden") or [])
     registered = [m for m in dict.fromkeys([default, *(cfg.get("models") or [])]) if m]
@@ -218,6 +218,6 @@ def model_catalog(name: str, timeout: float = 2.0) -> dict:
 
 
 def available_models(name: str, timeout: float = 2.0) -> list:
-    """Formlarda sunulacak modeller: gizliler hariç; Ollama'da makinede olmayanlar hariç (ulaşılabiliyorsa)."""
+    """Models offered in forms: hidden ones excluded; for Ollama, those not on the machine excluded (if reachable)."""
     cat = model_catalog(name, timeout)
     return [m["name"] for m in cat["models"] if not m["hidden"] and m["installed"] is not False]

@@ -1,9 +1,9 @@
 """
-webrulebench/webapp/routes/users.py — Kullanıcı yönetimi (admin): liste, oluşturma, token/rol/durum.
+webrulebench/webapp/routes/users.py — User management (admin): list, create, token/role/status.
 """
 from flask import Blueprint
 
-from webrulebench.webapp.core import *  # noqa: F401,F403 — paylaşılan yardımcılar, yollar, kimlik doğrulama
+from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("users", __name__)
 
@@ -34,14 +34,14 @@ def api_admin_users_create():
 
 @bp.route("/api/admin/users/<username>/<action>", methods=["POST"])
 def api_admin_users_action(username, action):
-    """token (yenile, bir kez gösterilir) · role {role} · active {active}"""
+    """token (renew, shown once) · role {role} · active {active}"""
     actor, err = require_admin()
     if err: return err
     body = request.get_json(silent=True) or {}
     try:
         if action == "token":
             token = users_store.reset_token(username)
-            if username == actor:                    # kendi token'ı: bu oturum açık kalsın
+            if username == actor:                    # own token: keep this session open
                 session["tv"] = users_store.token_version(username)
             _audit(f"USER_TOKEN_RESET  user={username}  by={actor}")
             return jsonify({"success": True, "token": token, "self": username == actor})
