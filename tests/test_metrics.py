@@ -1,7 +1,7 @@
 """
 test_metrics.py
 ================
-metrics.py içindeki temel benzerlik/skorlama fonksiyonları için birim testler.
+Unit tests for the basic similarity/scoring functions in metrics.py.
 """
 
 import sys

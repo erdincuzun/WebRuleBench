@@ -1,11 +1,11 @@
 """
-make_figures.py — annotatör uyumu çalışmasının şekli ve tablosu
+make_figures.py — figure and table of the annotator agreement study
 ===============================================================
-results/agreement.json'dan (analyze.py) üretir:
-  results/fig_agreement.pdf / .png  — alan başına kural κ ile içerik α (dumbbell)
-  results/table_agreement.tex       — booktabs tablo (makale)
+Produces from results/agreement.json (analyze.py):
+  results/fig_agreement.pdf / .png  — rule κ and content α per field (dumbbell)
+  results/table_agreement.tex       — booktabs table (paper)
 
-Kullanım:  python paper/annotation_study/make_figures.py [--min-layouts 3]
+Usage:  python paper/annotation_study/make_figures.py [--min-layouts 3]
 """
 from __future__ import annotations
 
@@ -19,13 +19,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "results"
-RULE, CONTENT = "#eb6834", "#2a78d6"          # doğrulanmış 2'li palet (CVD ΔE 24.7)
+RULE, CONTENT = "#eb6834", "#2a78d6"          # validated two-colour palette (CVD ΔE 24.7)
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--min-layouts", type=int, default=3, help="şekle girmek için en az layout sayısı")
+    ap.add_argument("--min-layouts", type=int, default=3, help="minimum number of layouts for a field to appear in the figure")
     args = ap.parse_args()
     res = json.loads((OUT / "agreement.json").read_text(encoding="utf-8"))
     rows = [r for r in res["per_field"] if r["rule_kappa"] is not None and r["content_alpha"] is not None]
@@ -41,7 +41,7 @@ def main():
                linewidth=1.5, zorder=3, label="Rule level (Fleiss κ, normalized CSS)")
     ax.scatter([r["content_alpha"] for r in fig_rows], ys, s=48, marker="o", color=CONTENT, edgecolor="white",
                linewidth=1.5, zorder=3, label="Content level (Krippendorff α)")
-    for i, r in enumerate(fig_rows):          # içerik değeri doğrudan etiketli
+    for i, r in enumerate(fig_rows):          # content value labelled directly
         ax.text(r["content_alpha"] + 0.03, i, f"{r['content_alpha']:.2f}", va="center", fontsize=7.5, color=MUTED)
     ax.set_yticks(list(ys))
     ax.set_yticklabels([f"{r['field']}  (n={r['layouts']})" for r in fig_rows], family="DejaVu Sans Mono", fontsize=8)
@@ -59,7 +59,7 @@ def main():
     for ext in ("pdf", "png"):
         fig.savefig(OUT / f"fig_agreement.{ext}", bbox_inches="tight")
 
-    # booktabs tablo (en iyi = sütundaki en yüksek; tablo bütün alanları içerir)
+    # booktabs table (best = highest in the column; the table includes all fields)
     tab = sorted(rows, key=lambda r: -r["content_alpha"])
     lines = [r"% \usepackage{booktabs}", r"\begin{table}[t]", r"  \centering", r"  \small",
              r"  \caption{Inter-annotator agreement on " + str(len(res['sample']['sites'])) + r" layouts ("

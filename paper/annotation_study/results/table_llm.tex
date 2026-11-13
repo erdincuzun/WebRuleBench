@@ -1,29 +1,29 @@
 \begin{table}[!htb]
   \centering
-  \footnotesize
-  \setlength{\tabcolsep}{2.5pt}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
   \setlength{\abovetopsep}{3pt}
-  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. Ollama, 4-bit quantized models (Q4\_K\_M); temperature 0, seed 42, at most 512 output tokens; whitelist cleaning; first ground-truth page of each layout as the sample. \textbf{Mean:} score (0--100) over all ground-truth pages. \textbf{Sample:} score on the ten sample pages. \textbf{Gap:} smallest and largest difference between the sample page and the other pages of a layout. \textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from the raw HTML, including parsing.}
+  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. Ollama, 4-bit quantized models (Q4\_K\_M); temperature 0, seed 42, at most 512 output tokens; whitelist cleaning; first ground-truth page of each layout as the sample. \textbf{Mean:} score (0--100) over all ground-truth pages. \textbf{Sample:} score on the ten sample pages. \textbf{Gap:} smallest/largest difference between the sample page and the other pages of a layout. \textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from the raw HTML, including parsing.}
   \label{tab:llm}
-  \begin{tabular}{@{}lrlrrrrr@{}}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.75cm}rlrrrrr@{}}
     \toprule
     Model (Ollama) & Params & Rules & Mean & Sample & Gap & LLM (s) & ms/page \\
     \midrule
-    \texttt{qwen2.5-coder:14b} & 14.8B & CSS & 71.0 & 73.0 & $-1.9$ to $+8.5$ & 320 & 28.3 \\
-    \texttt{qwen2.5-coder:7b} & 7.6B & CSS & 64.3 & 67.9 & $-1.4$ to $+14.4$ & 145 & 28.6 \\
-    \texttt{ministral-3:8b} & 8.9B & CSS & 52.5 & 56.5 & $-0.6$ to $+17.7$ & 187 & 29.6 \\
-    \texttt{gemma4:latest}$^{a}$ & 8.0B & CSS & 42.7 & 45.2 & $-0.2$ to $+7.2$ & 121 & 26.3 \\
-    \texttt{phi4:14b}$^{b}$ & 14.7B & CSS & 36.0 & 37.5 & $-1.2$ to $+9.3$ & 658 & 26.1 \\
+    \texttt{qwen2.5-coder:14b} & 14.8B & CSS & 71.0 & 73.0 & $-1.9$/$+8.5$ & 320 & 28.3 \\
+    \texttt{qwen2.5-coder:7b} & 7.6B & CSS & 64.3 & 67.9 & $-1.4$/$+14.4$ & 145 & 28.6 \\
+    \texttt{ministral-3:8b} & 8.9B & CSS & 52.5 & 56.5 & $-0.6$/$+17.7$ & 187 & 29.6 \\
+    \texttt{gemma4:latest}$^{a}$ & 8.0B & CSS & 42.7 & 45.2 & $-0.2$/$+7.2$ & 121 & 26.3 \\
+    \texttt{phi4:14b}$^{b}$ & 14.7B & CSS & 36.0 & 37.5 & $-1.2$/$+9.3$ & 658 & 26.1 \\
     \midrule
-    \texttt{qwen2.5-coder:14b} & 14.8B & XPath & 54.5 & 56.5 & $-10.1$ to $+13.8$ & 371 & 2.8 \\
-    \texttt{qwen2.5-coder:14b} & 14.8B & regex$^{c}$ & 20.2 & 20.2 & $-12.1$ to $+6.8$ & 351 & 1.0 \\
-    \texttt{qwen2.5-coder:14b} & 14.8B & CSS$\rightarrow$REGEXN & 65.6 & 68.2 & $-1.1$ to $+8.2$ & 295 & 1.7 \\
+    \texttt{qwen2.5-coder:14b} & 14.8B & XPath & 54.5 & 56.5 & $-10.1$/$+13.8$ & 371 & 2.8 \\
+    \texttt{qwen2.5-coder:14b} & 14.8B & regex$^{c}$ & 20.2 & 20.2 & $-12.1$/$+6.8$ & 351 & 1.0 \\
+    \texttt{qwen2.5-coder:14b} & 14.8B & CSS$\rightarrow$REGEXN & 65.6 & 68.2 & $-1.1$/$+8.2$ & 295 & 1.7 \\
     \midrule
-    Annotators' own rules (A1--A3)$^{d}$ & & CSS & 84.4--85.4 & 88.3--89.9 & & & \\
-    Generic rules, the same for every site$^{e}$ & & CSS & 36.9 & 36.5 & & & \\
-    \texttt{qwen2.5-coder:14b}, random sample page$^{f}$ & 14.8B & CSS & 61.1--68.6 & 63.9--73.1 & & & \\
+    Annotators' rules$^{d}$ & & CSS & 84.4--85.4 & 88.3--89.9 & & & \\
+    Generic rules$^{e}$ & & CSS & 36.9 & 36.5 & & & \\
+    \texttt{qwen2.5-coder:14b}, random page$^{f}$ & 14.8B & CSS & 61.1--68.6 & 63.9--73.1 & & & \\
     \bottomrule
-    \multicolumn{8}{@{}p{\linewidth}@{}}{\rule{0pt}{2.4ex}$^a$ thinking disabled; $^b$ one response cut off at the output limit; $^c$ written from the skeleton, which omits attributes; $^d$ scored like an LLM configuration; an optimistic upper reference, because the reference was built from these rules; $^e$ e.g.\ \texttt{h1}, \texttt{article}, \texttt{time}, written without looking at a page; $^f$ 3 runs, each with a randomly chosen ground-truth page per layout.} \\
+    \multicolumn{8}{@{}p{\linewidth}@{}}{\rule{0pt}{2.4ex}$^a$ thinking disabled; $^b$ one response cut off at the output limit; $^c$ written from the skeleton, which omits attributes; $^d$ the own rules of A1--A3, scored like an LLM configuration; an optimistic upper reference, because the reference was built from these rules; $^e$ the same for every site, e.g.\ \texttt{h1}, \texttt{article}, \texttt{time}, written without looking at a page; $^f$ 3 runs, each with a randomly chosen ground-truth page per layout.} \\
     \multicolumn{8}{@{}p{\linewidth}@{}}{\rule{0pt}{2.4ex}Model digests: \texttt{qwen2.5-coder:14b} \texttt{9ec8897f747e}; \texttt{qwen2.5-coder:7b} \texttt{dae161e27b0e}; \texttt{ministral-3:8b} \texttt{1922accd5827}; \texttt{gemma4:latest} \texttt{c6eb396dbd59}; \texttt{phi4:14b} \texttt{ac896e5b8b34}.} \\
   \end{tabular}
 \end{table}

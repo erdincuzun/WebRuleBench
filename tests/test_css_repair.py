@@ -1,8 +1,9 @@
 """
 test_css_repair.py
 ==================
-LLM'in CSS kurallarına sezgisel onarım: varsayılan kapalı (kural modelin yazdığı gibi döner); açıkken iskelette
-class olarak geçen adlar etikete çevrilmez ve tırnak içindeki metin bozulmaz. Deney yapılandırması seçimi kaydeder.
+Heuristic repair of the LLM's CSS rules: off by default (the rule is returned as the model wrote it); when on,
+names that appear as a class in the skeleton are not turned into tags and quoted text is not altered. The experiment
+configuration records the choice.
 """
 
 import json

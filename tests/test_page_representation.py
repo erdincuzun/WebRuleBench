@@ -1,10 +1,10 @@
 """
 test_page_representation.py
 ===========================
-Deney ayarı skeleton = none: LLM iskelet yerine temizlenmiş sayfanın HTML'ini görür. Otomatik prompt
-bunu söyler, iskeletli prompt değişmez (eski deneylerle karşılaştırılabilirlik), eski kayıtlar iskeletle
-sürer ve HTML'deki yıldızlı metin *annotation* sanılıp silinmez. Sunucunun sessizce kestiği girdi
-(bağlam penceresini aşan HTML) fark edilir.
+Experiment setting skeleton = none: the LLM sees the HTML of the cleaned page instead of the skeleton. The automatic
+prompt says so, the skeleton prompt is unchanged (comparability with earlier experiments), earlier records continue
+with the skeleton, and starred text in the HTML is not mistaken for an *annotation* and removed. Input that the server
+silently truncates (HTML that exceeds the context window) is detected.
 """
 
 import pytest
@@ -19,7 +19,7 @@ TEMPLATE = {"name": "News Article", "fields": {"title": {"description": "headlin
 @pytest.mark.parametrize("rule_type", ["css", "xpath", "regex"])
 def test_html_prompt_does_not_mention_skeleton(rule_type):
     p = build_prompt(TEMPLATE, rule_type, skeleton=False)
-    assert "{skeleton}" in p["user"]          # yer tutucu adı aynı kalır (extract onu doldurur)
+    assert "{skeleton}" in p["user"]          # the placeholder name stays the same (extract fills it in)
     assert "skeleton" not in (p["system"] + p["user"].replace("{skeleton}", "")).lower()
 
 

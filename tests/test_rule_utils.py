@@ -1,8 +1,8 @@
 """
 test_rule_utils.py
 ==================
-rule_utils.py (CSS/XPath/Regex ortak çalıştırıcı) ve metrics.score_selector'ın
-çoklu kural tipi desteğini doğrular.
+Checks rule_utils.py (shared CSS/XPath/Regex runner) and the support of
+metrics.score_selector for multiple rule types.
 """
 
 import sys
@@ -80,7 +80,7 @@ def test_run_rule_unknown_type_raises():
     ("regex", r'<h1 class="title">([^<]+)</h1>'),
 ])
 def test_score_selector_self_match_across_rule_types(rule_type, rule):
-    """Her kural tipinde, GT ve LLM aynı kuralı kullanırsa skor mükemmel olmalı."""
+    """For every rule type, the score must be perfect when GT and LLM use the same rule."""
     soup = BeautifulSoup(HTML, "html.parser")
     score, label = score_selector(
         soup, rule, rule, field="title",
@@ -91,7 +91,7 @@ def test_score_selector_self_match_across_rule_types(rule_type, rule):
 
 
 def test_score_selector_mixed_rule_types_css_gt_xpath_llm():
-    """GT CSS, LLM XPath kullanıyor — aynı elementi bulduklarında yüksek skor beklenir."""
+    """GT uses CSS, LLM uses XPath — a high score is expected when they find the same element."""
     soup = BeautifulSoup(HTML, "html.parser")
     score, label = score_selector(
         soup, "h1.title", "//h1[@class='title']", field="title",
@@ -111,9 +111,9 @@ def test_score_selector_regex_no_match_is_miss():
 
 
 def test_score_selector_malformed_xpath_is_miss_not_error():
-    """rule_utils.run_xpath hatalı XPath'te sessizce [] döner (exception fırlatmaz),
-    bu yüzden score_selector bunu MISS olarak görür — CSS'teki select() exception'ından
-    farklı olarak burada 'geçersiz söz dizimi' ile 'hiç eşleşme yok' ayrımı yapılmaz."""
+    """rule_utils.run_xpath silently returns [] on an invalid XPath (it raises no exception),
+    so score_selector sees it as MISS — unlike the select() exception in CSS, no distinction
+    is made here between 'invalid syntax' and 'no match at all'."""
     soup = BeautifulSoup(HTML, "html.parser")
     score, label = score_selector(
         soup, "h1.title", "//h1[unbalanced(", field="title",
@@ -123,10 +123,10 @@ def test_score_selector_malformed_xpath_is_miss_not_error():
 
 
 def test_score_selector_defaults_to_css_backward_compat():
-    """rule_type verilmezse eski davranış (css/css) korunmalı."""
+    """If rule_type is not given, the old behaviour (css/css) must be kept."""
     soup = BeautifulSoup(HTML, "html.parser")
     score, label = score_selector(soup, "h1.title", "h1.title", field="title")
-    assert (score, label) == (1.0, "MATCH")          # tam eşleşme, deneylerle aynı etiket
+    assert (score, label) == (1.0, "MATCH")          # exact match, same label as in experiments
 
 
 def test_run_regex_stops_catastrophic_backtracking(monkeypatch):
@@ -135,7 +135,7 @@ def test_run_regex_stops_catastrophic_backtracking(monkeypatch):
     rule_utils.regex_timeouts(reset=True)
     assert run_regex("a" * 40 + "b", r"(a+)+$") == []
     assert rule_utils.regex_timeouts(reset=True) == [r"(a+)+$"]
-    # sonraki regex yeni yardımcı işlemle normal çalışır
+    # the next regex works normally with a new helper process
     assert run_regex("<h1>Başlık</h1>", r"<h1>(.*?)</h1>") == ["Başlık"]
     assert rule_utils.regex_timeouts() == []
 

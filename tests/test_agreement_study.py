@@ -1,10 +1,10 @@
 """
 test_agreement_study.py
 =======================
-İki düzeyde annotatör uyumu (webrulebench.evaluation.agreement) hakem demosunun verisinde: üç annotatör
-aynı içeriği farklı kurallarla seçtiği için kural düzeyinde κ düşük, içerik düzeyinde α yüksek çıkar; bir alanı
-farklı yorumlayan annotatör (category) içerik uyumunu düşürür. Raporlar uç noktası aynı sonucu verir ve saklar.
-Gerçek veri klasörüne dokunulmaz (ayrı süreç, WRB_DATA_DIR).
+Annotator agreement at two levels (webrulebench.evaluation.agreement) on the reviewer demo data: three annotators
+select the same content with different rules, so κ is low at the rule level and α is high at the content level; an
+annotator who interprets a field differently (category) lowers content agreement. The Reports endpoint returns the
+same result and stores it. The real data folder is not touched (separate process, WRB_DATA_DIR).
 """
 
 import json
@@ -46,16 +46,16 @@ def test_agreement_on_demo_data(tmp_path):
     assert len(css["per_pair"]) == 3 and all(p["cells"] > 0 for p in css["per_pair"])
     assert all(r["annotators"] >= 2 for r in css["per_layout"]) and len(css["per_layout"]) == 5
     f = {r["field"]: r for r in css["per_field"]}
-    for name in ("title", "body", "date"):             # aynı içerik, farklı yazılmış kurallar
+    for name in ("title", "body", "date"):             # same content, rules written differently
         assert f[name]["rule_kappa"] < 0.5 and f[name]["content_alpha"] > 0.9
-    assert f["category"]["content_alpha"] < 0.5         # alanı farklı yorumlayan annotatör
+    assert f["category"]["content_alpha"] < 0.5         # annotator who interprets the field differently
     assert all(-1 <= r["content_alpha"] <= 1 for r in css["per_field"] if r["content_alpha"] is not None)
 
-    assert res["xpath"]["per_field"] == [] and res["xpath"]["per_layout"] == []   # demoda XPath kuralı yok
+    assert res["xpath"]["per_field"] == [] and res["xpath"]["per_layout"] == []   # the demo has no XPath rules
 
     assert res["anon"] == 401
     assert res["pending"] == {"pending": True}
     assert res["api"]["per_field"] == css["per_field"] and res["api"]["per_pair"] == css["per_pair"]
-    assert all(r["name"] for r in res["api"]["per_layout"])          # layout adları eklenir
-    assert res["cached"]["computed_at"] == res["api"]["computed_at"]   # ikinci istek saklanan sonucu döndürür
+    assert all(r["name"] for r in res["api"]["per_layout"])          # layout names are added
+    assert res["cached"]["computed_at"] == res["api"]["computed_at"]   # the second request returns the stored result
     assert res["bad_lang"] == 400

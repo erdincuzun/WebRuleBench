@@ -1,9 +1,9 @@
 """
 test_demo.py
 ============
-Hakem demosu uçtan uca: webrulebench.demo.setup_demo geçici bir veri klasörü kurar; replay
-backend'iyle çalışan deneyler tamamlanır ve güçlü model zayıf modelden yüksek skor alır.
-Gerçek veri klasörüne dokunulmaz (ayrı süreç, WRB_DATA_DIR).
+Reviewer demo end to end: webrulebench.demo.setup_demo sets up a temporary data folder; experiments
+run with the replay backend complete and the strong model scores higher than the weak model.
+The real data folder is not touched (separate process, WRB_DATA_DIR).
 """
 
 import json

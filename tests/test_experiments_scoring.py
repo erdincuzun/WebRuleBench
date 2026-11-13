@@ -1,7 +1,7 @@
 """
 test_experiments_scoring.py
 ===========================
-experiments.score_field: deneylerde (sayfa, alan) hücresinin skoru ve etiketi.
+experiments.score_field: the score and label of a (page, field) cell in experiments.
 """
 
 import sys

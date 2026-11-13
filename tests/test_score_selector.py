@@ -1,8 +1,8 @@
 """
 test_score_selector.py
 =======================
-score_selector() fonksiyonunu gerçek örnek sayfalar ve onaylı ground-truth
-selector'ları (tests/fixtures/) üzerinde doğrular.
+Checks the score_selector() function on real sample pages and approved ground-truth
+selectors (tests/fixtures/).
 """
 
 import json
@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from webrulebench.evaluation.metrics import score_selector
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-FIXTURE_DOMAINS = ["harborherald.example", "pulsedaily.example", "noticiasdelnorte.example"]   # sentetik (demo/make_fixtures.py)
+FIXTURE_DOMAINS = ["harborherald.example", "pulsedaily.example", "noticiasdelnorte.example"]   # synthetic (demo/make_fixtures.py)
 
 
 def _load_fixture(domain: str):
@@ -28,12 +28,12 @@ def _load_fixture(domain: str):
 
 @pytest.mark.parametrize("domain", FIXTURE_DOMAINS)
 def test_gt_selector_scores_well_against_itself(domain):
-    """GT selector'ı kendisiyle karşılaştırıldığında hiçbir zaman WRONG olmamalı.
+    """A GT selector compared with itself must never be WRONG.
 
-    Not: Bir layout birden çok sayfaya atanır; bu yüzden tekil örnek sayfada
-    bazı opsiyonel alanlar (örn. images) hiç eleman bulamayabilir (MISS/NULL) —
-    bu normaldir. Asıl garanti, selector kendisiyle karşılaştırıldığında asla
-    WRONG (skor 0, eleman bulundu ama içerik uyuşmuyor) çıkmamasıdır.
+    Note: a layout is assigned to several pages, so on a single sample page
+    some optional fields (e.g. images) may find no element (MISS/NULL) —
+    this is normal. The real guarantee is that a selector compared with itself
+    is never WRONG (score 0, element found but content does not match).
     """
     gt, soup = _load_fixture(domain)
     for field, selector in gt["selectors"].items():
@@ -45,7 +45,7 @@ def test_gt_selector_scores_well_against_itself(domain):
 
 @pytest.mark.parametrize("domain", FIXTURE_DOMAINS)
 def test_title_selector_finds_nonempty_text(domain):
-    """title alanı için GT selector sayfada gerçekten bir şey bulmalı."""
+    """The GT selector for the title field must actually find something on the page."""
     gt, soup = _load_fixture(domain)
     title_selector = gt["selectors"].get("title")
     if not title_selector:

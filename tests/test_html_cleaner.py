@@ -1,9 +1,9 @@
 """
 test_html_cleaner.py
 =====================
-HTMLCleaner stratejilerinin, örnek sayfalarda (tests/fixtures/) çökmeden
-çalıştığını ve beklenen temel davranışları (boyut küçültme, script/style
-kaldırma) gösterdiğini doğrular.
+Checks that the HTMLCleaner strategies run on the sample pages (tests/fixtures/)
+without crashing and show the expected basic behaviour (size reduction,
+script/style removal).
 """
 
 import sys
@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from webrulebench.pipeline.html_cleaner import HTMLCleaner, CleanerConfig, STRATEGIES
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-FIXTURE_DOMAINS = ["harborherald.example", "pulsedaily.example", "noticiasdelnorte.example"]   # sentetik (demo/make_fixtures.py)
+FIXTURE_DOMAINS = ["harborherald.example", "pulsedaily.example", "noticiasdelnorte.example"]   # synthetic (demo/make_fixtures.py)
 
 
 def _load_html(domain: str) -> str:
@@ -31,7 +31,7 @@ def test_strategy_runs_without_error_and_shrinks_html(domain, strategy):
     result = cleaner.clean(html, strategy=strategy)
 
     assert result.cleaned_chars > 0
-    # Her strateji gürültü kaldırdığı için çıktı orijinalden küçük veya eşit olmalı
+    # Every strategy removes noise, so the output must be smaller than or equal to the original
     assert result.cleaned_chars <= result.original_chars
 
 

@@ -1,5 +1,5 @@
 """
-test_cli.py — `webrulebench` komutu: sürüm ve kullanıcı yönetimi (geçici veri klasöründe).
+test_cli.py — the `webrulebench` command: version and user management (in a temporary data folder).
 """
 import json
 import os
@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
-CLI = [sys.executable, "-m", "webrulebench"]   # depo kökünden (cwd=ROOT)
+CLI = [sys.executable, "-m", "webrulebench"]   # from the repository root (cwd=ROOT)
 
 
 def test_version():
@@ -22,4 +22,4 @@ def test_users_create_admin_in_separate_data_dir(tmp_path):
     assert "Token" in out
     users = json.loads((tmp_path / "users.json").read_text())
     assert users["ci-admin"]["role"] == "admin" and "token_hash" in users["ci-admin"]
-    assert (tmp_path / "layout_templates.json").exists()          # defaults/ kopyalandı
+    assert (tmp_path / "layout_templates.json").exists()          # defaults/ was copied

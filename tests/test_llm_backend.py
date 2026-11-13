@@ -1,12 +1,12 @@
 """
 test_llm_backend.py
 ===================
-Ollama ve OpenAI uyumlu çağrı: modele özel `think` ayarı isteğe yalnızca verildiğinde eklenir; düşünen model çıktı
-token'larını düşünmeye harcayıp boş yanıt dönerse hata bunu söyler; çağrı hatası "Empty response" ile
-örtülmez; sağlayıcının durma nedeni (finish_reason) kaydedilir, çıktı sınırına takılan yanıt bunu söyler;
-çağrı süresi yanıt başlıkları gelmeden takılsa da toplamdır; 429/503 beklenip sınırlı sayıda yeniden denenir,
-bekleme süresi LLM süresine girmez.
-(Dış sunucu gerekmez: _post taklit edilir ya da yerel bir test sunucusu kullanılır.)
+Ollama and OpenAI-compatible calls: the model-specific `think` setting is added to the request only when given; if a
+thinking model spends its output tokens on thinking and returns an empty reply, the error says so; a call error is
+not hidden behind "Empty response"; the provider's stop reason (finish_reason) is recorded, and a reply cut off at the
+output limit says so; the call time is a total even if the call stalls before the response headers arrive; 429/503
+are waited out and retried a limited number of times, and the waiting time is not counted in the LLM time.
+(No external server is needed: _post is mocked or a local test server is used.)
 """
 
 import pytest
@@ -106,7 +106,7 @@ def test_ollama_done_reason_is_the_finish_reason(monkeypatch):
 
 @pytest.fixture
 def trickle_server():
-    """Başlığı hemen yollayıp gövdeye ara ara bir boşluk yazan, yanıtı hiç bitirmeyen sunucu."""
+    """Server that sends the headers at once, then writes a space to the body now and then and never finishes the reply."""
     import http.server
     import threading
     import time
@@ -144,7 +144,7 @@ def test_call_timeout_is_total_even_if_server_keeps_connection_alive(monkeypatch
 
 @pytest.fixture
 def stalled_headers_server():
-    """Durum satırını yollayıp başlıkları ara ara bir bayt yazan, başlıkları hiç bitirmeyen sunucu."""
+    """Server that sends the status line, then writes a byte of the headers now and then and never finishes the headers."""
     import socket
     import threading
 
@@ -158,7 +158,7 @@ def stalled_headers_server():
             conn, _ = srv.accept()
             with conn:
                 conn.sendall(b"HTTP/1.1 200 OK\r\nX-Wait: ")
-                while not stop.wait(0.2):           # time.sleep değil: başka testler onu taklit eder
+                while not stop.wait(0.2):           # not time.sleep: other tests mock it
                     conn.sendall(b"a")
         except OSError:
             pass
@@ -189,7 +189,7 @@ def test_timeout_comes_from_backend_unless_given(monkeypatch):
 
 
 def _status_server(replies):
-    """Sırayla (durum, başlıklar, gövde) yanıtlarını veren sunucu; son yanıt tekrarlanır."""
+    """Server that returns the (status, headers, body) replies in order; the last reply is repeated."""
     import http.server
     import threading
 
@@ -225,7 +225,7 @@ def test_busy_and_rate_limited_calls_are_retried_and_wait_is_not_timed(monkeypat
                                  OK_REPLY])
     waits, real_sleep = [], LE.time.sleep
 
-    def fake_sleep(s):                          # istenen süreyi kaydeder, gerçekte 0,5 s bekler
+    def fake_sleep(s):                          # records the requested time, actually waits 0.5 s
         waits.append(s)
         real_sleep(0.5)
 
@@ -234,9 +234,9 @@ def test_busy_and_rate_limited_calls_are_retried_and_wait_is_not_timed(monkeypat
     ex = LLMExtractor(backend="busy", model="m", rule_type="css", fields=["title"])
     res = ex.extract("<html><body><h1>t</h1></body></html>", domain="x.example")
     srv.shutdown()
-    assert calls == [503, 429, 200] and waits == [10, 20]       # Retry-After 7 < katlanan 20
+    assert calls == [503, 429, 200] and waits == [10, 20]       # Retry-After 7 < doubled 20
     assert res.success and res.retries == 2 and res.metrics()["retries"] == 2
-    assert 0 <= res.elapsed_ms < 500            # beklemeler (2 × 0,5 s) süreye girmez
+    assert 0 <= res.elapsed_ms < 500            # the waits (2 × 0.5 s) are not counted in the time
 
 
 def test_retries_are_limited(monkeypatch):
@@ -259,12 +259,12 @@ def test_other_errors_are_not_retried(monkeypatch):
 
 
 @pytest.mark.parametrize("retry_after,body,attempt,expected", [
-    (None, "", 0, 10),          # katlanan bekleme: 10, 20, 40, 60, 60
+    (None, "", 0, 10),          # doubling wait: 10, 20, 40, 60, 60
     (None, "", 1, 20),
     (None, "", 2, 40),
     (None, "", 4, 60),
-    ("5", "", 0, 10),           # sağlayıcının kısa süresi alt sınırın altında kalır
-    ("30", "", 0, 30),          # daha uzunsa o beklenir
+    ("5", "", 0, 10),           # the provider's short time is below the lower bound
+    ("30", "", 0, 30),          # if longer, that time is waited
     ("999", "", 0, 60),
     (None, "not json", 1, 20),
 ])

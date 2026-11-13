@@ -1,20 +1,20 @@
 """
-analyze_rules.py — LLM deneylerindeki kural hatalarının analizi (makale, Bölüm 3.2)
+analyze_rules.py — analysis of rule errors in the LLM experiments (paper, Section 3.2)
 ================================================================================
-results/experiments/ altındaki deney kayıtlarından (RUNS) şunları yeniden üretir:
+Reproduces the following from the experiment records under results/experiments/ (RUNS):
 
-  1. Kayıp puanların etikete göre dağılımı (MISS = kural hiçbir şey çıkarmadı)  — yalnızca kayıtlar
-  2. XPath: kuralların sınıf özniteliğini tam eşitlikle sınaması (@class='…'); yalnızca bu testler
-     sınıf listesinde geçme testine çevrildiğinde skor                          — HTML sayfaları gerekir
-  3. Modelin yazdığı regex'ler: iskelette (modelin gördüğü) ve ham sayfada eşleşme  — HTML sayfaları gerekir
-  4. Kural dillerinin çıkarım süresi (ms/sayfa, ham HTML'den)                    — HTML sayfaları gerekir
-  5. Makaledeki sonuç tablosu (results/table_llm.tex)
+  1. Distribution of lost points by label (MISS = the rule extracted nothing)      — records only
+  2. XPath: rules that test the class attribute by exact equality (@class='…'); the score when
+     only these tests are turned into a class-list membership test               — needs HTML pages
+  3. Regexes written by the model: matches in the skeleton (what the model saw) and in the raw page — needs HTML pages
+  4. Extraction time of the rule languages (ms/page, from raw HTML)               — needs HTML pages
+  5. Results table of the paper (results/table_llm.tex)
 
-2-4 için WRB_DATA_DIR, onaylı GT'yi ve ham sayfaları içeren veri klasörünü göstermelidir
-(Zenodo'daki açık kayıt + istek üzerine verilen html.zip).
+For 2-4, WRB_DATA_DIR must point to the data folder that holds the approved GT and the raw pages
+(the open record on Zenodo + html.zip, provided on request).
 
-Kullanım:  python paper/annotation_study/analyze_rules.py
-Çıktı:     paper/annotation_study/results/rule_analysis.json, results/table_llm.tex
+Usage:   python paper/annotation_study/analyze_rules.py
+Output:  paper/annotation_study/results/rule_analysis.json, results/table_llm.tex
 """
 from __future__ import annotations
 
@@ -34,8 +34,8 @@ from webrulebench.rules.rule_utils import split_selector_list  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 EXPS = HERE / "results" / "experiments"
-RX_FLAGS = re.I | re.S          # deneylerdeki gibi (rule_utils.run_regex)
-# (model, kural dili, kural kaynağı) — makaledeki tablonun sırası
+RX_FLAGS = re.I | re.S          # as in the experiments (rule_utils.run_regex)
+# (model, rule language, rule source) — order of the table in the paper
 RUNS = [("qwen2.5-coder:14b", "css", "llm"), ("qwen2.5-coder:7b", "css", "llm"), ("ministral-3:8b", "css", "llm"),
         ("gemma4:latest", "css", "llm"), ("phi4:14b", "css", "llm"),
         ("qwen2.5-coder:14b", "xpath", "llm"), ("qwen2.5-coder:14b", "regex", "llm"),
@@ -57,7 +57,7 @@ def label(e: dict) -> str:
 
 
 def lost_points(e: dict) -> dict:
-    """Etikete göre kaybedilen puan (1 − skor) payı."""
+    """Share of lost points (1 − score) by label."""
     loss = Counter()
     for lay in e["layouts"]:
         for cells in lay["pages"].values():
@@ -73,7 +73,7 @@ def class_token_test(m) -> str:
 
 
 def rescore_xpath(e: dict, rewrite) -> float:
-    """Deneydeki gibi skorla (layout ortalamalarının ortalaması); kurallara önce rewrite uygulanır."""
+    """Score as in the experiment (mean of the layout means); rewrite is applied to the rules first."""
     tmpls, means = X._templates(), []
     for lay in e["layouts"]:
         dom, lid = lay["domain"], lay["layout_id"]
@@ -121,10 +121,10 @@ def regex_on_skeleton_vs_raw(e: dict) -> dict:
 
 
 def extraction_speed(runs: dict, repeats: int = 3) -> dict:
-    # runs: {etiket: (deney kaydı, "css" | "xpath" | "regex")}
-    """Bir sayfadan layout'un bütün alanlarını çıkarma süresi (ms/sayfa, ham HTML'den başlayarak):
-    CSS → Beautiful Soup (html.parser) DOM'u + select; XPath → lxml ağacı + xpath; regex → ham metinde re.
-    Her sayfa için `repeats` ölçümün en küçüğü alınır; metin normalleştirmesi ölçüme dahil değildir."""
+    # runs: {label: (experiment record, "css" | "xpath" | "regex")}
+    """Time to extract all fields of the layout from one page (ms/page, starting from raw HTML):
+    CSS → Beautiful Soup (html.parser) DOM + select; XPath → lxml tree + xpath; regex → re on the raw text.
+    For each page the minimum of `repeats` measurements is taken; text normalisation is not included in the measurement."""
     import time
     import lxml.html
     from bs4 import BeautifulSoup as BS
@@ -199,15 +199,15 @@ def write_table(runs: list, speed: dict, path: Path):
     rnd = [e for e in (json.loads(p.read_text(encoding="utf-8")) for p in sorted((res / "experiments_sample_pages").glob("*.json")))
            if e["config"]["sample"]["mode"] == "random"]
     rng = lambda xs: f"{min(xs):.1f}--{max(xs):.1f}"
-    lines = [r"\begin{table}[!htb]", r"  \centering", r"  \footnotesize", r"  \setlength{\tabcolsep}{2.5pt}", r"  \setlength{\abovetopsep}{3pt}",
+    lines = [r"\begin{table}[!htb]", r"  \centering", r"  \scriptsize", r"  \setlength{\tabcolsep}{3pt}", r"  \setlength{\abovetopsep}{3pt}",
              r"  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. "
              + f"Ollama, 4-bit quantized models ({quant.replace('_', chr(92) + '_')}); temperature {temp:g}, seed {seed}, at most {max_tokens} output tokens; "
              + f"{strategy.replace('_', ' ')} cleaning; first ground-truth page of each layout as the sample. "
              + r"\textbf{Mean:} score (0--100) over all ground-truth pages. \textbf{Sample:} score on the ten sample pages. "
-             r"\textbf{Gap:} smallest and largest difference between the sample page and the other pages of a layout. "
+             r"\textbf{Gap:} smallest/largest difference between the sample page and the other pages of a layout. "
              r"\textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from "
              r"the raw HTML, including parsing.}",
-             r"  \label{tab:llm}", r"  \begin{tabular}{@{}lrlrrrrr@{}}", r"    \toprule",
+             r"  \label{tab:llm}", r"  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.75cm}rlrrrrr@{}}", r"    \toprule",
              r"    Model (Ollama) & Params & Rules & Mean & Sample & Gap & LLM (s) & ms/page \\", r"    \midrule"]
     used, digests = set(), {}
     for i, e in enumerate(runs):
@@ -231,20 +231,20 @@ def write_table(runs: list, speed: dict, path: Path):
             lines.append(r"    \midrule")
         lines.append(f"    \\texttt{{{c['model']}}}{'$^{' + ','.join(marks) + '}$' if marks else ''} & "
                      f"{info.get('parameter_size', '')} & {rules}{rmark} & {100 * s['mean']:.1f} & {100 * s['sample_mean']:.1f} & "
-                     f"${min(gaps):+.1f}$ to ${max(gaps):+.1f}$ & {s['llm_ms'] / 1000:.0f} & {speed[label(e)]['median_ms']:.1f} \\\\")
+                     f"${min(gaps):+.1f}$/${max(gaps):+.1f}$ & {s['llm_ms'] / 1000:.0f} & {speed[label(e)]['median_ms']:.1f} \\\\")
     ann = [ref[a]["summary"] for a in ("A1", "A2", "A3")]
     base = ref["baseline"]["summary"]
     lines += [r"    \midrule",
-              f"    Annotators' own rules (A1--A3)$^{{d}}$ & & CSS & {rng([a['mean'] for a in ann])} & {rng([a['sample_mean'] for a in ann])} & & & \\\\",
-              f"    Generic rules, the same for every site$^{{e}}$ & & CSS & {base['mean']:.1f} & {base['sample_mean']:.1f} & & & \\\\",
-              f"    \\texttt{{qwen2.5-coder:14b}}, random sample page$^{{f}}$ & 14.8B & CSS & {rng([100 * e['summary']['mean'] for e in rnd])} & "
+              f"    Annotators' rules$^{{d}}$ & & CSS & {rng([a['mean'] for a in ann])} & {rng([a['sample_mean'] for a in ann])} & & & \\\\",
+              f"    Generic rules$^{{e}}$ & & CSS & {base['mean']:.1f} & {base['sample_mean']:.1f} & & & \\\\",
+              f"    \\texttt{{qwen2.5-coder:14b}}, random page$^{{f}}$ & 14.8B & CSS & {rng([100 * e['summary']['mean'] for e in rnd])} & "
               f"{rng([100 * e['summary']['sample_mean'] for e in rnd])} & & & \\\\",
               r"    \bottomrule"]
     notes = {"a": r"$^a$ thinking disabled", "b": r"$^b$ one response cut off at the output limit",
              "c": r"$^c$ written from the skeleton, which omits attributes"}
     note = lambda s: r"    \multicolumn{8}{@{}p{\linewidth}@{}}{\rule{0pt}{2.4ex}" + s + r"} \\"
-    lines += [note("; ".join(notes[k] for k in sorted(used)) + r"; $^d$ scored like an LLM configuration; an optimistic upper reference, because "
-                   r"the reference was built from these rules; $^e$ e.g.\ \texttt{h1}, \texttt{article}, \texttt{time}, written without "
+    lines += [note("; ".join(notes[k] for k in sorted(used)) + r"; $^d$ the own rules of A1--A3, scored like an LLM configuration; an optimistic upper reference, because "
+                   r"the reference was built from these rules; $^e$ the same for every site, e.g.\ \texttt{h1}, \texttt{article}, \texttt{time}, written without "
                    + f"looking at a page; $^f$ {len(rnd)} runs, each with a randomly chosen ground-truth page per layout."),
               note("Model digests: " + "; ".join(f"\\texttt{{{m}}} \\texttt{{{d}}}" for m, d in digests.items()) + ".")]
     lines += [r"  \end{tabular}", r"\end{table}"]
@@ -262,7 +262,7 @@ def main():
                     "score_with_class_token_tests": rescore_xpath(
                         xp, lambda r: re.sub(r"@class\s*=\s*(['\"])(.*?)\1", class_token_test, r))}
     out["regex_matches_on_sample_page"] = regex_on_skeleton_vs_raw(rx)
-    # CSS → Beautiful Soup (html.parser), XPath → lxml, regex → re: deneylerin kullandığı yürütücüler
+    # CSS → Beautiful Soup (html.parser), XPath → lxml, regex → re: the engines used by the experiments
     out["extraction_ms_per_page"] = extraction_speed({label(e): (e, e["config"]["rule_type"]) for e in runs})
     (HERE / "results" / "rule_analysis.json").write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     write_table(runs, out["extraction_ms_per_page"], HERE / "results" / "table_llm.tex")

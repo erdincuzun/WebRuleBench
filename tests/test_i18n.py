@@ -1,8 +1,8 @@
 """
 test_i18n.py
 ============
-Arayüz çevirileri: sözlük dosyaları geçerli, yer tutucular iki tarafta aynı,
-İngilizce tekil/çoğul kuralı ve eksik çevirinin İngilizceye düşmesi.
+Interface translations: the dictionary files are valid, placeholders match on both sides,
+the English singular/plural rule, and a missing translation falls back to English.
 """
 
 import json

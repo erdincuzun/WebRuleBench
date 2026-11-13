@@ -1,18 +1,18 @@
 """
-analyze.py — annotatör uyumu çalışması (paper/annotation_study)
+analyze.py — annotator agreement study (paper/annotation_study)
 ===============================================================
-sample.json'daki layout'lar için annotatörlerin CSS kurallarını iki düzeyde karşılaştırır:
+Compares the annotators' CSS rules for the layouts in sample.json at two levels:
 
-  1. Kural düzeyi  — normalize kurallar üzerinden Fleiss κ (layout'lar konu) ve P̄o
-  2. İçerik düzeyi — kuralların layout'un BÜTÜN GT sayfalarında çıkardığı değerler üzerinden
-                     Krippendorff α (uzaklık = 1 − alan metriği: ROUGE-1 F1 / Jaccard / tam eşleşme)
-                     ve annotatör çiftleri arasındaki ortalama içerik benzerliği
+  1. Rule level    — Fleiss κ over the normalised rules (layouts are the subjects) and P̄o
+  2. Content level — Krippendorff α over the values the rules extract on ALL GT pages of the layout
+                     (distance = 1 − field metric: ROUGE-1 F1 / Jaccard / exact match)
+                     and the mean content similarity between annotator pairs
 
-Hesap webrulebench.evaluation.agreement'tadır; web arayüzü (Raporlar → Annotation & GT) aynı fonksiyonu kullanır.
+The computation lives in webrulebench.evaluation.agreement; the web interface (Reports → Annotation & GT) uses the same function.
 
-Kullanım:  python paper/annotation_study/analyze.py [--annotators euzun user2 user3]
-           Çıktılarda annotatörler verilen sırayla A1, A2, A3… olarak anonimleştirilir.
-Çıktılar:  paper/annotation_study/results/agreement.json, per_field.csv, per_pair.csv, per_layout.csv
+Usage:    python paper/annotation_study/analyze.py [--annotators euzun user2 user3]
+          In the outputs the annotators are anonymised as A1, A2, A3… in the given order.
+Outputs:  paper/annotation_study/results/agreement.json, per_field.csv, per_pair.csv, per_layout.csv
 """
 from __future__ import annotations
 
@@ -34,10 +34,10 @@ OUT = HERE / "results"
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--annotators", nargs="+", default=["euzun", "user2", "user3"])
-    ap.add_argument("--max-pairs", type=int, default=20000, help="D_e kestirimi için rastgele çift sayısı")
+    ap.add_argument("--max-pairs", type=int, default=20000, help="number of random pairs for estimating D_e")
     args = ap.parse_args()
     users = args.annotators
-    label = {u: f"A{i}" for i, u in enumerate(users, 1)}   # çıktılarda anonim ad
+    label = {u: f"A{i}" for i, u in enumerate(users, 1)}   # anonymous name in the outputs
 
     sample = json.loads((HERE / "sample.json").read_text(encoding="utf-8"))
     res = agreement_study([(s["domain"], s["layout_id"]) for s in sample["sites"]], users=users, lang="css",

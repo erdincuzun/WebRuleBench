@@ -1,9 +1,9 @@
 """
 test_skeleton.py
 =================
-Skeleton çıkarımının (html_cleaner sonrası) örnek sayfalarda çökmeden
-çalıştığını ve temel yapısal beklentileri (metin/script/style kalmaması,
-boyut küçültme) karşıladığını doğrular.
+Checks that skeleton extraction (after html_cleaner) runs on the sample pages
+without crashing and meets the basic structural expectations (no text/script/style
+left, size reduction).
 """
 
 import sys
@@ -17,7 +17,7 @@ from webrulebench.pipeline.html_cleaner import HTMLCleaner, CleanerConfig
 from webrulebench.pipeline.skeleton import Skeleton
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-FIXTURE_DOMAINS = ["harborherald.example", "pulsedaily.example", "noticiasdelnorte.example"]   # sentetik (demo/make_fixtures.py)
+FIXTURE_DOMAINS = ["harborherald.example", "pulsedaily.example", "noticiasdelnorte.example"]   # synthetic (demo/make_fixtures.py)
 
 
 def _load_html(domain: str) -> str:
@@ -40,7 +40,7 @@ def test_skeleton_shrinks_and_strips_text(domain):
 
 @pytest.mark.parametrize("domain", FIXTURE_DOMAINS)
 def test_skeleton_keeps_only_class_id_and_known_data_attrs(domain):
-    """Skeleton çıktısında src/href/style gibi orijinal-veri taşıyan attribute'lar olmamalı."""
+    """The skeleton output must not contain attributes that carry original data, such as src/href/style."""
     html = _load_html(domain)
     cleaned = HTMLCleaner(CleanerConfig()).clean(html, strategy="whitelist").cleaned_html
     result = Skeleton(strategy="whitelist").extract(cleaned)
@@ -57,6 +57,6 @@ def test_meaningful_segment_keeps_readable_class_names():
 
 def test_meaningful_segment_drops_hash_like_tokens():
     sk = Skeleton()
-    # Kısa, rakam içeren, düşük ünlü yoğunluklu — CSS-in-JS hash imzası
+    # Short, contains digits, low vowel density — CSS-in-JS hash signature
     assert sk._is_meaningful_segment("wsquJ") is False
     assert sk._is_meaningful_segment("8ytrv8") is False
