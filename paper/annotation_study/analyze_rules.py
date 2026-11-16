@@ -204,7 +204,7 @@ def write_table(runs: list, speed: dict, path: Path):
              + f"Ollama, 4-bit quantized models ({quant.replace('_', chr(92) + '_')}); temperature {temp:g}, seed {seed}, at most {max_tokens} output tokens; "
              + f"{strategy.replace('_', ' ')} cleaning; first ground-truth page of each layout as the sample. "
              + r"\textbf{Mean:} score (0--100) of the scored page--field pairs, averaged per layout, then over the ten layouts. \textbf{Sample:} score on the ten sample pages, one per layout. "
-             r"\textbf{Gap:} smallest/largest difference between the sample page and the other pages of a layout. "
+             r"\textbf{Gap:} smallest/largest difference between the sample page and the other pages of a layout (sample minus others). "
              r"\textbf{LLM:} seconds for the ten calls (Apple M1 Pro, 16 GB RAM). \textbf{ms/page:} median extraction time from "
              r"the raw HTML, including parsing.}",
              r"  \label{tab:llm}", r"  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.75cm}rlrrrrr@{}}", r"    \toprule",
@@ -243,7 +243,7 @@ def write_table(runs: list, speed: dict, path: Path):
     notes = {"a": r"$^a$ thinking disabled", "b": r"$^b$ one response cut off at the output limit",
              "c": r"$^c$ written from the skeleton, which omits attributes"}
     note = lambda s: r"    \multicolumn{8}{@{}p{\linewidth}@{}}{\rule{0pt}{2.4ex}" + s + r"} \\"
-    lines += [note("; ".join(notes[k] for k in sorted(used)) + r"; $^d$ the own rules of A1--A3, scored like an LLM configuration; an optimistic upper reference, because "
+    lines += [note("; ".join(notes[k] for k in sorted(used)) + r"; $^d$ the annotators' own rules (A1--A3), scored like an LLM configuration; an optimistic upper reference, because "
                    r"the reference was built from these rules; $^e$ the same for every site, e.g.\ \texttt{h1}, \texttt{article}, \texttt{time}, written without "
                    + f"looking at a page; $^f$ {len(rnd)} runs, each with a randomly chosen ground-truth page per layout."),
               note("Model digests: " + "; ".join(f"\\texttt{{{m}}} \\texttt{{{d}}}" for m, d in digests.items()) + ".")]

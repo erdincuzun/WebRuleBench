@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.3 — 2026-11
+
+The version cited by the revised SoftwareX manuscript; the behavior of the tool is unchanged.
+
+- The last Turkish texts outside the bilingual interface are in English: three messages (`rule_utils`, MCP server,
+  skeleton command line), a test skip reason and the comments of `compile.css` and `hub.css`; the README no longer
+  calls the web application guide Turkish.
+- Annotation study: the captions of Tables 3 and 4 state why `summary` is not in Table 3 and the direction of the
+  gap (sample minus other pages).
+
 ## 1.1.2 — 2026-11
 
 The version cited by the revised SoftwareX manuscript; the behavior of the tool is unchanged.

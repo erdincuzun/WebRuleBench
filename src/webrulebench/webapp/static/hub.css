@@ -1,4 +1,4 @@
-/* Hub + bölüm sayfaları — index.html ile aynı renk paleti */
+/* Hub + section pages — the same colour palette as index.html */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -120,7 +120,7 @@ tbody tr:hover { background: rgba(91,124,250,.05); }
 td.num { font-family: var(--mono); text-align: right; }
 td .btn + .btn { margin-left: 6px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--text3); }
-.dot.empty { padding: 0; }   /* siteStatus 'empty' → .empty (boş tablo mesajı) dolgusunu alma */
+.dot.empty { padding: 0; }   /* siteStatus 'empty' → do not take the padding of .empty (empty-table message) */
 .dot.gt { background: var(--green); } .dot.ready { background: var(--accent); } .dot.partial { background: var(--yellow); }
 .pill { display: inline-block; font-size: 10px; font-family: var(--mono); padding: 1px 6px; border-radius: 4px; background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
 .pill.req { color: var(--yellow); border-color: rgba(251,191,36,.3); }
@@ -151,7 +151,7 @@ pre.cli .c { color: var(--text3); }
   .cards { grid-template-columns: 1fr; }
 }
 
-/* ── EDITOR (Şablon & Prompt alt sayfaları) ─────────── */
+/* ── EDITOR (Template & Prompt subpages) ─────────── */
 .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); margin-bottom: 10px; }
 .back-link:hover { color: var(--accent); }
 .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
@@ -225,7 +225,7 @@ td a.mono:hover { color: var(--accent); }
 .help-content b { color: var(--text); }
 .help-content .card ul { padding-left: 0; }
 
-/* ── LLM Değerlendirme ──────────────────────────────── */
+/* ── LLM Evaluation ──────────────────────────────── */
 .progress { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; margin-top: 5px; min-width: 70px; }
 .progress > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s; }
 .scorebar { display: inline-block; vertical-align: middle; width: 90px; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-right: 6px; }
@@ -241,13 +241,13 @@ tr.detail-row > td { background: var(--bg); white-space: normal; }
 tr.diff td { background: rgba(251,191,36,.07); }
 details > summary { cursor: pointer; }
 
-/* label gibi görünen ama içinde buton olan alan: <label> içindeki butona tıklama ilk butona da iletilir */
+/* an area that looks like a label but contains buttons: a click on a button inside <label> is also passed to the first button */
 .form-row .form-field { display: flex; flex-direction: column; gap: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--text3); }
 
-/* üst çubuk kalabalıklaşınca yalnızca simge */
+/* icon only when the top bar gets crowded */
 @media (max-width: 1560px) { .wide-only { display: none; } }
 
-/* ── Karşılaştırmalı deney ─────────────────────────── */
+/* ── Comparative experiment ─────────────────────────── */
 .model-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
 .model-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
   background: var(--bg3); font-size: 11px; cursor: pointer; text-transform: none; letter-spacing: 0; color: var(--text); }
@@ -263,7 +263,7 @@ table.heatmap td.heat { text-align: center; font-family: var(--mono); font-size:
 td.winner { background: rgba(52,211,153,.12); font-weight: 700; }
 tr.totals td { background: var(--bg3); }
 
-/* ── RAPOR (tablo + grafik blokları) ───────────────── */
+/* ── REPORT (table + chart blocks) ───────────────── */
 .rt-block { margin-bottom: 18px; min-width: 0; }
 .rt-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
 .rt-title { font-size: 13px; font-weight: 700; }
@@ -281,7 +281,7 @@ th.th-num { text-align: right; }
 .rt-details[open] > summary { margin-bottom: 4px; }
 @media (max-width: 520px) { .rt-grid { grid-template-columns: 1fr; } }
 
-/* ── DİL SEÇİCİ ─────────────────────────────────────── */
+/* ── LANGUAGE SWITCH ─────────────────────────────────────── */
 .lang-switch { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
 .lang-switch button { background: none; border: none; color: var(--text3); font: 600 10px var(--mono); padding: 5px 7px; cursor: pointer; }
 .lang-switch button + button { border-left: 1px solid var(--border); }

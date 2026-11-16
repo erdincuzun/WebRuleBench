@@ -754,4 +754,4 @@ if __name__ == "__main__":
         print("\n--- SKELETON ---\n")
         print(result.skeleton_html[:3000])
         if len(result.skeleton_html) > 3000:
-            print(f"\n... ({len(result.skeleton_html)-3000} chars daha)")
+            print(f"\n... ({len(result.skeleton_html)-3000} more chars)")

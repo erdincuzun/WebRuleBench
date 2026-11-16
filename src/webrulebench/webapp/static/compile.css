@@ -49,8 +49,8 @@
 .compile-zoom-level { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 36px; text-align: center; cursor: pointer; padding: 2px 4px; border-radius: 3px; transition: background .1s; }
 .compile-zoom-level:hover { background: var(--bg3); color: var(--text); }
 
-/* ── Derleme sayfası (/ground-truth/<site>/<layout>) ──────────────
-   Eski modal markup'ı tam sayfa olarak; index.html'deki temel sınıflar burada kapsamlı. */
+/* ── Compile page (/ground-truth/<site>/<layout>) ──────────────
+   The former modal markup as a full page; the base classes of index.html are scoped here. */
 .hub-main.full { max-width: none; padding: 16px 20px 0; }
 .compile-page { display: flex; flex-direction: column; height: calc(100vh - 56px - 16px - 150px); min-height: 520px;
   background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
@@ -59,12 +59,12 @@
 .compile-page .picker-attr-select { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; color: var(--text); font-family: var(--mono); font-size: 11px; padding: 3px 6px; outline: none; }
 .compile-page .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .compile-page .btn-secondary { background: var(--bg3); color: var(--text2); }
-.compile-page .empty { padding: 3px 6px; text-align: left; }   /* hub.css .empty (boş tablo mesajı) dolgusunu alma */
+.compile-page .empty { padding: 3px 6px; text-align: left; }   /* do not take the padding of hub.css .empty (empty-table message) */
 .compile-page.readonly .compile-sel-cell { cursor: default; }
 .compile-page.readonly .compile-page-cb { pointer-events: none; }
 .readonly-note { font-size: 12px; color: var(--yellow); background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 6px; padding: 6px 10px; }
 
-/* ── Kural dili sekmeleri + "Kaydedilecek" sütunu ─── */
+/* ── Rule language tabs + "To save" column ─── */
 .compile-lang-bar { display: flex; align-items: center; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .compile-lang-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 9px 12px; color: var(--text3); font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer; }
 .compile-lang-tab:hover { color: var(--text); }

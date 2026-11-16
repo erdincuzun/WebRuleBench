@@ -66,7 +66,8 @@ def main():
              + str(len(res["annotators"])) + r" annotators). Layouts: layouts in which at least two annotators wrote a rule; "
              r"values from fewer than six layouts are less reliable. Rule level: share of annotator pairs with the same normalized "
              r"CSS rule, and Fleiss' $\kappa$. Content level: mean similarity (field metric) of the values extracted from all "
-             r"ground-truth pages, and Krippendorff's $\alpha$ (distance $= 1 -$ similarity).}",
+             r"ground-truth pages, and Krippendorff's $\alpha$ (distance $= 1 -$ similarity). \texttt{summary} is not listed: "
+             r"only one annotator wrote a rule for it.}",
              r"  \label{tab:agreement}", r"  \begin{tabular}{llrrrrr}", r"    \toprule",
              r"          &        &         & \multicolumn{2}{c}{Rule level} & \multicolumn{2}{c}{Content level} \\",
              r"    \cmidrule(lr){4-5}\cmidrule(lr){6-7}",

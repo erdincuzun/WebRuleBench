@@ -40,7 +40,7 @@ compiles them into the approved ground truth; a single annotator is enough. With
 annotators, agreement is measured at two levels: rules (Fleiss' κ) and the content they
 extract (content scores; Krippendorff's α in **Reports**).
 
-A user guide for the web application (Turkish) is in
+A user guide for the web application is in
 [src/webrulebench/webapp/README.md](src/webrulebench/webapp/README.md); every section also has an in-app
 **?** help in English and Turkish.
 

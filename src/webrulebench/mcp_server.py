@@ -290,7 +290,7 @@ def validate_selector(
         previews = [el.get_text(strip=True)[:100] for el in els[:3] if el.get_text(strip=True)]
         if not els:
             return {"valid": False, "message": "No element found", "count": 0, "previews": []}
-        return {"valid": True, "message": f"{len(els)} eleman bulundu", "count": len(els), "previews": previews}
+        return {"valid": True, "message": f"{len(els)} elements found", "count": len(els), "previews": previews}
     except Exception as e:
         return {"valid": False, "message": f"Error: {str(e)}"}
 

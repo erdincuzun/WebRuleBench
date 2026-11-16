@@ -96,7 +96,7 @@ def test_krippendorff_alpha_nominal():
     assert krippendorff_alpha([["x", "x", "x"], ["y", "y", "y"]], nominal)["alpha"] == 1.0
 
 
-@pytest.mark.skipif(not shutil.which("node"), reason="node yok")
+@pytest.mark.skipif(not shutil.which("node"), reason="node not installed")
 def test_browser_copy_normalizes_identically():
     src = (ROOT / "src" / "webrulebench" / "webapp" / "static" / "compile.js").read_text(encoding="utf-8")
     code = src[src.index("function _splitTop"):src.index("function _observedAgreement")]

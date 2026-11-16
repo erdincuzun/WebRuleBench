@@ -351,4 +351,4 @@ def run_rule(html_or_soup, rule: str, rule_type: RuleType) -> list:
         return run_xpath(html_or_soup, rule)
     if rule_type == "regex":
         return run_regex(html_or_soup, rule)
-    raise ValueError(f"Bilinmeyen rule_type: {rule_type}")
+    raise ValueError(f"Unknown rule_type: {rule_type}")
