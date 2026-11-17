@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.5 — 2026-11
+
+The version cited by the revised SoftwareX manuscript; the behavior of the tool is unchanged.
+
+- Annotation study: `analyze_rules.py` and `make_figures.py` write the captions of Tables 4 and 3 as printed in the
+  paper (citations of the models; Krippendorff's α with the expected disagreement from 20,000 sampled pairs).
+
 ## 1.1.4 — 2026-11
 
 Fixes found in a final check before the resubmission; the version cited by the revised SoftwareX manuscript.
