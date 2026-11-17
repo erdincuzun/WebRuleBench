@@ -298,10 +298,10 @@ function _normAttr(a) {
   return `[${name.toLowerCase()}${op}"${val}"` + (flag ? ` ${flag}` : '') + ']';
 }
 function _normCompound(c) {
-  const m = /^(\*|[a-zA-Z][\w-]*)/.exec(c);
+  const m = /^(\*|[a-zA-Z][\p{L}\p{N}_-]*)/u.exec(c);   // \w of Python's re is Unicode-aware; u makes JS match it
   let tag = m ? m[1].toLowerCase() : '';
   const rest = m ? c.slice(m[1].length) : c;
-  const parts = rest.match(/#[\w-]+|\.[\w-]+|\[[^\]]*\]|::?[\w-]+(?:\([^)]*\))?/g) || [];
+  const parts = rest.match(/#[\p{L}\p{N}_-]+|\.[\p{L}\p{N}_-]+|\[[^\]]*\]|::?[\p{L}\p{N}_-]+(?:\([^)]*\))?/gu) || [];
   if (parts.join('') !== rest) return null;
   const ids = parts.filter(p => p[0] === '#');
   const classes = parts.filter(p => p[0] === '.').sort();

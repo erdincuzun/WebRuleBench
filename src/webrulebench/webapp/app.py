@@ -12,11 +12,11 @@ for _bp in BLUEPRINTS:
 
 
 def main():
-    # WRB_PORT / WRB_HOST / WRB_DEBUG (see paths.py): for the demo and Docker (default 127.0.0.1:5001, debug on)
+    # WRB_PORT / WRB_HOST / WRB_DEBUG (see paths.py): for the demo and Docker (default 127.0.0.1:5001, debug off)
     from webrulebench.paths import env
     port  = int(env("PORT", "5001"))
     host  = env("HOST", "127.0.0.1")
-    debug = env("DEBUG", "1") != "0"
+    debug = env("DEBUG", "0") == "1"
     print("=" * 50)
     print("  WebRuleBench")
     print(f"  http://{'localhost' if host in ('127.0.0.1', '0.0.0.0') else host}:{port}")

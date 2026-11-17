@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.4 — 2026-11
+
+Fixes found in a final check before the resubmission; the version cited by the revised SoftwareX manuscript.
+
+- Security: values from a request that become path components (site, page file) are checked before any route
+  runs; a value with `..`, a separator or an absolute path is refused (400). Before, an administrator's site or page
+  delete request could remove files outside the data folder. The MCP tools check the same.
+  `tests/test_paths_and_export.py`.
+- `webrulebench serve` starts with Flask debug mode off; `--debug` turns it on for local development.
+- The HuggingFace-style ground-truth export contains exactly the values the experiments score against (the
+  extractor and the metric of the experiments); before, it used a separate extractor that joined words without
+  spaces. A test compares the export of the demo with the scoring.
+- The approval page normalizes rules with non-ASCII class names as the Python code does (Unicode-aware
+  matching); the test of the browser copy now includes such names.
+- The tests no longer depend on a local Ollama installation (`tests/conftest.py`).
+- `requirements.txt` lists Playwright as optional, as `pyproject.toml` does; the manifest also digests
+  `rules/rule_agreement.py` and `evaluation/agreement.py`; outdated docstrings corrected.
+- 218 tests.
+
 ## 1.1.3 — 2026-11
 
 The version cited by the revised SoftwareX manuscript; the behavior of the tool is unchanged.

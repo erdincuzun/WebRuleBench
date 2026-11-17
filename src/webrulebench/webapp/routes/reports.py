@@ -268,6 +268,7 @@ def api_export_hf():
     Each row is a (domain, page, field) triple — together with the GT value.
     Extracts from the HTML and returns the actual text values.
     """
+    from webrulebench.evaluation import experiments as X
     from flask import Response
     lines = []
     for domain_file in sorted(APPROVED_DIR.glob("*.json")):
@@ -289,27 +290,24 @@ def api_export_hf():
             tid       = layout.get("template_id", "")
             tmpl      = get_template(tid) or {}
             t_fields  = tmpl.get("fields", {})
-            overrides = layout.get("metric_overrides", {})
+            # the values and metrics the experiments score against (evaluation.experiments.rule_values / score_field)
+            metrics = {f: t_fields.get(f, {}).get("metric", "rouge") for f in selectors}
 
             for fname in pages:
                 html_path = DATASET_DIR / domain / fname
                 if not html_path.exists():
                     continue
                 html = html_path.read_text(encoding="utf-8", errors="ignore")
-                soup = BeautifulSoup(html, "lxml")
+                soup = BeautifulSoup(html, "html.parser")
 
                 gt_values = {}
                 for field, sel in selectors.items():
-                    merge = bool(t_fields.get(field.split("[")[0], {}).get("merge", False))
-                    gt_values[field] = _extract_with_selector(soup, sel, field, merge)
-
-                metrics = {}
-                for field in selectors:
-                    metrics[field] = (
-                        overrides.get(field)
-                        or t_fields.get(field, {}).get("metric")
-                        or ("jaccard" if field == "images" else "rouge")
-                    )
+                    fd = t_fields.get(field, {})
+                    try:
+                        gt_values[field] = X.rule_values(html, soup, X._rule_of(sel, "css"), "css", X._kind(fd),
+                                                         bool(fd.get("merge")))
+                    except Exception:
+                        gt_values[field] = []
 
                 lines.append(json.dumps({
                     "domain":      domain,

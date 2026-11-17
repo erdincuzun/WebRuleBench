@@ -3,6 +3,7 @@ webrulebench/webapp/routes/data.py — Data Collection: sites, pages (add, delet
 """
 from flask import Blueprint
 
+from webrulebench.paths import inside, safe_name
 from webrulebench.webapp.core import *  # noqa: F401,F403 — shared helpers, paths, authentication
 
 bp = Blueprint("data", __name__)
@@ -140,6 +141,8 @@ def api_delete_page():
     # Delete the HTML file from disk
     html_path = DATASET_DIR / domain / filename
     deleted_from_disk = False
+    if not inside(html_path, DATASET_DIR):
+        return jsonify({"success": False, "error": _t("Invalid name")}), 400
     if html_path.exists():
         _audit(f"PAGE_DELETE  domain={domain}  file={filename}  path={html_path}")
         html_path.unlink()
@@ -511,6 +514,8 @@ def api_delete_site():
 
     # 1. Raw HTML directory
     site_dir = DATASET_DIR / domain
+    if not safe_name(domain) or not inside(site_dir, DATASET_DIR) or site_dir.resolve() == DATASET_DIR.resolve():
+        return jsonify({"success": False, "error": _t("Invalid name")}), 400
     if site_dir.exists():
         html_files = list(site_dir.glob("*.html"))
         _audit(f"SITE_DELETE  domain={domain}  html_files={len(html_files)}  path={site_dir}")

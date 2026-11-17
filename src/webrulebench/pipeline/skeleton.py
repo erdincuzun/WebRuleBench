@@ -3,9 +3,9 @@ skeleton.py
 ===========
 Phase 3 — K3: HTML Skeleton Extractor
 
-Extracts only the structural tree from cleaned HTML.
-Text, src, href, style, event handlers — none of them remain.
-Only tag + class + id + selected data-* attributes remain.
+Extracts the structural tree from cleaned HTML: tag + class + id + selected data-* attributes; src, href, style
+and event handlers are dropped. The whitelist mode keeps no text; the default mode used by the experiments
+(enriched) also keeps headings and short text cues.
 
 Class cleaning:
   ssrcss-8ytrv8-TextContainer  →  TextContainer   (split on hyphens, drop hashes)

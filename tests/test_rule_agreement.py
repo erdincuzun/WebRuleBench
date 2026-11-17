@@ -100,7 +100,8 @@ def test_krippendorff_alpha_nominal():
 def test_browser_copy_normalizes_identically():
     src = (ROOT / "src" / "webrulebench" / "webapp" / "static" / "compile.js").read_text(encoding="utf-8")
     code = src[src.index("function _splitTop"):src.index("function _observedAgreement")]
-    cases = list(CASES) + ["h2, h1", "img.b,IMG.a"]
+    cases = list(CASES) + ["h2, h1", "img.b,IMG.a",
+                           "div.x.başlık", "span.ödül.a", "DIV.b.a > p.ç", "#içerik .ğ.ä", "h1.标题.a"]   # non-ASCII names
     js = code + f"\nconsole.log(JSON.stringify({json.dumps(cases)}.map(c => [_normalizeRule(c), _normalizeRule(c, 'css', true)])));"
     out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True).stdout
     assert json.loads(out) == [[normalize_rule(c), normalize_rule(c, merge=True)] for c in cases]

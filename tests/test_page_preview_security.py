@@ -55,7 +55,7 @@ def test_downloaded_pages_are_served_with_a_script_blocking_policy(tmp_path):
     assert "object-src 'none'" in csp and "base-uri 'none'" in csp and "form-action 'none'" in csp
     # opt-in mode: scripts run, in an opaque origin (a sandbox without allow-same-origin)
     assert res["active"].startswith("sandbox") and "allow-scripts" in res["active"] and "allow-same-origin" not in res["active"]
-    assert res["missing"] == 404 and all(s in (404, 308, 401) for s in res["outside"]) and 200 not in res["outside"]
+    assert res["missing"] == 404 and all(s in (400, 404, 308, 401) for s in res["outside"]) and 200 not in res["outside"]
 
 
 def test_every_preview_frame_is_sandboxed():

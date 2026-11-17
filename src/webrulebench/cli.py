@@ -1,7 +1,7 @@
 """
 webrulebench — command line (installed with pip install -e .; or python -m webrulebench)
 
-    webrulebench serve [--port 5001] [--host 127.0.0.1] [--data DIR] [--no-debug]
+    webrulebench serve [--port 5001] [--host 127.0.0.1] [--data DIR] [--debug]
     webrulebench demo  [--port 5002] [--rebuild]           # reviewer demo (no LLM needed)
     webrulebench users list | create-admin <name> | create <name> [--role] | reset-token <name> | activate|deactivate <name>
     webrulebench --version
@@ -44,7 +44,8 @@ def main(argv=None):
     s.add_argument("--port", type=int, default=None)
     s.add_argument("--host", default=None)
     s.add_argument("--data", default=None, help="data folder (default: data/)")
-    s.add_argument("--no-debug", action="store_true")
+    s.add_argument("--debug", action="store_true", help="Flask debug mode (local development only)")
+    s.add_argument("--no-debug", action="store_true", help=argparse.SUPPRESS)   # the default; kept for old scripts
 
     d = sub.add_parser("demo", help="self-contained demo: synthetic sites, no LLM needed")
     d.add_argument("--port", type=int, default=5002)
@@ -64,8 +65,8 @@ def main(argv=None):
             os.environ["WRB_PORT"] = str(a.port)
         if a.host:
             os.environ["WRB_HOST"] = a.host
-        if a.no_debug:
-            os.environ["WRB_DEBUG"] = "0"
+        if a.debug:
+            os.environ["WRB_DEBUG"] = "1"
         return _serve()
 
     if a.cmd == "demo":

@@ -238,7 +238,7 @@ def _mean(xs):
 
 
 # ---------------------------------------------------------------------------
-# tek layout
+# one layout
 # ---------------------------------------------------------------------------
 def run_layout(cfg: dict, item: dict, prompts_used: dict) -> dict:
     from bs4 import BeautifulSoup

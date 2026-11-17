@@ -31,7 +31,7 @@ combinators (+, ~), CSS escapes (\\:), content of void tags.
 
 Usage:
     from webrulebench.rules.regex_generator import generate
-    r = generate("div.article-body", pages=[html1, html2], kind="text")
+    r = generate("div.article-body", pages=[html1, html2], expected=[values1, values2], kind="text")
     r["regex"], r["strategy"], r["passed"], r["total"]
 """
 

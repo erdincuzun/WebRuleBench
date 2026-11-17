@@ -230,6 +230,30 @@ def _api_login_gate():
         return jsonify({"error": _t("Login required")}), 401
 
 
+# Values from a request that become path components (data folder / domain / page file). A value that could leave
+# its folder ("..", a separator, an absolute path) is refused before any route runs.
+_NAME_KEYS, _NAME_LIST_KEYS = ("domain", "filename", "file", "page"), ("pages", "filenames", "files")
+
+
+def _unsafe_request_names() -> list:
+    from webrulebench.paths import safe_name
+    vals = [v for k, v in (request.view_args or {}).items() if k in _NAME_KEYS]
+    vals += [request.args[k] for k in _NAME_KEYS if k in request.args]
+    body = request.get_json(silent=True) if request.is_json else None
+    if isinstance(body, dict):
+        vals += [body[k] for k in _NAME_KEYS if body.get(k) not in (None, "")]
+        for k in _NAME_LIST_KEYS:
+            if isinstance(body.get(k), list):
+                vals += body[k]
+    return [v for v in vals if not safe_name(v)]
+
+
+@app.before_request
+def _path_gate():
+    if _unsafe_request_names():
+        return jsonify({"success": False, "error": _t("Invalid name")}), 400
+
+
 def require_admin():
     """Returns (username, error_response). error_response is None if admin."""
     u = current_user()
@@ -988,55 +1012,6 @@ def _group_or_404(gid):
     return X.group_members(gid) or None
 
 
-def _extract_with_selector(soup, selector: str, field: str, merge: bool = False) -> str | list:
-    """Apply a CSS selector and return extracted text or image src list.
-
-    merge=False → break-after-success (first matching part wins).
-    merge=True  → continue-after-success (all parts run, results unioned).
-    """
-    # fields in {css, xpath, regex} form (GT and user annotations) → the CSS part
-    if isinstance(selector, dict):
-        selector = selector.get("css") or ""
-    if isinstance(selector, list):  # rules stored as lists in old records
-        selector = ", ".join(s for s in selector if isinstance(s, str))
-    if not selector:
-        return "" if field != "images" else []
-
-    parts = split_selector_list(selector)
-
-    if merge:
-        seen = set()
-        els  = []
-        for part in parts:
-            try:
-                for el in soup.select(part):
-                    if id(el) not in seen:
-                        seen.add(id(el))
-                        els.append(el)
-            except Exception:
-                continue
-    else:
-        els = []
-        for part in parts:
-            try:
-                found = soup.select(part)
-            except Exception:
-                continue
-            if found:
-                els = found
-                break
-
-    if field == "images":
-        srcs = []
-        for el in els:
-            for img in ([el] if el.name == "img" else []) + el.find_all("img"):
-                src = img.get("src") or img.get("data-src") or ""
-                if src:
-                    srcs.append(src.strip())
-        return srcs
-    return " ".join(el.get_text(strip=True) for el in els).strip()
-
-
 def _build_export_rows() -> list[dict]:
     """
     For each approved domain, return (domain, layout_id, page_type,
@@ -1060,14 +1035,11 @@ def _build_export_rows() -> list[dict]:
             tid      = layout.get("template_id", "")
             tmpl     = get_template(tid) or {}
             t_fields = tmpl.get("fields", {})
-            overrides = layout.get("metric_overrides", {})
             selectors = layout.get("selectors", {})
             pages     = lid_pages.get(lid, [])
 
             for field, sel in selectors.items():
-                metric = overrides.get(field) or t_fields.get(field, {}).get("metric") or (
-                    "jaccard" if field == "images" else "rouge"
-                )
+                metric = t_fields.get(field, {}).get("metric", "rouge")      # the metric the experiments score with
                 rows.append({
                     "domain":      domain,
                     "layout_id":   lid,

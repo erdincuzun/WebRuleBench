@@ -28,7 +28,7 @@ AUDIT_LOG = DATA_DIR / "dataset" / "deletion_audit.log"
 # code files digested in the manifest: pins down the code the experiment was produced with
 CODE_FILES = ("evaluation/experiments.py", "evaluation/metrics.py", "pipeline/llm_extractor.py", "pipeline/llm_models.py",
               "pipeline/prompt_builder.py", "pipeline/html_cleaner.py", "pipeline/skeleton.py",
-              "rules/regex_generator.py", "rules/rule_utils.py")
+              "rules/regex_generator.py", "rules/rule_utils.py", "rules/rule_agreement.py", "evaluation/agreement.py")
 
 
 def _now() -> str:

@@ -36,6 +36,7 @@ mcp = FastMCP("WebRuleBench")
 # PATHS
 # ---------------------------------------------------------------------------
 from webrulebench.paths import DATA_DIR as _DATA   # noqa: E402
+from webrulebench.paths import safe_name   # noqa: E402
 from webrulebench.rules.rule_utils import split_selector_list   # noqa: E402
 DATASET_DIR  = _DATA / "dataset" / "raw"
 APPROVED_DIR = _DATA / "ground_truth" / "approved"
@@ -190,6 +191,8 @@ def detect_selectors(
     username = verify_token(token)
     if not username:
         return {"error": "Invalid token"}
+    if not (safe_name(domain) and safe_name(filename)):
+        return {"error": "Invalid name"}
 
     html_path = DATASET_DIR / domain / filename
     if not html_path.exists():
@@ -252,6 +255,8 @@ def validate_selector(
     username = verify_token(token)
     if not username:
         return {"error": "Invalid token"}
+    if not (safe_name(domain) and safe_name(filename)):
+        return {"valid": False, "message": "Invalid name"}
 
     html_path = DATASET_DIR / domain / filename
     if not html_path.exists():
@@ -312,6 +317,8 @@ def evaluate_page(
     username = verify_token(token)
     if not username:
         return {"error": "Invalid token"}
+    if not (safe_name(domain) and safe_name(filename)):
+        return {"error": "Invalid name"}
 
     gt_selectors = selectors_for_page(domain, filename)
     if not gt_selectors:
@@ -409,6 +416,8 @@ def bulk_test(
     username = verify_token(token)
     if not username:
         return {"error": "Invalid token"}
+    if not (safe_name(domain) and all(safe_name(f) for f in filenames)):
+        return {"error": "Invalid name"}
 
     gt      = load_ground_truth(domain)
     layout  = gt.get("layouts", {}).get(layout_id)
@@ -497,6 +506,8 @@ def get_ground_truth(domain: str, token: str) -> dict:
     username = verify_token(token)
     if not username:
         return {"error": "Invalid token"}
+    if not safe_name(domain):
+        return {"error": "Invalid name"}
 
     gt = load_ground_truth(domain)
     pa = gt.get("page_assignments", {})
@@ -524,6 +535,8 @@ def get_pages(domain: str, token: str) -> dict:
     username = verify_token(token)
     if not username:
         return {"error": "Invalid token"}
+    if not safe_name(domain):
+        return {"error": "Invalid name"}
 
     site_dir = DATASET_DIR / domain
     if not site_dir.exists():

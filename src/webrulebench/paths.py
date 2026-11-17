@@ -18,7 +18,7 @@ Environment variables (the old LLMWB_* names are also accepted):
     WRB_DATA_DIR   data folder                (default: <repo>/data)
     WRB_PORT       server port                (5001)
     WRB_HOST       address to listen on       (127.0.0.1; 0.0.0.0 in Docker)
-    WRB_DEBUG      0 → Flask debug off        (1)
+    WRB_DEBUG      1 → Flask debug on         (0; never on a reachable server)
 """
 
 import os
@@ -61,3 +61,19 @@ def ensure_data_dir(data_dir: Path = DATA_DIR) -> Path:
 
 
 ensure_data_dir()
+
+
+def safe_name(name) -> bool:
+    """True for a single path component that cannot leave its folder: a domain, a page file name or a layout id.
+    Rejects empty values, '.', '..', path separators, NUL and drive prefixes; used for every value from a request."""
+    return (isinstance(name, str) and name not in ("", ".", "..") and not any(c in name for c in "/\\\0:")
+            and len(name) <= 255)
+
+
+def inside(path, folder) -> bool:
+    """True if path, resolved, lies inside folder (resolved)."""
+    try:
+        Path(path).resolve().relative_to(Path(folder).resolve())
+        return True
+    except ValueError:
+        return False

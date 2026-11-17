@@ -5,7 +5,7 @@ Rule agreement between annotators (GT Approval · Layer 1, reports).
 
 - normalize_rule(): strips a rule of writing differences that do not change its meaning
   (CSS: whitespace, whitespace around combinators, order of id/class/attribute in a compound
-  selector, attribute quotes, tag letter case, order of comma-separated alternatives).
+  selector, attribute quotes, tag letter case; for merged fields also the order of comma-separated alternatives).
   Differences that may change the meaning (e.g. `a > b` vs `a b`, `h1` vs `h1.title`) are kept —
   these are evaluated at the content level (Layer 2).
 - observed_agreement(): observed pairwise agreement P_o for a single layout × field (share of
