@@ -201,7 +201,7 @@ def write_table(runs: list, speed: dict, path: Path):
     rng = lambda xs: f"{min(xs):.1f}--{max(xs):.1f}"
     lines = [r"\begin{table}[!htb]", r"  \centering", r"  \scriptsize", r"  \setlength{\tabcolsep}{3pt}", r"  \setlength{\abovetopsep}{3pt}",
              r"  \caption{LLM experiments on the ten layouts, scored against the reviewed reference. "
-             + f"Ollama, 4-bit quantized models ({quant.replace('_', chr(92) + '_')}); temperature {temp:g}, seed {seed}, at most {max_tokens} output tokens; "
+             + f"Ollama, 4-bit quantized models~\\cite{{hui2024qwen25coder,abdin2024phi4,liu2026ministral3,gemma2026gemma4}} ({quant.replace('_', chr(92) + '_')}); temperature {temp:g}, seed {seed}, at most {max_tokens} output tokens; "
              + f"{strategy.replace('_', ' ')} cleaning; first ground-truth page of each layout as the sample. "
              + r"\textbf{Mean:} score (0--100) of the scored page--field pairs, averaged per layout, then over the ten layouts. \textbf{Sample:} score on the ten sample pages, one per layout. "
              r"\textbf{Gap:} smallest/largest difference between the sample page and the other pages of a layout (sample minus others). "
