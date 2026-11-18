@@ -9,7 +9,7 @@ The version cited by the revised SoftwareX manuscript; the behavior of the tool 
 
 ## 1.1.4 — 2026-11
 
-Fixes found in a final check before the resubmission; the version cited by the revised SoftwareX manuscript.
+Fixes found in a final check before the resubmission of the SoftwareX manuscript.
 
 - Security: values from a request that become path components (site, page file) are checked before any route
   runs; a value with `..`, a separator or an absolute path is refused (400). Before, an administrator's site or page
@@ -28,7 +28,7 @@ Fixes found in a final check before the resubmission; the version cited by the r
 
 ## 1.1.3 — 2026-11
 
-The version cited by the revised SoftwareX manuscript; the behavior of the tool is unchanged.
+The behavior of the tool is unchanged.
 
 - The last Turkish texts outside the bilingual interface are in English: three messages (`rule_utils`, MCP server,
   skeleton command line), a test skip reason and the comments of `compile.css` and `hub.css`; the README no longer
@@ -38,7 +38,7 @@ The version cited by the revised SoftwareX manuscript; the behavior of the tool 
 
 ## 1.1.2 — 2026-11
 
-The version cited by the revised SoftwareX manuscript; the behavior of the tool is unchanged.
+The behavior of the tool is unchanged.
 
 - Comments, docstrings and help texts of the tests and of the annotation study scripts are in English (test data in
   Turkish is kept); `README.md` gives the current number of tests (202).
